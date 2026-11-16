@@ -6,6 +6,7 @@ import { S, MAP } from '../state.js';
 import { groundHeight, distToPaths, inWater, isGrass } from './world.js';
 import { barkTex, leafTex, grassBladeTex } from './textures.js';
 import { loadModel, fitHeight, shadowify } from '../systems/models.js';
+import { buildCanopy } from '../systems/canopy.js';
 
 // small deterministic rng so the park is the same park every load
 let seed = 1337;
@@ -104,6 +105,10 @@ export function buildTrees(scene) {
   buildUnderstory(scene);
   buildHollowTree(scene);
   swapHeroTrees(scene);
+  // canopy highways go last: every tree/platform/solid must be registered
+  // first (systems/canopy.js reads the finished registries, incl. the snag
+  // it adds itself for the Charles Street crossing)
+  buildCanopy(scene);
 }
 
 // Bushes + grass tufts: the squirrel-height detail layer. At 25cm eye height

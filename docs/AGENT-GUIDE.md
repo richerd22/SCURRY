@@ -104,22 +104,42 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   allocations in the loop; reuse vectors.
 - PMREM rebakes happen only when the day-phase segment changes.
 
-## Known state / next rounds (as of v0.2, Nov 15 2026)
+## Known state / next rounds (as of v0.4, Nov 15 2026)
 
-- Golden-hour ground is still moodier than midday; full-quality (PMREM)
-  lifts it, lowq shots exaggerate the darkness. Next: a dedicated
-  grade pass with full-quality captures at 640x360.
-- The tail in the down-view reads oddly in stills (fine in motion);
-  watch it if the rig is touched.
-- Quaternius `Trees.glb` (CC0, in the library) is a 5-tree blob - split
-  and instance it for hero trees; procedural elms carry the canopy
-  gameplay. Benches are still procedural (Sammy Park Bench, CC-BY, is in
-  the library if wanted - 17 meshes, merge first).
-- Roadmap (owner's direction): canopy branch highways + cache hollows,
-  burrow tunnels + rat black market, Hawk Dua (the hawk), Public Garden
-  geese (lagoon bridge bosses), food-stealing crows, Fenway + City Hall
-  as teleport-reached expansion maps (Sketchfab models are WANTED in the
-  ledger - account-gated, need a human grab), save persistence.
+- v0.3 (commit 35a13a6): full-quality grade pass (warm golden-hour hemi
+  blend, PMREM horizon lift, water emissive sheen - pond/lagoon reflect
+  sky + lamps, never black; exposure 1.22, midday trimmed). Hero trees:
+  Quaternius `Trees.glb` split into Tree1-5.glb (raw re-slicer, geometry
+  byte-identical, 32,220 tris total) and swapped in at 17 hero spots
+  (Hollow tree, Mall elms, Garden specimens) over the procedural
+  fallback; registries are never modified by the swap. Benches: the
+  CC0 Quaternius bench (baked, seat-height-exact scale x3.7431) swapped
+  in for all 22. WARNING: the Sammy "Park Bench" in the library is a
+  PICNIC TABLE (merged derivative banked as a future picnic prop) - do
+  not use it as a bench.
+- v0.4: canopy highways (`systems/canopy.js` - 49 bridges / 527 m of
+  stepping-box routes computed from the tree registry, Common-Garden
+  crossing via a planted snag at (-47.13,-37.58), 6 cache hollows with
+  150 s restock, stream-cam lookout perch at (-33.9,-1.9) with a "sit
+  in frame" interactable). Hawk Dua (`systems/hawk.js` - roost/circle/
+  screech/dive state machine; canopy cover = safety; catch relocates
+  to a random canopy, stash intact; bite escape window is tight by
+  design, ~last 0.2 s of the dive - tune after playtests). Save
+  persistence (`systems/save.js` via hud.js hooks: `scurry-save-v1` -
+  live stash, bestDays by dawn-crossing, daysPlayed, muted). food.js
+  has a 1.5 m height gate on pickup AND bury (canopy food/bury exploits
+  closed). fadeCatch in main.js now takes optional {pos, message,
+  grounded} - ranger behaviour unchanged.
+- Known warts: foreground grass tufts read as dark silhouettes at
+  golden hour; western Mall row has no canopy bridge (crowns 27.9 m
+  apart - needs a planted tree/snag if wanted); split tree GLBs are
+  ~2.3 MB each (shared textures duplicated per file); during a hawk
+  screech the HUD warning reuses the dog-scent line (shared
+  spottedFlash).
+- Roadmap (owner's direction): burrow tunnels + rat black market,
+  Public Garden geese (lagoon bridge bosses), food-stealing crows,
+  Fenway + City Hall as teleport-reached expansion maps (Sketchfab
+  models are WANTED in the ledger - account-gated, need a human grab).
 - **Multiplayer is roadmap-only - no netcode yet.** Design note: a
   WebSocket relay on a Cloudflare Worker + Durable Object fits the
   existing stack; sync transforms + anim state at 10-15 Hz with

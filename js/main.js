@@ -13,7 +13,9 @@ import { buildHumans, updateHumans } from './systems/humans.js';
 import { initFood, updateFood, nearestFoodAction, buryAction } from './systems/food.js';
 import { buildDogs, updateDogs, biteDogs, nearestDogDist } from './systems/dogs.js';
 import { buildRanger, updateRanger, biteRanger } from './systems/ranger.js';
+import { buildHawk, updateHawk, biteHawk } from './systems/hawk.js';
 import { buildHollow, initHollowInteractables, updateHollow } from './systems/hollow.js';
+import { updateCanopy } from './systems/canopy.js';
 import { initAudio, setMuted, isMuted } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
@@ -50,6 +52,7 @@ buildProps(scene);
 buildHumans(scene);
 buildDogs(scene);
 buildRanger(scene);
+buildHawk(scene);
 buildHollow(scene);
 initFood();
 initHollowInteractables();
@@ -86,22 +89,26 @@ document.addEventListener('keydown', (e) => {
 });
 
 // bite: boop whatever is in range
-S.onBite = () => { biteDogs() || biteRanger(); };
+S.onBite = () => { biteDogs() || biteRanger() || biteHawk(); };
 
-// ranger net catch: fade, relocate to the bandstand roof, stash raided
-S.fadeCatch = (lost) => {
+// ranger net catch: fade, relocate to the bandstand roof, stash raided.
+// Hawk Dua reuses the same fade with opts {pos, message, grounded}: a
+// canopy relocation with its own toast and the stash intact (lost = 0).
+// The ranger call passes no opts and keeps the original behaviour exactly.
+S.fadeCatch = (lost, opts) => {
   const fade = document.getElementById('fade');
   fade.style.opacity = 1;
+  const dest = (opts && opts.pos) ? opts.pos : S.respawnPoint;
   setTimeout(() => {
     const P = S.player;
-    P.pos.copy(S.respawnPoint);
+    P.pos.copy(dest);
     P.vel.set(0, 0, 0);
     P.climbing = null;
-    P.grounded = false;
+    P.grounded = (opts && typeof opts.grounded === 'boolean') ? opts.grounded : false;
     fade.style.opacity = 0;
-    toast(lost > 0
+    toast((opts && opts.message) ? opts.message : (lost > 0
       ? 'NETTED. relocated to the bandstand roof. the ranger took ' + lost + ' from your stash.'
-      : 'NETTED. relocated to the bandstand roof. undignified, but free.', 4.5);
+      : 'NETTED. relocated to the bandstand roof. undignified, but free.'), 4.5);
   }, 650);
 };
 
@@ -248,8 +255,9 @@ function loop() {
     updatePlayer(dt, camera);
     updateHumans(dt);
     updateFood(dt);
-    if (!S.debugShot) { updateDogs(dt); updateRanger(dt); } // frozen in shot mode so poses hold
+    if (!S.debugShot) { updateDogs(dt); updateRanger(dt); updateHawk(dt); } // frozen in shot mode so poses hold
     updateHollow(dt);
+    updateCanopy(dt);
     scanInteractions();
     const prompt = currentE ? currentE.label : (currentF ? currentF.label : '');
     updateHUD(prompt, warnings());

@@ -131,10 +131,33 @@ export function updateFood(dt) {
 }
 
 // pickup / steal / bury decisions, called from main's interaction scan
+// Vertical pickup gate, in metres between the food's y and the player's
+// FEET y (S.player.pos is feet - see state.js / player.js). Food items
+// store no y of their own (spawnFood keeps only x/z on the item), so the
+// gate reads f.mesh.position.y, which is the live y at scan time: main's
+// loop runs scanInteractions after updateFood and updateCanopy, so cache
+// food has already been re-pinned to its branch for this frame.
+// Per-source audit of intended dy (food mesh y minus feet y):
+//   ground spawns / respawns / drops / swaps / beg + trash-can tosses
+//     (all land via spawnFood with no y): groundHeight + 0.05, dy ~0.05
+//     (worst slope case, the terrace-edge ambient acorn: ~0.55)
+//   blanket steal food: mesh pinned at blanket gy + 0.11, dy ~0.11
+//   ground food grabbed from a low walkable surface beside it
+//     (bandstand stage gy+1.1, bridge deck 1.15, monument step gy+1.2):
+//     dy up to ~1.25 - the highest intended case, sets the gate floor
+//   canopy cache food (canopy.js): mesh at platY + 0.07 where platY is
+//     canopyY - 0.55 and elm canopyY is gy + 7.1..10.6, so dy ~0.07
+//     standing on the canopy platform, but dy >= ~6.6 from the ground
+// No food spawns on the pretzel cart or a trash-can rim (the can is an
+// interactable; its jackpot is tossed and lands on the ground), so no
+// case needs a gate above 1.25. 1.5 clears it with margin and is still
+// far under the lowest ground-to-cache dy.
+const FOOD_REACH_Y = 1.5;
 export function nearestFoodAction() {
   const P = S.player.pos;
   let best = null, bd = 1e9;
   for (const f of S.foods) {
+    if (Math.abs(f.mesh.position.y - P.y) > FOOD_REACH_Y) continue;
     const d = Math.hypot(P.x - f.x, P.z - f.z);
     if (d < bd) { bd = d; best = f; }
   }
@@ -183,6 +206,7 @@ export function buryAction() {
   const P = S.player.pos;
   if (!S.carried) return null;
   if (S.player.climbing || !S.player.grounded) return null;
+  if (P.y - groundHeight(P.x, P.z) > FOOD_REACH_Y) return null; // grounded on a canopy/bridge is not ground - no burying mid-air
   if (!isGrass(P.x, P.z)) return null;
   return {
     label: 'F - bury the ' + S.carried,

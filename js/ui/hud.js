@@ -3,17 +3,36 @@
 
 import { S } from '../state.js';
 import { clockString, phaseName } from '../systems/daycycle.js';
+import { loadSave, observeSave } from '../systems/save.js';
 
 const el = {};
 export function initHUD() {
   for (const id of ['hud-stash', 'hud-carried', 'hud-clock', 'hud-prompt', 'hud-warn', 'hud-toast', 'hud-gossip', 'hud-bar']) {
     el[id] = document.getElementById(id);
   }
+  // Save persistence (systems/save.js): load at boot - applies the saved
+  // stash + mute + bests into S / S.save before the first frame.
+  const save = loadSave();
+  // Title screen: one dry line for returning squirrels, nothing if no save.
+  if (save && save.exists) {
+    const title = document.getElementById('title');
+    if (title && !document.getElementById('hud-save-line')) {
+      const line = document.createElement('div');
+      line.id = 'hud-save-line';
+      line.className = 'tag'; // the title overlay's existing small-print style
+      line.style.marginTop = '18px';
+      line.style.marginBottom = '0';
+      line.textContent = 'saved stash: ' + save.stash +
+        ' - longest run: ' + save.bestDays + (save.bestDays === 1 ? ' day' : ' days');
+      title.appendChild(line);
+    }
+  }
 }
 
 const FOOD_NAMES = { acorn: 'acorn', pretzel: 'pretzel bit', sandwich: 'sandwich scrap', peanut: 'peanut' };
 
 export function updateHUD(promptText, warnText) {
+  observeSave(); // save persistence: dirty-checked, writes only on change
   if (!el['hud-stash']) return;
   el['hud-stash'].textContent = 'STASH ' + S.stash;
   const barLen = 24;

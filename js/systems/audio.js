@@ -72,6 +72,32 @@ export const sfx = {
   toss() { tone(600, 900, 0.15, 'sine', 0.06); },
   splash() { noiseBurst(0.25, 1200, 0.12, 0, 'lowpass'); },
   caught() { tone(800, 200, 0.5, 'triangle', 0.25); },
+  screech() {
+    // Hawk Dua: harsh descending FM cry - a carrier screamed down from
+    // ~2.6kHz with a rasping modulator, plus a noise layer for the rasp.
+    if (!ctx || muted) return;
+    try {
+      const t0 = ctx.currentTime;
+      const dur = 0.7;
+      const carrier = ctx.createOscillator(); carrier.type = 'sawtooth';
+      carrier.frequency.setValueAtTime(2600, t0);
+      carrier.frequency.exponentialRampToValueAtTime(620, t0 + dur);
+      const mod = ctx.createOscillator(); mod.type = 'square';
+      mod.frequency.setValueAtTime(880, t0);
+      mod.frequency.exponentialRampToValueAtTime(280, t0 + dur);
+      const modGain = ctx.createGain();
+      modGain.gain.setValueAtTime(750, t0);
+      modGain.gain.exponentialRampToValueAtTime(90, t0 + dur);
+      mod.connect(modGain); modGain.connect(carrier.frequency);
+      const g = ctx.createGain();
+      env(g, t0, 0.015, 0.2, dur);
+      carrier.connect(g); g.connect(master);
+      carrier.start(t0); carrier.stop(t0 + dur + 0.1);
+      mod.start(t0); mod.stop(t0 + dur + 0.1);
+    } catch (e) {}
+    noiseBurst(0.5, 2100, 0.13);
+    tone(3100, 750, 0.55, 'sawtooth', 0.07, 0.02);
+  },
   gossip() { tone(1100, 1300, 0.06, 'sine', 0.08); tone(1300, 1500, 0.06, 'sine', 0.08, 0.08); },
 };
 
