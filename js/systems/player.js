@@ -10,7 +10,8 @@ import { sfx } from './audio.js';
 const EYE = 0.25;
 const RADIUS = 0.22;
 const keys = {};
-let paws, belly, pawL, pawR, carriedMesh;
+let paws, belly, bellyMat, hindMat, pawL, pawR, carriedMesh;
+let tailGroup, tailMat, tailTipMat;
 let runPhase = 0;
 
 export function initPlayer(scene, camera) {
@@ -35,38 +36,126 @@ export function initPlayer(scene, camera) {
   });
 }
 
+// Paw rig v1: Richard's playtest verdict on v0 was "horrifying - giant feet".
+// v0.1 shrank the paws, parked them at the bottom edge and faded them out
+// when idle. v1 keeps that discipline and fixes the anatomy, which was the
+// real problem: the v0 paw was an elongated oval with round toe blobs on
+// the side FACING the camera, floating with no leg - that is a human foot.
+// A squirrel forepaw is small (~4cm), barely longer than wide, its thin
+// fingers point AWAY from the body (the way the squirrel faces), and a
+// short foreleg runs from the paw back and down out of frame to the chest.
+// Belly/chest and a tail curl return, but flat, low, and strictly gated on
+// looking down - they never sit in frame during normal play.
+let pawFadeL = 0, pawFadeR = 0, bodyFade = 0, tailFade = 0;
 function buildPawRig(camera) {
   paws = new THREE.Group();
-  const fur = new THREE.MeshStandardMaterial({ color: 0x8a6a4e, roughness: 1 });
-  const furLight = new THREE.MeshStandardMaterial({ color: 0xcbb59a, roughness: 1 });
-  const pawGeo = new THREE.SphereGeometry(0.045, 8, 6);
   function makePaw(side) {
+    // per-paw materials so left/right fade independently (v0.1 pattern)
+    const fur = new THREE.MeshStandardMaterial({ color: 0x7d6248, roughness: 1, transparent: true, opacity: 0 });
+    const furDark = new THREE.MeshStandardMaterial({ color: 0x5d4630, roughness: 1, transparent: true, opacity: 0 });
+    const clawMat = new THREE.MeshStandardMaterial({ color: 0x2e241a, roughness: 0.6, transparent: true, opacity: 0 });
     const g = new THREE.Group();
-    const main = new THREE.Mesh(pawGeo, fur);
-    main.scale.set(1, 0.55, 1.5);
-    g.add(main);
-    for (let i = -1; i <= 1; i++) {
-      const toe = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 5), furLight);
-      toe.position.set(i * 0.026, -0.012, 0.062);
-      g.add(toe);
+    // foreleg: thin, angles back toward the body (local +z) and down out
+    // of frame - the paw is attached to something now, not floating
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.0135, 0.09, 7), fur);
+    leg.position.set(0, 0.02, 0.05);
+    leg.rotation.x = 1.15;
+    g.add(leg);
+    // paw pad: small and compact, NOT a foot shape
+    const pad = new THREE.Mesh(new THREE.SphereGeometry(0.0205, 10, 8), fur);
+    pad.scale.set(0.95, 0.58, 1.12);
+    g.add(pad);
+    // four thin fingers at the front tip (-z, away from the viewer), splayed
+    for (let i = 0; i < 4; i++) {
+      const off = (i - 1.5) * 0.0095;
+      const inset = Math.abs(i - 1.5) * 0.0015;
+      const finger = new THREE.Mesh(new THREE.SphereGeometry(0.0042, 6, 5), furDark);
+      finger.scale.set(1, 0.72, 2.6);
+      finger.position.set(off, -0.004, -0.026 - inset);
+      finger.rotation.y = off * 1.4;
+      g.add(finger);
+      const claw = new THREE.Mesh(new THREE.ConeGeometry(0.0016, 0.007, 5), clawMat);
+      claw.rotation.x = -Math.PI / 2 - 0.35;
+      claw.position.set(off * 1.15, -0.006, -0.039 - inset);
+      g.add(claw);
     }
-    g.position.set(0.11 * side, -0.13, -0.3);
+    // thumb nub on the inner side
+    const thumb = new THREE.Mesh(new THREE.SphereGeometry(0.0048, 6, 5), furDark);
+    thumb.scale.set(1, 0.7, 1.9);
+    thumb.position.set(-side * 0.017, -0.003, -0.012);
+    g.add(thumb);
+    g.rotation.x = -0.35; // toes tip down-forward, like a planted forepaw
+    g.userData.mats = [fur, furDark, clawMat];
     paws.add(g);
     return g;
   }
   pawL = makePaw(-1);
   pawR = makePaw(1);
-  // carried food rides in the right paw
+  pawL.position.set(-0.062, -0.235, -0.29);
+  pawR.position.set(0.062, -0.235, -0.29);
+  // carried food rides just in front of the right paw, small; animatePaws
+  // keeps it glued to wherever the right paw currently is
   carriedMesh = new THREE.Group();
-  carriedMesh.position.set(0.11, -0.1, -0.34);
+  carriedMesh.position.set(0.062, -0.2, -0.32);
   carriedMesh.visible = false;
   paws.add(carriedMesh);
-  // belly patch: fades in when you look down
-  belly = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8),
-    new THREE.MeshStandardMaterial({ color: 0xd9c6a8, roughness: 1, transparent: true, opacity: 0 }));
-  belly.scale.set(1.1, 0.7, 1.3);
-  belly.position.set(0, -0.24, -0.12);
+
+  // belly + chest: flat, low, far back - looking down reads as a body
+  // curving away under you, not the v0 beach ball. Hind feet flank the
+  // belly: a hind foot IS long and narrow, and planted either side of the
+  // belly it sells "quadruped seen from above". All pitch-gated (below).
+  bellyMat = new THREE.MeshStandardMaterial({ color: 0xdcc9a9, roughness: 1, transparent: true, opacity: 0, depthWrite: false });
+  belly = new THREE.Mesh(new THREE.SphereGeometry(0.135, 12, 10), bellyMat);
+  belly.scale.set(1.05, 0.6, 1.3);
+  belly.position.set(0, -0.27, -0.04);
+  belly.renderOrder = 5;
   paws.add(belly);
+  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.095, 10, 8), bellyMat);
+  chest.scale.set(1.0, 0.62, 1.0);
+  chest.position.set(0, -0.215, -0.155);
+  chest.renderOrder = 5;
+  paws.add(chest);
+  hindMat = new THREE.MeshStandardMaterial({ color: 0x6e563d, roughness: 1, transparent: true, opacity: 0, depthWrite: false });
+  function makeHindFoot(side) {
+    const g = new THREE.Group();
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), hindMat);
+    foot.scale.set(0.78, 0.42, 2.4);
+    g.add(foot);
+    for (let i = 0; i < 3; i++) {
+      const off = (i - 1) * 0.011;
+      const toe = new THREE.Mesh(new THREE.SphereGeometry(0.0038, 6, 5), hindMat);
+      toe.scale.set(1, 0.7, 2.4);
+      toe.position.set(off, -0.004, -0.052 - Math.abs(i - 1) * 0.002);
+      g.add(toe);
+    }
+    g.position.set(0.108 * side, -0.245, -0.095);
+    g.rotation.y = -0.38 * side; // toes splay outward, planted
+    g.traverse((o) => { o.renderOrder = 5; });
+    paws.add(g);
+    return g;
+  }
+  makeHindFoot(-1);
+  makeHindFoot(1);
+
+  // tail: a bushy arc curling into the bottom of frame from behind the
+  // belly - where a squirrel's tail actually shows when you look sharply
+  // down. Camera-attached, so (like the belly) it is pitch-gated by
+  // opacity, and animatePaws gives it a slow flick. Fat in the middle.
+  tailMat = new THREE.MeshStandardMaterial({ color: 0x84684c, roughness: 1, transparent: true, opacity: 0, depthWrite: false });
+  tailTipMat = new THREE.MeshStandardMaterial({ color: 0xcbb59a, roughness: 1, transparent: true, opacity: 0, depthWrite: false });
+  tailGroup = new THREE.Group();
+  const tailPts = [
+    [0.0, -0.345, 0.05, 0.020], [0.032, -0.335, -0.05, 0.031], [0.078, -0.305, -0.13, 0.039],
+    [0.118, -0.255, -0.185, 0.041], [0.138, -0.195, -0.215, 0.035], [0.132, -0.14, -0.225, 0.025],
+  ];
+  tailPts.forEach(([x, y, z, r], i) => {
+    const seg = new THREE.Mesh(new THREE.SphereGeometry(r, 9, 7), i >= 4 ? tailTipMat : tailMat);
+    seg.scale.set(1, 1, 1.3);
+    seg.position.set(x, y, z);
+    seg.renderOrder = 4;
+    tailGroup.add(seg);
+  });
+  paws.add(tailGroup);
   camera.add(paws);
 }
 
@@ -74,8 +163,8 @@ export function setCarriedVisual(type) {
   while (carriedMesh.children.length) carriedMesh.remove(carriedMesh.children[0]);
   if (!type) { carriedMesh.visible = false; return; }
   const mats = { acorn: 0x7a4a22, pretzel: 0xa06a28, sandwich: 0xe3d3a2, peanut: 0xc8a86a };
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 6),
-    new THREE.MeshStandardMaterial({ color: mats[type] || 0x999999, roughness: 0.9 }));
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 6),
+    new THREE.MeshStandardMaterial({ color: mats[type] || 0x999999, roughness: 0.9, transparent: true, opacity: 0 }));
   m.scale.set(1, 0.8, 1.2);
   carriedMesh.add(m);
   carriedMesh.visible = true;
@@ -270,27 +359,81 @@ function updateClimb(dt, fwd, str) {
 function animatePaws(dt, camera) {
   const P = S.player;
   const now = performance.now() / 1000;
+  // Paw positions hug the bottom edge of the frame and tuck close to the
+  // chest (x +-0.062, not the old wide +-0.11 stance). Rotation tips the
+  // fingers: down-forward when planted/running, up when begging.
+  let tL = 0, tR = 0; // target opacities: invisible unless doing something
   if (P.begging > 0) {
-    // both paws up, center, trembling cutely
-    pawL.position.set(-0.045, -0.07 + Math.sin(now * 30) * 0.004, -0.26);
-    pawR.position.set(0.045, -0.07 + Math.cos(now * 30) * 0.004, -0.26);
+    // both paws up together at the chest, fingers tipped up, trembling
+    pawL.position.set(-0.03, -0.152 + Math.sin(now * 30) * 0.003, -0.26);
+    pawR.position.set(0.03, -0.152 + Math.cos(now * 30) * 0.003, -0.26);
+    pawL.rotation.x = 1.05; pawR.rotation.x = 1.05;
+    tL = 1; tR = 1;
   } else if (P.climbing) {
-    const a = Math.sin(now * 9) * 0.05;
-    pawL.position.set(-0.13, -0.1 + a, -0.3);
-    pawR.position.set(0.13, -0.1 - a, -0.3);
+    // alternating reaches up the trunk
+    const a = Math.sin(now * 9) * 0.04;
+    pawL.position.set(-0.075, -0.188 + a, -0.285);
+    pawR.position.set(0.075, -0.188 - a, -0.285);
+    pawL.rotation.x = -0.1; pawR.rotation.x = -0.1;
+    tL = 0.95; tR = 0.95;
   } else if (P.biteAnim > 0) {
     const k = Math.sin((0.22 - P.biteAnim) / 0.22 * Math.PI);
-    pawR.position.set(0.09, -0.1, -0.3 - k * 0.17);
-    pawL.position.set(-0.11, -0.13, -0.3);
+    pawR.position.set(0.06, -0.2, -0.29 - k * 0.13);
+    pawR.rotation.x = -0.55;
+    pawL.position.set(-0.062, -0.218, -0.29);
+    pawL.rotation.x = -0.35;
+    tL = 0.7; tR = 1;
   } else if (P.grounded && P.moving) {
+    // quadruped scurry: paws pump in and out of the bottom rim in
+    // alternation, dipping forward as they reach
     const s = Math.sin(runPhase * 2);
-    pawL.position.set(-0.11, -0.14 + Math.abs(s) * 0.02, -0.3 - s * 0.03);
-    pawR.position.set(0.11, -0.14 + Math.abs(-s) * 0.02, -0.3 + s * 0.03);
+    pawL.position.set(-0.062, -0.214 + Math.abs(s) * 0.015, -0.29 - s * 0.024);
+    pawR.position.set(0.062, -0.214 + Math.abs(-s) * 0.015, -0.29 + s * 0.024);
+    pawL.rotation.x = -0.35 - s * 0.22;
+    pawR.rotation.x = -0.35 + s * 0.22;
+    tL = 0.85; tR = 0.85;
+  } else if (!P.grounded) {
+    // mid-leap: paws tucked just into the bottom of frame
+    pawL.position.set(-0.066, -0.222, -0.29);
+    pawR.position.set(0.066, -0.222, -0.29);
+    pawL.rotation.x = -0.2; pawR.rotation.x = -0.2;
+    tL = 0.55; tR = 0.55;
   } else {
-    pawL.position.set(-0.11, -0.135 + Math.sin(now * 2) * 0.003, -0.3);
-    pawR.position.set(0.11, -0.135 + Math.cos(now * 2) * 0.003, -0.3);
+    // idle: tucked under the chest, sunk to the rim, faded out entirely
+    pawL.position.set(-0.062, -0.238 + Math.sin(now * 2) * 0.002, -0.29);
+    pawR.position.set(0.062, -0.238 + Math.cos(now * 2) * 0.002, -0.29);
+    pawL.rotation.x = -0.35; pawR.rotation.x = -0.35;
   }
-  belly.material.opacity += (((P.pitch < -0.85) ? 0.95 : 0) - belly.material.opacity) * Math.min(1, dt * 8);
+  // carrying food keeps the right paw (and the food) in frame
+  if (S.carried) tR = Math.max(tR, 0.9);
+  const k = Math.min(1, dt * 10);
+  pawFadeL += (tL - pawFadeL) * k;
+  pawFadeR += (tR - pawFadeR) * k;
+  for (const m of pawL.userData.mats) m.opacity = pawFadeL;
+  for (const m of pawR.userData.mats) m.opacity = pawFadeR;
+  pawL.visible = pawFadeL > 0.02;
+  pawR.visible = pawFadeR > 0.02;
+  if (carriedMesh.visible && carriedMesh.children.length) {
+    carriedMesh.children[0].material.opacity = pawFadeR;
+    carriedMesh.position.set(pawR.position.x, pawR.position.y + 0.012, pawR.position.z - 0.03);
+  }
+  // belly/chest + hind feet fade in as you look down (pitch < -0.62 rad),
+  // the tail curl only on a sharp look down (pitch < -1.02 rad), with a
+  // slow idle flick so it feels alive when it does appear
+  const down = -P.pitch;
+  const bellyT = Math.max(0, Math.min(1, (down - 0.62) / 0.3)) * 0.96;
+  const tailT = Math.max(0, Math.min(1, (down - 1.02) / 0.28)) * 0.95;
+  const kb = Math.min(1, dt * 7);
+  bodyFade += (bellyT - bodyFade) * kb;
+  tailFade += (tailT - tailFade) * kb;
+  bellyMat.opacity = bodyFade;
+  hindMat.opacity = bodyFade;
+  tailMat.opacity = tailFade;
+  tailTipMat.opacity = tailFade;
+  belly.visible = bodyFade > 0.02;
+  tailGroup.visible = tailFade > 0.02;
+  tailGroup.rotation.z = Math.sin(now * 1.7) * 0.05 + Math.sin(now * 7.3) * 0.012;
+  tailGroup.rotation.x = Math.sin(now * 2.3) * 0.03;
 }
 
 export function isOnGroundLow() {
