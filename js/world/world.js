@@ -149,7 +149,7 @@ function paintGround() {
   }
   // pond/lagoon beds (sandy bottom under the water meshes)
   for (const e of [MAP.lagoon, MAP.frogPond]) {
-    g.fillStyle = '#8a7f5c';
+    g.fillStyle = '#978a64';
     g.beginPath(); g.ellipse(px(e.x), pz(e.z), e.rx * m, e.rz * m * 0.983, 0, 0, 7); g.fill();
   }
   const tex = new THREE.CanvasTexture(cv);
@@ -170,7 +170,7 @@ export function buildWorld(scene) {
     pos.setY(i, groundHeight(x, z));
   }
   geo.computeVertexNormals();
-  const groundMat = new THREE.MeshStandardMaterial({ map: paintGround(), roughness: 1, envMapIntensity: 0.6 });
+  const groundMat = new THREE.MeshStandardMaterial({ map: paintGround(), roughness: 1, envMapIntensity: 0.75 });
   // micro-detail: blend a tiling grass-noise texture by world position so the
   // lawn has grain at squirrel height instead of one blurry paint layer
   const detail = groundDetailTex();
@@ -192,7 +192,12 @@ export function buildWorld(scene) {
 
   // water: lagoon + frog pond. Low roughness + scene.environment = sky sheen;
   // reads wet and reflective at dusk (the Saltline trick, pond-sized).
-  const waterMat = new THREE.MeshStandardMaterial({ color: 0x1e4a5a, transparent: true, opacity: 0.9, roughness: 0.07, metalness: 0.05, envMapIntensity: 1.6 });
+  // Grade (v0.3): lighter base colour, slightly broader reflection lobe and
+  // a hotter env response so the sky actually lands on the surface; the
+  // emissive sheen is driven per-phase by daycycle (see S.waterMat there),
+  // which is what keeps it from going black at dusk/night.
+  const waterMat = new THREE.MeshStandardMaterial({ color: 0x2a5a68, transparent: true, opacity: 0.93, roughness: 0.13, metalness: 0.05, envMapIntensity: 2.3, emissive: 0x1a2440, emissiveIntensity: 0.22 });
+  S.waterMat = waterMat;
   for (const [e, y] of [[MAP.lagoon, 0.02], [MAP.frogPond, 0.06]]) {
     const w = new THREE.Mesh(new THREE.CircleGeometry(1, 40), waterMat);
     w.rotation.x = -Math.PI / 2;

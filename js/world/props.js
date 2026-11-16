@@ -32,6 +32,7 @@ export function buildProps(scene) {
   buildPretzelCart(scene);
 }
 
+const benchGroups = [];
 function buildBenches(scene) {
   const seatGeo = new THREE.BoxGeometry(2.1, 0.09, 0.5);
   const backGeo = new THREE.BoxGeometry(2.1, 0.5, 0.08);
@@ -39,17 +40,44 @@ function buildBenches(scene) {
   for (const [x, z, rotY] of BENCHES) {
     const gy = groundHeight(x, z);
     const g = new THREE.Group();
-    const seat = new THREE.Mesh(seatGeo, slat); seat.position.y = 0.5; seat.castShadow = true; g.add(seat);
-    const back = new THREE.Mesh(backGeo, slat); back.position.set(0, 0.85, -0.26); back.rotation.x = -0.15; g.add(back);
+    const parts = [];
+    const seat = new THREE.Mesh(seatGeo, slat); seat.position.y = 0.5; seat.castShadow = true; g.add(seat); parts.push(seat);
+    const back = new THREE.Mesh(backGeo, slat); back.position.set(0, 0.85, -0.26); back.rotation.x = -0.15; g.add(back); parts.push(back);
     for (const sx of [-0.9, 0.9]) {
-      const leg = new THREE.Mesh(legGeo, iron); leg.position.set(sx, 0.25, 0); g.add(leg);
+      const leg = new THREE.Mesh(legGeo, iron); leg.position.set(sx, 0.25, 0); g.add(leg); parts.push(leg);
     }
     g.position.set(x, gy, z);
     g.rotation.y = rotY;
     scene.add(g);
+    benchGroups.push({ g, parts });
     BENCH_SPOTS.push({ x, z, rotY, gy });
     S.solids.push({ x, z, r: 0.8 });
   }
+  swapBenches();
+}
+
+// CC0 Bench (Quaternius) replaces the procedural slat benches where it loads
+// cleanly. The shipped Bench.glb is baked Y-up in metres, origin at ground
+// centre, seat slats topping out at 0.1444/0.1468 local. A uniform scale of
+// 0.545/0.1456 lands the seat plane on gy+0.545 - the height humans.js
+// seatOnBench is built around - at the cost of footprint: 2.49 m long,
+// 1.18 m tall, 0.91 m deep vs the procedural 2.1/1.10/~0.58 (a long park
+// bench, not a distortion; proportions stay the model's own). The model's
+// backrest stands on its local +Z while ours is on -Z, so the visual turns
+// PI inside the group; group transforms, BENCH_SPOTS and solids are untouched.
+const BENCH_MODEL_SCALE = 0.545 / 0.1456;
+function swapBenches() {
+  loadModel('assets/models/Bench.glb').then((tpl) => {
+    if (!tpl) return;
+    for (const { g, parts } of benchGroups) {
+      const m = tpl.scene.clone(true);
+      m.scale.setScalar(BENCH_MODEL_SCALE);
+      m.rotation.y = Math.PI;
+      m.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      for (const p of parts) p.visible = false;
+      g.add(m);
+    }
+  }).catch(() => { /* procedural benches stay */ });
 }
 
 function buildLamps(scene) {

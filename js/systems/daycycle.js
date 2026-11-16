@@ -11,16 +11,19 @@ const DAY_LENGTH = 780; // seconds per full day (13 min) - a long golden evening
 
 const KEYS = [
   // hour, sunColor, sunI, sky top/mid/bot, fogColor, amb, lamp 0..1, fogNear, fogFar
-  [0.0,  0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.22, 1,    26, 230],
-  [5.0,  0x8fa8d8, 0.25, 0x0a1428, 0x1c2440, 0x2a2438, 0x161c30, 0.22, 1,    26, 230],
-  [6.5,  0xffb37a, 0.9,  0x3a5a8c, 0xe8906a, 0xf7cf9a, 0x8a7a72, 0.5, 0.25,  55, 380],
-  [9.0,  0xfff2d8, 1.65, 0x3a6ea8, 0x9fc4e8, 0xd8ecf7, 0xaec6d8, 0.75, 0,   95, 560],
-  [16.0, 0xffeec9, 1.55, 0x3a6ea8, 0xa8c8e8, 0xe4eef2, 0xb2c4d2, 0.78, 0,   90, 540],
-  [17.6, 0xffc98a, 1.5,  0x38649e, 0xf2b879, 0xf7d9a8, 0xc2a88e, 0.95, 0,   70, 440],
-  [18.7, 0xff9a56, 1.1,  0x2c4a78, 0xe87f52, 0xf2b879, 0x9a7a6e, 0.8, 0.55, 48, 320],
-  [19.6, 0x7a86c8, 0.45, 0x141f42, 0x4a4470, 0x8a5a68, 0x3c3448, 0.44, 1,   32, 250],
-  [21.0, 0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.22, 1,   26, 230],
-  [24.0, 0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.22, 1,   26, 230],
+  // grade pass (v0.3): amb is lifted at dawn/golden/dusk/night so the ground
+  // stays readable at squirrel height; midday sun is trimmed a touch so the
+  // exposure lift elsewhere does not blow the highlights out.
+  [0.0,  0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.3, 1,    26, 230],
+  [5.0,  0x8fa8d8, 0.25, 0x0a1428, 0x1c2440, 0x2a2438, 0x161c30, 0.3, 1,    26, 230],
+  [6.5,  0xffb37a, 0.9,  0x3a5a8c, 0xe8906a, 0xf7cf9a, 0x8a7a72, 0.62, 0.25,  55, 380],
+  [9.0,  0xfff2d8, 1.55, 0x3a6ea8, 0x9fc4e8, 0xd8ecf7, 0xaec6d8, 0.75, 0,   95, 560],
+  [16.0, 0xffeec9, 1.48, 0x3a6ea8, 0xa8c8e8, 0xe4eef2, 0xb2c4d2, 0.78, 0,   90, 540],
+  [17.6, 0xffc98a, 1.5,  0x38649e, 0xf2b879, 0xf7d9a8, 0xc2a88e, 1.12, 0,   70, 440],
+  [18.7, 0xff9a56, 1.3,  0x2c4a78, 0xe87f52, 0xf2b879, 0xa88472, 1.02, 0.55, 48, 320],
+  [19.6, 0x7a86c8, 0.5,  0x141f42, 0x4a4470, 0x8a5a68, 0x4a4054, 0.68, 1,   32, 250],
+  [21.0, 0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.3, 1,   26, 230],
+  [24.0, 0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.3, 1,   26, 230],
 ];
 
 const cA = new THREE.Color(), cB = new THREE.Color();
@@ -32,6 +35,12 @@ function lerpKeyNum(a, b, t, idx) { return a[idx] + (b[idx] - a[idx]) * t; }
 
 let sun, hemi;
 let pmrem = null, envScene = null, envSkyMat = null, envSun = null, envRT = null, lastEnvBucket = -99;
+let envGndMat = null;
+// grade temps (module-scope, reused - no per-frame allocation)
+const hemiMid = new THREE.Color();
+const grassBounce = new THREE.Color(0x66744c);
+const envGrass = new THREE.Color(0x4d7c3a);
+const lampWarm = new THREE.Color(0xff9a4d);
 
 export function initDaycycle(scene) {
   sun = new THREE.DirectionalLight(0xffc98a, 1.3);
@@ -68,8 +77,8 @@ export function initDaycycle(scene) {
     envSun = new THREE.Mesh(new THREE.SphereGeometry(9, 12, 8),
       new THREE.MeshBasicMaterial({ color: 0xffc98a }));
     envScene.add(envSun);
-    const gnd = new THREE.Mesh(new THREE.CircleGeometry(95, 24),
-      new THREE.MeshBasicMaterial({ color: 0x44543a }));
+    envGndMat = new THREE.MeshBasicMaterial({ color: 0x4d7c3a });
+    const gnd = new THREE.Mesh(new THREE.CircleGeometry(95, 24), envGndMat);
     gnd.rotation.x = -Math.PI / 2; gnd.position.y = -4;
     envScene.add(gnd);
   }
@@ -79,8 +88,21 @@ function rebakeEnv(bucket, a, b, t, sunDirV) {
   if (!pmrem || S.lowQ || bucket === lastEnvBucket) return;
   lastEnvBucket = bucket;
   lerpKeyColor(envSkyMat.uniforms.top.value, a, b, t, 3);
+  envSkyMat.uniforms.top.value.multiplyScalar(1.1);
   lerpKeyColor(envSkyMat.uniforms.mid.value, a, b, t, 4);
-  envSkyMat.uniforms.bot.value.setHex(0x584a38).lerp(envSkyMat.uniforms.mid.value, 0.25);
+  // horizon band carries the reflections (water, wet paths graze it), so it
+  // bakes hot - this is what stops the ponds reading black at dusk
+  envSkyMat.uniforms.mid.value.multiplyScalar(1.35);
+  // below-horizon band follows the keyed horizon colour instead of a fixed
+  // dark brown, so steep-angle reflections stay warm too
+  lerpKeyColor(envSkyMat.uniforms.bot.value, a, b, t, 5);
+  envSkyMat.uniforms.bot.value.multiplyScalar(0.85);
+  // env ground disc: grass warmed by the horizon, scaled by sun strength -
+  // the bounce half of the envmap, previously a fixed dark green
+  if (envGndMat) {
+    envGndMat.color.copy(envGrass).lerp(envSkyMat.uniforms.mid.value, 0.35)
+      .multiplyScalar(0.75 + lerpKeyNum(a, b, t, 2) * 0.4);
+  }
   lerpKeyColor(envSun.material.color, a, b, t, 1);
   envSun.material.color.multiplyScalar(2.2);
   envSun.position.copy(sunDirV).multiplyScalar(82);
@@ -126,6 +148,14 @@ export function updateDaycycle(dt) {
   sun.intensity = lerpKeyNum(a, b, t, 2);
   hemi.intensity = lerpKeyNum(a, b, t, 7);
   lerpKeyColor(hemi.color, a, b, t, 3);
+  // grade: blend the hemisphere sky colour halfway toward the horizon (mid)
+  // colour - at golden hour the ambient stops being deep blue and turns
+  // amber, which is what lifts the ground out of the murk; at midday the
+  // horizon is pale blue so the blend is near-neutral there.
+  lerpKeyColor(hemiMid, a, b, t, 4);
+  hemi.color.lerp(hemiMid, 0.5);
+  // ground bounce follows the sun tint instead of a fixed grey-green
+  hemi.groundColor.copy(grassBounce).lerp(sun.color, 0.3);
 
   if (S.skyMat) {
     lerpKeyColor(S.skyMat.uniforms.top.value, a, b, t, 3);
@@ -143,6 +173,14 @@ export function updateDaycycle(dt) {
     S.scene.fog.far = lerpKeyNum(a, b, t, 10);
   }
   const lamp = lerpKeyNum(a, b, t, 8);
+  // water grade: a faint emissive sheen keyed to the horizon colour, warmed
+  // toward lamp-orange as the lamps come up. The PMREM reflection does the
+  // sky; this guarantees the pond/lagoon never reads as a black mirror at
+  // dusk/night and picks up a lamp glint after dark.
+  if (S.waterMat) {
+    S.waterMat.emissive.copy(hemiMid).lerp(lampWarm, lamp * 0.45);
+    S.waterMat.emissiveIntensity = 0.22 + lamp * 0.2;
+  }
   for (const L of S.lamps) {
     L.sprite.material.opacity = lamp * 0.85;
     L.bulbMat.emissiveIntensity = lamp * 2.2;
