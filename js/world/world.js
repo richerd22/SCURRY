@@ -1,0 +1,283 @@
+// SCURRY - world core: terrain height field, painted ground, water, sky dome.
+// The map is one continuous park: Public Garden (west), Charles St, Boston Common (east).
+
+import * as THREE from 'three';
+import { S, MAP } from '../state.js';
+
+// ---------- terrain height ----------
+function gauss(x, z, cx, cz, r) {
+  const dx = x - cx, dz = z - cz;
+  return Math.exp(-(dx * dx + dz * dz) / (r * r));
+}
+function smooth01(t) { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); }
+function ellipseDip(x, z, e) {
+  const dx = (x - e.x) / e.rx, dz = (z - e.z) / e.rz;
+  const d = dx * dx + dz * dz;
+  return d >= 1 ? 0 : Math.cos(Math.min(1, Math.sqrt(d)) * Math.PI * 0.5);
+}
+
+export function groundHeight(x, z) {
+  let h = 0;
+  h += 6.5 * gauss(x, z, 60, -45, 36);            // Soldiers & Sailors Monument hill
+  h += 1.3 * gauss(x, z, 140, 42, 17);            // bandstand knoll
+  h += 0.9 * gauss(x, z, -25, -58, 14);           // Brewer Fountain rise
+  // State House terrace, NE corner plateau
+  const tx = smooth01((x - 146) / 26), tz = smooth01((-z - 50) / 22);
+  h += 8.0 * tx * tz;
+  // Beacon St edge rises slightly along the north fence of the Common
+  h += 1.1 * gauss(z, 0, -104, 0, 10) * smooth01((x + 30) / 60) * (1 - tx * tz);
+  h -= 0.6 * ellipseDip(x, z, MAP.lagoon);         // lagoon basin
+  h -= 0.38 * ellipseDip(x, z, MAP.frogPond);      // frog pond basin
+  return h;
+}
+
+// ---------- path network (also drives ground painting + human waypoints) ----------
+// Each path is a polyline of [x, z] points.
+export const PATHS = [
+  // Common perimeter
+  [[-34, -94], [196, -94], [196, 94], [-34, 94], [-34, -94]],
+  // Central promenade (the Mall)
+  [[-36, -18], [40, -18], [110, -18], [196, -18]],
+  // North-south spines
+  [[60, -94], [60, -52], [60, -18], [60, 30], [60, 94]],
+  [[112, -60], [112, -18], [112, 8], [112, 60], [112, 94]],
+  [[158, -94], [158, -40], [158, -18], [158, 42], [158, 94]],
+  // Diagonal: Park St corner to bandstand
+  [[-34, -80], [30, -40], [80, 0], [140, 42]],
+  // Frog pond loop feeders
+  [[60, 12], [80, 12], [112, 12]],
+  [[140, 42], [112, 42], [60, 42]],
+  // Garden: lagoon loop
+  [[-182, -34], [-132, -40], [-82, -34], [-76, 0], [-82, 34], [-132, 40], [-182, 34], [-188, 0], [-182, -34]],
+  // Garden: bridge crossing (over the deck, endpoints on the loop)
+  [[-132, -38], [-132, 38]],
+  // Garden: south mall to Washington statue
+  [[-132, 40], [-132, 74]],
+  // Garden north path + Charles St crossings
+  [[-196, -70], [-100, -70], [-60, -70]],
+  [[-36, -70], [-44, -70], [-60, -70]],
+  [[-36, 30], [-44, 30], [-76, 30]],
+  [[-36, -18], [-44, -18], [-76, -14]],
+];
+
+export function distToPaths(x, z) {
+  let best = 1e9;
+  for (const line of PATHS) {
+    for (let i = 0; i < line.length - 1; i++) {
+      const [ax, az] = line[i], [bx, bz] = line[i + 1];
+      const abx = bx - ax, abz = bz - az;
+      const t = Math.max(0, Math.min(1, ((x - ax) * abx + (z - az) * abz) / (abx * abx + abz * abz || 1)));
+      const dx = x - (ax + abx * t), dz = z - (az + abz * t);
+      const d = Math.hypot(dx, dz);
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+export function inWater(x, z) {
+  const L = MAP.lagoon, F = MAP.frogPond;
+  const dl = ((x - L.x) / (L.rx - 3)) ** 2 + ((z - L.z) / (L.rz - 2)) ** 2;
+  const df = ((x - F.x) / (F.rx - 2)) ** 2 + ((z - F.z) / (F.rz - 1.5)) ** 2;
+  return dl < 1 || df < 1;
+}
+export function onRoad(x, z) { return x > MAP.charlesMinX - 1 && x < MAP.charlesMaxX + 1; }
+export function isGrass(x, z) {
+  if (inWater(x, z) || onRoad(x, z)) return false;
+  if (distToPaths(x, z) < 2.4) return false;
+  return true;
+}
+
+// ---------- ground texture painting ----------
+function paintGround() {
+  const W = 2048, H = 1170;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const px = (x) => (x - MAP.minX) / (MAP.maxX - MAP.minX) * W;
+  const pz = (z) => (z - MAP.minZ) / (MAP.maxZ - MAP.minZ) * H;
+  const m = W / (MAP.maxX - MAP.minX); // px per metre
+
+  // grass base with mow stripes
+  g.fillStyle = '#4d7c3a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 26; i++) {
+    g.fillStyle = i % 2 ? 'rgba(255,255,200,0.045)' : 'rgba(0,40,0,0.05)';
+    g.fillRect(0, i * H / 26, W, H / 26);
+  }
+  // grass noise
+  for (let i = 0; i < 26000; i++) {
+    g.fillStyle = Math.random() < 0.5 ? 'rgba(20,60,15,0.16)' : 'rgba(140,190,90,0.13)';
+    g.fillRect(Math.random() * W, Math.random() * H, 2.4, 2.4);
+  }
+  // Garden lawns slightly richer
+  g.fillStyle = 'rgba(30,90,40,0.18)';
+  g.fillRect(px(MAP.garden.minX), pz(MAP.garden.minZ), (MAP.garden.maxX - MAP.garden.minX) * m, (MAP.garden.maxZ - MAP.garden.minZ) * m);
+  // flower beds in the Garden (colour blobs)
+  const bedCols = ['#b8546e', '#d9a441', '#e8e4da', '#a04a7a', '#c96f3b'];
+  for (let i = 0; i < 26; i++) {
+    const bx = MAP.garden.minX + 12 + Math.random() * 120, bz = -88 + Math.random() * 176;
+    if (ellipseDip(bx, bz, MAP.lagoon) > 0) continue;
+    g.fillStyle = bedCols[i % bedCols.length];
+    g.globalAlpha = 0.55;
+    g.beginPath(); g.ellipse(px(bx), pz(bz), (3 + Math.random() * 5) * m, (1.6 + Math.random() * 2) * m, Math.random(), 0, 7); g.fill();
+  }
+  g.globalAlpha = 1;
+  // Charles Street asphalt
+  g.fillStyle = '#33343a';
+  g.fillRect(px(MAP.charlesMinX), 0, (MAP.charlesMaxX - MAP.charlesMinX) * m, H);
+  g.fillStyle = '#c9a227';
+  for (let z = MAP.minZ; z < MAP.maxZ; z += 8) g.fillRect(px(-50.4), pz(z), 0.8 * m, 3.4 * m);
+  // surrounding city apron (sidewalk grey outside the parks)
+  g.fillStyle = 'rgba(120,118,110,0.85)';
+  g.fillRect(0, 0, W, pz(-104)); g.fillRect(0, pz(104), W, H - pz(104));
+  g.fillRect(0, 0, px(-208), H); g.fillRect(px(208), 0, W - px(208), H);
+  // paths
+  g.strokeStyle = '#c8b490'; g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const line of PATHS) {
+    g.lineWidth = 3.4 * m;
+    g.beginPath();
+    line.forEach(([x, z], i) => i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)));
+    g.stroke();
+    g.strokeStyle = '#d6c49c'; g.lineWidth = 2.9 * m; g.stroke();
+    g.strokeStyle = '#c8b490';
+  }
+  // plaza discs
+  for (const [cx, cz, r] of [[140, 42, 13], [-25, -58, 10], [60, -45, 12], [-132, 0, 0]]) {
+    if (!r) continue;
+    g.fillStyle = '#cdbb96';
+    g.beginPath(); g.ellipse(px(cx), pz(cz), r * m, r * m * (H / W) * (MAP.maxX - MAP.minX) / (MAP.maxZ - MAP.minZ), 0, 0, 7); g.fill();
+  }
+  // pond/lagoon beds (sandy bottom under the water meshes)
+  for (const e of [MAP.lagoon, MAP.frogPond]) {
+    g.fillStyle = '#8a7f5c';
+    g.beginPath(); g.ellipse(px(e.x), pz(e.z), e.rx * m, e.rz * m * 0.983, 0, 0, 7); g.fill();
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+// ---------- build ----------
+export function buildWorld(scene) {
+  // terrain mesh
+  const geo = new THREE.PlaneGeometry(MAP.maxX - MAP.minX, MAP.maxZ - MAP.minZ, 150, 86);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) + (MAP.minX + MAP.maxX) / 2;
+    const z = pos.getZ(i) + (MAP.minZ + MAP.maxZ) / 2;
+    pos.setY(i, groundHeight(x, z));
+  }
+  geo.computeVertexNormals();
+  const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: paintGround(), roughness: 1 }));
+  ground.position.set((MAP.minX + MAP.maxX) / 2, 0, (MAP.minZ + MAP.maxZ) / 2);
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // water: lagoon + frog pond (semi-transparent, gently animated in daycycle via userData)
+  const waterMat = new THREE.MeshStandardMaterial({ color: 0x2e5f6e, transparent: true, opacity: 0.82, roughness: 0.15, metalness: 0.35 });
+  for (const [e, y] of [[MAP.lagoon, 0.02], [MAP.frogPond, 0.06]]) {
+    const w = new THREE.Mesh(new THREE.CircleGeometry(1, 40), waterMat);
+    w.rotation.x = -Math.PI / 2;
+    w.scale.set(e.rx - 1.5, e.rz - 1, 1);
+    w.position.set(e.x, y, e.z);
+    w.userData.isWater = true;
+    scene.add(w);
+    S.waterMeshes = S.waterMeshes || [];
+    S.waterMeshes.push(w);
+    // stone rim
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(1, 0.03, 6, 48),
+      new THREE.MeshStandardMaterial({ color: 0x9a958a, roughness: 0.9 })
+    );
+    rim.rotation.x = Math.PI / 2;
+    rim.scale.set(e.rx, e.rz, 6);
+    rim.position.set(e.x, 0.1, e.z);
+    scene.add(rim);
+  }
+
+  // sky dome (gradient shader, colors driven by daycycle)
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color(0x3a6ea8) }, mid: { value: new THREE.Color(0xf2b879) }, bot: { value: new THREE.Color(0xf7d9a8) } },
+    vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 bot; varying vec3 vP;' +
+      'void main(){ float h = normalize(vP).y; vec3 c = h > 0.12 ? mix(mid, top, smoothstep(0.12, 0.65, h)) : mix(bot, mid, smoothstep(-0.08, 0.12, h)); gl_FragColor = vec4(c, 1.0); }',
+  });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 24, 16), skyMat);
+  sky.userData.isSky = true;
+  scene.add(sky);
+  S.skyMat = skyMat;
+
+  // stars (fade in at night via daycycle)
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = [];
+  for (let i = 0; i < 700; i++) {
+    const a = Math.random() * Math.PI * 2, e = Math.random() * Math.PI * 0.48 + 0.05, r = 850;
+    starPos.push(Math.cos(a) * Math.cos(e) * r, Math.sin(e) * r, Math.sin(a) * Math.cos(e) * r);
+  }
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xcfd8ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, fog: false });
+  const stars = new THREE.Points(starGeo, starMat);
+  scene.add(stars);
+  S.starMat = starMat;
+
+  buildPerimeter(scene);
+}
+
+// park perimeter: low iron fence + gates, city backdrop blocks beyond
+function buildPerimeter(scene) {
+  const iron = new THREE.MeshStandardMaterial({ color: 0x22252a, roughness: 0.6, metalness: 0.6 });
+  const postGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.1, 5);
+  const railGeo = new THREE.BoxGeometry(1, 0.05, 0.05);
+  const group = new THREE.Group();
+  function fenceRun(x0, z0, x1, z1) {
+    const len = Math.hypot(x1 - x0, z1 - z0);
+    const n = Math.floor(len / 2.2);
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t;
+      const p = new THREE.Mesh(postGeo, iron);
+      p.position.set(x, groundHeight(x, z) + 0.55, z);
+      group.add(p);
+    }
+    for (const ry of [0.35, 0.95]) {
+      const r = new THREE.Mesh(railGeo, iron);
+      r.scale.x = len;
+      r.position.set((x0 + x1) / 2, groundHeight((x0 + x1) / 2, (z0 + z1) / 2) + ry, (z0 + z1) / 2);
+      r.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+      group.add(r);
+    }
+    // collision approx: a few circles along the run
+    for (let i = 0; i <= n; i += 2) {
+      const t = i / n;
+      S.solids.push({ x: x0 + (x1 - x0) * t, z: z0 + (z1 - z0) * t, r: 1.15 });
+    }
+  }
+  // Common fence (gaps at Park St corner + Charles St crossings are implied by short runs)
+  fenceRun(-38, -100, 120, -100); fenceRun(150, -100, 203, -100);
+  fenceRun(-38, 100, 203, 100);
+  fenceRun(203, -100, 203, 100);
+  fenceRun(-38, -100, -38, -84); fenceRun(-38, -60, -38, 100);
+  // Garden fence
+  fenceRun(-203, -96, -62, -96); fenceRun(-203, 96, -62, 96);
+  fenceRun(-203, -96, -203, 96);
+  fenceRun(-62, -96, -62, -76); fenceRun(-62, -56, -62, 20); fenceRun(-62, 44, -62, 96);
+  scene.add(group);
+
+  // city backdrop: simple extruded blocks + lit windows texture outside the park
+  const cityMat = new THREE.MeshStandardMaterial({ color: 0x6b6f78, roughness: 0.9 });
+  const cityMat2 = new THREE.MeshStandardMaterial({ color: 0x595048, roughness: 0.9 });
+  const winMat = new THREE.MeshStandardMaterial({ color: 0x3c4048, emissive: 0xffca7a, emissiveIntensity: 0.0 });
+  S.cityWinMat = winMat;
+  const spots = [];
+  for (let x = -200; x <= 200; x += 34) { spots.push([x + 8, -128, 26, 30 + Math.random() * 55]); spots.push([x, 130, 26, 24 + Math.random() * 40]); }
+  for (let z = -100; z <= 100; z += 36) { spots.push([222, z, 24, 26 + Math.random() * 46]); spots.push([-228, z + 10, 24, 20 + Math.random() * 34]); }
+  for (const [x, z, w, h] of spots) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), Math.random() < 0.5 ? cityMat : cityMat2);
+    b.position.set(x, h / 2 - 1, z);
+    scene.add(b);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.92, h * 0.9, w * 0.92), winMat);
+    win.position.copy(b.position); win.scale.set(1.01, 1, 1.01);
+    scene.add(win);
+  }
+}

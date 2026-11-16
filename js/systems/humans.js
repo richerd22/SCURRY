@@ -1,0 +1,179 @@
+// SCURRY - humans. Stylized code-built figures: path wanderers, bench sitters
+// (beg targets), picnic blanket owners (they look away... mostly), cart vendor.
+
+import * as THREE from 'three';
+import { S } from '../state.js';
+import { groundHeight, PATHS } from '../world/world.js';
+import { BENCH_SPOTS } from '../world/props.js';
+import { spawnFood, tossFood } from './food.js';
+import { sfx } from './audio.js';
+import { toast } from '../ui/hud.js';
+
+const SKIN = [0xe8b98f, 0xc98a5e, 0x8a5a34, 0xf0cba8, 0x6e4525];
+const SHIRT = [0xb84a4a, 0x4a6eb8, 0x4a9a5e, 0xd9c84a, 0x7a4a9a, 0xe8e4da, 0x3a8a9a, 0xd97f3b];
+const PANTS = [0x3a4050, 0x5a4632, 0x2c2c34, 0x6e6e5a, 0x44586e];
+let ci = 0;
+function pick(arr) { return arr[(ci = (ci * 7 + 3) % 997) % arr.length]; }
+
+export function makeHuman(scale = 1) {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({ color: pick(SKIN), roughness: 0.8 });
+  const shirt = new THREE.MeshStandardMaterial({ color: pick(SHIRT), roughness: 0.95 });
+  const pants = new THREE.MeshStandardMaterial({ color: pick(PANTS), roughness: 0.95 });
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.8, 0.18), pants);
+  legL.position.set(-0.11, 0.4, 0); legL.castShadow = true;
+  const legR = legL.clone(); legR.position.x = 0.11;
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.65, 0.24), shirt);
+  torso.position.y = 1.12; torso.castShadow = true;
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.62, 0.13), shirt);
+  armL.position.set(-0.3, 1.12, 0);
+  const armR = armL.clone(); armR.position.x = 0.3;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), skin);
+  head.position.y = 1.66; head.castShadow = true;
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.165, 10, 6, 0, Math.PI * 2, 0, 1.4),
+    new THREE.MeshStandardMaterial({ color: pick([0x2c2018, 0x5a4028, 0x9a8a7a, 0x1a1a1a, 0xb84a2a]), roughness: 1 }));
+  hair.position.y = 1.69;
+  g.add(legL, legR, torso, armL, armR, head, hair);
+  g.scale.setScalar(scale);
+  g.userData.parts = { legL, legR, armL, armR, torso, head };
+  return g;
+}
+
+function seatOnBench(h, spot) {
+  const p = h.userData.parts;
+  // sit: thighs forward, shins down - approximate with rotated legs + lowered body
+  h.position.set(spot.x, spot.gy + 0.06, spot.z);
+  h.rotation.y = spot.rotY;
+  p.legL.rotation.x = -1.5; p.legR.rotation.x = -1.5;
+  p.legL.position.set(-0.11, 0.52, 0.3); p.legR.position.set(0.11, 0.52, 0.3);
+  p.torso.position.y = 0.78;
+  p.armL.position.y = 0.8; p.armR.position.y = 0.8;
+  p.head.position.y = 1.3;
+  h.userData.seated = true;
+}
+
+const wanderers = [];
+const pendingTosses = [];
+
+export function buildHumans(scene) {
+  // bench sitters - the beg targets
+  const sitterBenches = [0, 2, 4, 6, 9, 12, 15, 17, 19, 21];
+  for (const bi of sitterBenches) {
+    const spot = BENCH_SPOTS[bi];
+    if (!spot) continue;
+    const h = makeHuman(0.95 + Math.random() * 0.12);
+    seatOnBench(h, spot);
+    scene.add(h);
+    const sitter = { mesh: h, x: spot.x, z: spot.z, cooldown: 0, phase: Math.random() * 9 };
+    S.benchSitters.push(sitter);
+    S.interactables.push({
+      x: spot.x, z: spot.z, y: spot.gy, r: 2.4,
+      label: () => sitter.cooldown > 0 ? null : 'E - beg',
+      action: () => startBeg(sitter),
+    });
+  }
+  // wanderers on the path network
+  const loopIdx = [0, 1, 4, 6, 8, 11]; // land paths only (10 is the bridge line - feet would get wet)
+  for (let i = 0; i < 9; i++) {
+    const h = makeHuman(0.93 + Math.random() * 0.15);
+    scene.add(h);
+    wanderers.push({
+      mesh: h, path: PATHS[loopIdx[i % loopIdx.length]],
+      seg: Math.random() * 3 | 0, t: Math.random(), dir: 1,
+      speed: 0.05 + Math.random() * 0.03, phase: Math.random() * 9,
+    });
+  }
+  // blanket owners
+  for (const b of S.blankets) {
+    for (let k = 0; k < 2; k++) {
+      const h = makeHuman(0.95);
+      const ox = b.x + (k ? 1 : -1) * 1.1, oz = b.z + (k ? 0.6 : -0.7);
+      h.position.set(ox, b.gy - 0.42, oz);
+      h.rotation.y = Math.atan2(b.x - ox, b.z - oz);
+      const p = h.userData.parts;
+      p.legL.rotation.x = -1.4; p.legR.rotation.x = -1.4;
+      p.legL.position.set(-0.11, 0.45, 0.25); p.legR.position.set(0.11, 0.45, 0.25);
+      scene.add(h);
+      b['owner' + k] = h;
+    }
+  }
+  // pretzel vendor
+  if (S.pretzelCart) {
+    const v = makeHuman(1.0);
+    const cp = S.pretzelCart;
+    v.position.set(cp.x - 0.4, cp.y, cp.z - 1.3);
+    v.rotation.y = 2.6;
+    scene.add(v);
+    const vendor = { mesh: v, x: cp.x - 0.4, z: cp.z - 1.3, cooldown: 0, phase: 0, vendor: true };
+    S.interactables.push({
+      x: vendor.x, z: vendor.z, y: cp.y, r: 2.6,
+      label: () => vendor.cooldown > 0 ? null : 'E - beg (vendor)',
+      action: () => startBeg(vendor),
+    });
+    S.benchSitters.push(vendor);
+  }
+}
+
+function startBeg(sitter) {
+  const P = S.player;
+  if (sitter.cooldown > 0 || P.begging > 0) return;
+  P.begging = 1.25;
+  sitter.cooldown = 26;
+  sfx.squeak();
+  pendingTosses.push({ timer: 1.25, from: new THREE.Vector3(sitter.x, 1.2, sitter.z), type: sitter.vendor ? 'pretzel' : null });
+}
+
+export function updateHumans(dt) {
+  const now = performance.now() / 1000;
+  for (const s of S.benchSitters) {
+    if (s.cooldown > 0) s.cooldown -= dt;
+    s.mesh.rotation.z = Math.sin(now * 0.8 + s.phase) * 0.02;
+  }
+  for (const w of wanderers) {
+    const line = w.path;
+    const a = line[w.seg], b = line[(w.seg + 1) % line.length];
+    if (!a || !b) continue;
+    const segLen = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    w.t += w.dir * w.speed * dt * 10 / segLen;
+    if (w.t > 1) {
+      if (w.seg >= line.length - 2 && line === PATHS[0]) { w.seg = 0; w.t = 0; } // perimeter wraps
+      else if (w.seg >= line.length - 2) { w.dir = -1; w.t = 1; }
+      else { w.seg++; w.t = 0; }
+    } else if (w.t < 0) {
+      if (w.seg <= 0) { w.dir = 1; w.t = 0; } else { w.seg--; w.t = 1; }
+    }
+    const x = a[0] + (b[0] - a[0]) * w.t, z = a[1] + (b[1] - a[1]) * w.t;
+    const gy = groundHeight(x, z);
+    w.mesh.position.set(x, gy + Math.abs(Math.sin(now * 7 + w.phase)) * 0.04, z);
+    w.mesh.rotation.y = Math.atan2((b[0] - a[0]) * w.dir, (b[1] - a[1]) * w.dir);
+    const p = w.mesh.userData.parts;
+    const sw = Math.sin(now * 7 + w.phase) * 0.5;
+    p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
+    p.armL.rotation.x = -sw * 0.7; p.armR.rotation.x = sw * 0.7;
+  }
+  // blanket owners: gaze wanders; sometimes they look right at the blanket
+  for (const b of S.blankets) {
+    b.gazeTimer -= dt;
+    if (b.gazeTimer <= 0) {
+      b.lookingAway = !b.lookingAway && Math.random() < 0.75 ? true : (Math.random() < 0.5);
+      b.lookingAway = Math.random() < 0.55;
+      b.gazeTimer = 2.5 + Math.random() * 4.5;
+      const lookRot = b.lookingAway ? 1.9 : 0;
+      if (b.owner0) b.owner0.rotation.y += lookRot * 0.4;
+      if (b.owner1) b.owner1.rotation.y -= lookRot * 0.4;
+    }
+  }
+  // resolve beg tosses
+  for (let i = pendingTosses.length - 1; i >= 0; i--) {
+    const t = pendingTosses[i];
+    t.timer -= dt;
+    if (t.timer <= 0) {
+      pendingTosses.splice(i, 1);
+      const P = S.player.pos;
+      const type = t.type || ['acorn', 'peanut', 'sandwich', 'pretzel'][(Math.random() * 4) | 0];
+      tossFood(type, t.from, new THREE.Vector3(P.x + (Math.random() - 0.5), 0, P.z + (Math.random() - 0.5)));
+      sfx.toss();
+      if (Math.random() < 0.4) toast('a human finds you adorable. food acquired.', 2.2);
+    }
+  }
+}
