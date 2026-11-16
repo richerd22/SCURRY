@@ -38,6 +38,21 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.5.1
+
+A small polish round on top of v0.5:
+
+- **Caps are money now, not confetti.** Your bottle-cap balance saves with
+  everything else - earn them, spend them at the Exchange, close the tab,
+  come back: still there. The title screen shows the balance when you
+  have one.
+- **The crows got a rebuild.** Same three thieves, same behaviour, but the
+  blobby sphere-and-planks look is gone: teardrop body, a neck, a beak
+  with two parts, eyes, shaped wings, a proper tail fan. Get snatched at
+  point-blank and you will notice. (A sourced model was auditioned first;
+  the available corvids are unrigged statues, and these crows act. The
+  procedural bird won.)
+
 ## What's in v0.5
 
 Everything from v0.4 (canopy highways, Hawk Dua, save persistence), plus:

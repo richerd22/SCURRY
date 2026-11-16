@@ -23,6 +23,7 @@ export function initHUD() {
       line.style.marginTop = '18px';
       line.style.marginBottom = '0';
       line.textContent = 'saved stash: ' + save.stash +
+        (save.caps > 0 ? ' - caps: ' + save.caps : '') +
         ' - longest run: ' + save.bestDays + (save.bestDays === 1 ? ' day' : ' days');
       title.appendChild(line);
     }

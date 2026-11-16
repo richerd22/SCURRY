@@ -9,11 +9,18 @@
 //   {
 //     v: 1,            // schema version, for future migrations
 //     stash: number,   // the LIVE stash, mirrored as-is (see below)
+//     caps: number,    // bottle caps: the rat-market balance (burrows.js)
 //     bestDays: number,// longest run, in days survived (dawn rule below)
 //     daysPlayed: number, // cumulative days survived across ALL sessions
 //     muted: boolean,  // the audio.js mute flag (mirrored onto S.muted)
 //     savedAt: number, // Date.now() of the last successful write
 //   }
+//
+// Caps semantics: S.caps is the live balance. burrows.js earns (+1 per
+// cap collected) and spends (-3 per Exchange trade). The save mirrors it
+// exactly like the stash: whatever the balance is right now is what gets
+// written, on the same dirty-check - so a spend at the stall persists on
+// the next frame's observe, no explicit save call at the trade site.
 //
 // Stash semantics: S.stash is the live stash. Burying adds +1 (food.js),
 // a ranger catch raids 25% (ranger.js). The save mirrors whatever S.stash
@@ -54,7 +61,7 @@ let currentRunDays = 0;    // dawn crossings this session
 let daysPlayed = 0;        // cumulative dawn crossings, persisted
 let bestDays = 0;          // longest currentRunDays ever, persisted
 // last successfully persisted snapshot (the dirty-check baseline)
-let snapStash = null, snapBestDays = null, snapDaysPlayed = null, snapMuted = null;
+let snapStash = null, snapCaps = null, snapBestDays = null, snapDaysPlayed = null, snapMuted = null;
 let retryAfter = 0;        // Date.now() before which a failed write is not retried
 
 function getStore() {
@@ -81,6 +88,7 @@ function readStored() {
   if (!data || typeof data !== 'object') return null;
   return {
     stash: cleanCount(data.stash),
+    caps: cleanCount(data.caps),
     bestDays: cleanCount(data.bestDays),
     daysPlayed: cleanCount(data.daysPlayed),
     muted: data.muted === true,
@@ -94,6 +102,7 @@ function writeStored() {
   const payload = {
     v: 1,
     stash: S.stash,
+    caps: cleanCount(S.caps),
     bestDays,
     daysPlayed,
     muted: isMuted(),
@@ -106,11 +115,13 @@ function writeStored() {
     return false;
   }
   snapStash = payload.stash;
+  snapCaps = payload.caps;
   snapBestDays = payload.bestDays;
   snapDaysPlayed = payload.daysPlayed;
   snapMuted = payload.muted;
   if (S.save) {
     S.save.stash = payload.stash;
+    S.save.caps = payload.caps;
     S.save.bestDays = payload.bestDays;
     S.save.daysPlayed = payload.daysPlayed;
     S.save.muted = payload.muted;
@@ -119,10 +130,10 @@ function writeStored() {
   return true;
 }
 
-// Load the save (if any) and apply it: live stash, bests, and mute.
-// Safe to call before any user gesture - audio is gesture-gated, and
-// setMuted() before initAudio() just sets the flag the sfx checks read.
-// Returns S.save: { exists, stash, bestDays, daysPlayed, muted,
+// Load the save (if any) and apply it: live stash, caps balance, bests,
+// and mute. Safe to call before any user gesture - audio is gesture-gated,
+// and setMuted() before initAudio() just sets the flag the sfx checks read.
+// Returns S.save: { exists, stash, caps, bestDays, daysPlayed, muted,
 // currentRunDays, savedAt }. Absent/corrupt storage -> exists:false and
 // the game's defaults are left untouched.
 export function loadSave() {
@@ -131,6 +142,7 @@ export function loadSave() {
   prevHours = null;
   if (stored) {
     S.stash = stored.stash;
+    S.caps = stored.caps;
     bestDays = stored.bestDays;
     daysPlayed = stored.daysPlayed;
     setMuted(stored.muted); // apply both ways - the stored setting wins
@@ -138,6 +150,7 @@ export function loadSave() {
     // Baseline = what we just loaded, so observeSave() writes nothing
     // until something actually changes this session.
     snapStash = stored.stash;
+    snapCaps = stored.caps;
     snapBestDays = stored.bestDays;
     snapDaysPlayed = stored.daysPlayed;
     snapMuted = stored.muted;
@@ -146,6 +159,7 @@ export function loadSave() {
     daysPlayed = 0;
     S.muted = isMuted();
     snapStash = S.stash;
+    snapCaps = cleanCount(S.caps);
     snapBestDays = 0;
     snapDaysPlayed = 0;
     snapMuted = S.muted;
@@ -153,6 +167,7 @@ export function loadSave() {
   S.save = {
     exists: !!stored,
     stash: S.stash,
+    caps: cleanCount(S.caps),
     bestDays,
     daysPlayed,
     muted: isMuted(),
@@ -190,13 +205,15 @@ export function observeSave() {
   if (S.save) {
     S.save.currentRunDays = currentRunDays;
     S.save.stash = S.stash;
+    S.save.caps = cleanCount(S.caps);
     S.save.bestDays = bestDays;
     S.save.daysPlayed = daysPlayed;
     S.save.muted = m;
   }
 
   // --- dirty-check: write only when a persisted value changed ---
-  if (S.stash === snapStash && bestDays === snapBestDays &&
+  if (S.stash === snapStash && cleanCount(S.caps) === snapCaps &&
+      bestDays === snapBestDays &&
       daysPlayed === snapDaysPlayed && m === snapMuted) return;
   if (Date.now() < retryAfter) return; // last write failed; don't hammer it
   writeStored();

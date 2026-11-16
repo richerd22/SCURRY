@@ -52,8 +52,7 @@ Modules never import each other in circles; systems read/write `S`.
   `audio.js` (all synthesized; every call guarded).
 - `js/systems/` round v0.5 - `burrows.js` tunnel network + rat market
   (interior at (3000, 0, 3000), rect-union walkable clamp, 6 entrances,
-  caps economy lives here; `S.caps` is session-only - save.js does not
-  persist it yet), `geese.js` bridge flock (deck found via
+  caps economy lives here; `S.caps` persists via save.js since v0.5.1), `geese.js` bridge flock (deck found via
   `S.platformBoxes`, `S.fadeCatch` relocation, `S.gooseWarn` drives the
   HUD line), `crows.js` food thieves (perch on lamps, `S.shotPose` crow
   tableau). Shared wiring they depend on: `player.js` `collideWalls`
@@ -78,7 +77,9 @@ the frame rim), `garden`, `statehouse`, `bench`, `cart`, `lamps`,
 rat Exchange), `geese` (on the deck in warn range - geese are NOT frozen
 in shot mode, the warn tableau is the point), `crow` (crows.js freezes
 crow #0 mid-swoop in front of the player, who is posed carrying a
-pretzel by the cart; crows are not frozen either). `S.shotPose` carries
+pretzel by the cart; crows are not frozen either), `crowperch` (crow #1
+on its lamp by the blankets, seen from below-side - the profile check
+for the v0.5.1 crow rebuild). `S.shotPose` carries
 the pose name to systems that self-stage. Add `&lowq=1` for software renderers (0.55 pixel ratio, no
 shadows, quarter grass, no PMREM) and `&touch=1` to force the touch UI.
 In a real browser you can also just open these URLs and look.
@@ -141,7 +142,7 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   to a random canopy, stash intact; bite escape window is tight by
   design, ~last 0.2 s of the dive - tune after playtests). Save
   persistence (`systems/save.js` via hud.js hooks: `scurry-save-v1` -
-  live stash, bestDays by dawn-crossing, daysPlayed, muted). food.js
+  live stash, caps balance (v0.5.1), bestDays by dawn-crossing, daysPlayed, muted). food.js
   has a 1.5 m height gate on pickup AND bury (canopy food/bury exploits
   closed). fadeCatch in main.js now takes optional {pos, message,
   grounded} - ranger behaviour unchanged.
@@ -164,6 +165,25 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   save yet); the crow reads blobby at point-blank range (fine at swoop
   distance); goose deck height is read from the landmarks platformBox
   (y=1.15) with a 0.55 fallback.
+- v0.5.1 (Nov 16 2026): caps persistence (save.js schema gains `caps`,
+  sanitized like every other count; earns and Exchange spends ride the
+  same dirty-checked observeSave writes - no save call at the trade
+  site; title line shows caps when > 0; headless save tests now 24/24
+  in /tmp/test-save.mjs) and the crow rebuild. Crow sourcing was
+  evaluated first: every corvid on Poly Pizza (Poly by Google "Crow"
+  /m/1MIvWQ5Q3R9, "Raven" /m/7eQ51arTYDj, /m/bnpgn6o5qNs, /m/5oae0lwh9fF,
+  all CC-BY 3.0) is a single STATIC mesh - no rig, no separable
+  wings/head/tail, 550-930 tris - and this crow is animated part by
+  part, so a swap would have deleted its animation vocabulary. Do not
+  re-run that hunt. Instead makeCrowMesh was rebuilt: lathe teardrop
+  body, neck, two-part flattened beak, glossy eyes, throat ruff,
+  extruded wing outlines with stepped primaries (+ a whisper of
+  airfoil pitch so wings don't vanish edge-on), extruded tail fan,
+  toed feet. Same userData contract. Verified via `crow` (swoop
+  tableau: head/body separation, wing surfaces) + new `crowperch`
+  pose (profile: beak + tapered body), spawn/down clean, zero console
+  errors. Note: head-on at golden hour the crow is still mostly
+  silhouette - it's a black bird at sunset; judge it in profile.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

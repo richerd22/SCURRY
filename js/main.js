@@ -211,6 +211,15 @@ if (Q.has('shot')) {
     case 'crow': // by the pretzel cart; crows.js freezes crow #0 mid-swoop in front
       pose(124.5, 52.5, 128, 56);
       break;
+    case 'crowperch': { // crow #1 on its lamp, seen from below-side: the profile check
+      let lx = 52, lz = -22, bd = Infinity;
+      for (const lamp of (S.lamps || [])) {
+        const d = Math.hypot(lamp.x - 52, lamp.z + 22);
+        if (d < bd) { bd = d; lx = lamp.x; lz = lamp.z; }
+      }
+      pose(lx + 1.9, lz + 1.9, lx, lz, 0.84); // perch is ground + 3.3
+      break;
+    }
     default: break; // 'spawn' = the regular spawn pose
   }
   Promise.race([whenModelsSettled(), new Promise((r) => setTimeout(r, 7000))]).then(() => {

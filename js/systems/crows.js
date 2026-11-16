@@ -70,74 +70,181 @@ const _featherGeo = new THREE.PlaneGeometry(0.09, 0.05);
 // ------------------------------------------------------------------ mesh
 // One procedural crow, ~45 cm of glossy bad intentions. Forward is +Z
 // (head/beak at +Z, tail at -Z), same convention as the dogs and Hawk Dua.
+//
+// v0.5.1 rebuild: the v0.5 crow was a squashed sphere with plank wings
+// and read as a blob at point-blank (the snatch lands 0.65 m away, so
+// point-blank is a real viewing distance). A sourced swap was evaluated
+// first - the Poly Pizza corvids (Poly by Google "Crow"/"Raven" et al.)
+// are all single static meshes: no rig, no separable wings/head/tail,
+// 550-930 tris. This crow is animated part by part (wing pivots, head
+// tilts, tail flicks), so a statue would have been a downgrade. Instead
+// the procedural build got real anatomy: a lathe-turned teardrop body
+// (full breast, tapered rear), a neck, a separated head with a two-part
+// beak and glossy eyes, extruded wing shapes with stepped primaries,
+// and an extruded tail fan. The userData contract is unchanged.
 function makeCrowMesh() {
   const g = new THREE.Group();
   const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0x191c22, roughness: 0.55, metalness: 0.2, // the sheen is the point
+    color: 0x171a21, roughness: 0.46, metalness: 0.28, // the sheen is the point
   });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a2d33, roughness: 0.6, metalness: 0.1 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x23252c, roughness: 0.55, metalness: 0.12 });
+  const beakMat = new THREE.MeshStandardMaterial({ color: 0x232227, roughness: 0.38, metalness: 0.05 });
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x070708, roughness: 0.08, metalness: 0.3 });
   const legMat = new THREE.MeshStandardMaterial({ color: 0x35322c, roughness: 0.9 });
 
-  // body
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), bodyMat);
-  body.scale.set(1, 0.9, 1.4);
+  // body: a lathe profile, tail at -Y turned to -Z, breast forward.
+  // Radii swell to the breast (forward of middle) and pinch at both
+  // ends - a teardrop, not an egg.
+  const profile = [
+    [0.004, -0.160], [0.038, -0.150], [0.068, -0.120], [0.098, -0.070],
+    [0.122, -0.010], [0.133, 0.045], [0.126, 0.095], [0.104, 0.130],
+    [0.070, 0.155], [0.030, 0.165],
+  ].map(([r, y]) => new THREE.Vector2(r, y));
+  const bodyGeo = new THREE.LatheGeometry(profile, 24);
+  bodyGeo.rotateX(Math.PI / 2); // lathe axis +Y -> +Z (breast at +Z)
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.scale.set(0.94, 0.88, 1); // a touch narrow, a touch flat-backed
   body.castShadow = true;
   g.add(body);
 
-  // head + cone beak (dark grey), on a group so idle tilts read
+  // neck: a short tapered cylinder bridging body to head, tipped forward
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.064, 0.1, 10), bodyMat);
+  neck.position.set(0, 0.05, 0.15);
+  neck.rotation.x = 0.55;
+  g.add(neck);
+
+  // head on a group pivoting at the neck joint, so idle tilts read
   const head = new THREE.Group();
-  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.095, 10, 8), bodyMat);
-  skull.scale.set(0.95, 0.92, 1.05);
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.08, 14, 12), bodyMat);
+  skull.scale.set(0.92, 0.88, 1.1);
+  skull.position.set(0, 0.018, 0.03);
   skull.castShadow = true;
   head.add(skull);
-  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.13, 6), darkMat);
-  beak.rotation.x = Math.PI / 2; // cone tip forward, +Z
-  beak.position.set(0, -0.01, 0.13);
+  // eyes: small, glossy, half-sunk in the skull sides. At point-blank
+  // the eyes are what make it a bird and not a blob.
+  for (const sx of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.0125, 8, 8), eyeMat);
+    eye.position.set(sx * 0.056, 0.032, 0.066);
+    head.add(eye);
+  }
+  // beak: two cones, flattened - a crow's bill is deep at the base and
+  // straight, not a seed-eater's nub. Upper does the work; lower sits
+  // a fraction open underneath.
+  const beak = new THREE.Group();
+  const upperGeo = new THREE.ConeGeometry(0.027, 0.135, 10);
+  upperGeo.rotateX(Math.PI / 2);       // tip -> +Z
+  upperGeo.scale(1.12, 0.66, 1);       // deep, not round
+  upperGeo.translate(0, 0, 0.028);
+  const upper = new THREE.Mesh(upperGeo, beakMat);
+  upper.castShadow = true;
+  beak.add(upper);
+  const lowerGeo = new THREE.ConeGeometry(0.019, 0.095, 8);
+  lowerGeo.rotateX(Math.PI / 2);
+  lowerGeo.scale(1, 0.5, 1);
+  lowerGeo.translate(0, 0, 0.012);
+  const lower = new THREE.Mesh(lowerGeo, beakMat);
+  lower.position.set(0, -0.02, 0);
+  lower.rotation.x = 0.1;
+  beak.add(lower);
+  beak.position.set(0, 0.006, 0.1);
+  beak.rotation.x = 0.05;
   head.add(beak);
-  head.position.set(0, 0.07, 0.2);
+  // throat hackles: the shaggy little wedge under a crow's chin
+  const ruff = new THREE.Mesh(new THREE.ConeGeometry(0.048, 0.085, 10), darkMat);
+  ruff.position.set(0, -0.048, 0.05);
+  ruff.rotation.x = 2.75;
+  ruff.scale.set(0.8, 1, 1.15);
+  head.add(ruff);
+  head.position.set(0, 0.085, 0.185);
   g.add(head);
 
-  // tail: three flattened boxes fanned at the back, angled down
+  // tail: one extruded fan - narrow at the base, widening to a stepped
+  // tip edge (feather ends, not a rectangle). Shape +Y maps to -Z.
+  const tailShape = new THREE.Shape();
+  tailShape.moveTo(-0.024, 0);
+  tailShape.lineTo(-0.062, 0.15);
+  tailShape.lineTo(-0.08, 0.205);
+  tailShape.lineTo(-0.052, 0.218);
+  tailShape.lineTo(-0.028, 0.206);
+  tailShape.lineTo(0, 0.222);
+  tailShape.lineTo(0.028, 0.206);
+  tailShape.lineTo(0.052, 0.218);
+  tailShape.lineTo(0.08, 0.205);
+  tailShape.lineTo(0.062, 0.15);
+  tailShape.lineTo(0.024, 0);
+  tailShape.quadraticCurveTo(0, -0.014, -0.024, 0);
+  const tailGeo = new THREE.ExtrudeGeometry(tailShape, { depth: 0.012, bevelEnabled: false });
+  tailGeo.translate(0, 0, -0.006);
+  tailGeo.rotateX(-Math.PI / 2);
+  const tailFan = new THREE.Mesh(tailGeo, bodyMat);
+  tailFan.castShadow = true;
   const tail = new THREE.Group();
-  const tailGeo = new THREE.BoxGeometry(0.085, 0.016, 0.24);
-  for (const a of [-0.28, 0, 0.28]) {
-    const f = new THREE.Mesh(tailGeo, bodyMat);
-    f.rotation.y = a;
-    f.position.set(Math.sin(a) * 0.05, 0, -Math.cos(a) * 0.05);
-    tail.add(f);
-  }
+  tail.add(tailFan);
   tail.rotation.x = -0.4; // angled down
-  tail.position.set(0, 0.02, -0.24);
+  tail.position.set(0, 0.018, -0.148);
   g.add(tail);
 
-  // wings: flattened boxes on shoulder pivots. rotation.z is the flap -
-  // left wing up is negative, right wing up is positive (hawk convention).
+  // wings: extruded outlines on shoulder pivots - an inner section and
+  // a stepped-primary outer section, instead of two flat boxes.
+  // rotation.z is the flap (hawk convention: left up negative, right up
+  // positive). Shape +Y maps to -Z (trailing edge aft).
+  function wingGeo(points, depth) {
+    const s = new THREE.Shape();
+    s.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) s.lineTo(points[i][0], points[i][1]);
+    s.closePath();
+    const geo = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false });
+    geo.translate(0, 0, -depth / 2);
+    geo.rotateX(-Math.PI / 2);
+    return geo;
+  }
   function makeWing(side) {
     const pivot = new THREE.Group();
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.018, 0.2), bodyMat);
-    wing.position.set(side * 0.19, 0, -0.02);
-    wing.rotation.y = side * -0.15; // swept slightly back
-    wing.castShadow = true;
-    pivot.add(wing);
-    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.014, 0.15), darkMat);
-    tip.position.set(side * 0.42, 0, -0.06);
-    tip.rotation.y = side * -0.3;
-    pivot.add(tip);
-    pivot.position.set(side * 0.08, 0.07, 0.03);
+    const inner = new THREE.Mesh(wingGeo([
+      [0, -0.062], [side * 0.26, -0.04], [side * 0.265, 0.07],
+      [side * 0.1, 0.1], [0, 0.078],
+    ], 0.013), bodyMat);
+    inner.castShadow = true;
+    inner.rotation.x = 0.1; // a whisper of airfoil pitch, so the underside
+    pivot.add(inner);       // catches front views instead of vanishing edge-on
+    const outer = new THREE.Mesh(wingGeo([
+      [side * 0.24, -0.042], [side * 0.47, 0.002], [side * 0.485, 0.03],
+      [side * 0.435, 0.042], [side * 0.43, 0.072], [side * 0.375, 0.066],
+      [side * 0.37, 0.094], [side * 0.315, 0.086], [side * 0.31, 0.11],
+      [side * 0.24, 0.072],
+    ], 0.01), darkMat);
+    outer.castShadow = true;
+    outer.rotation.x = 0.14;
+    pivot.add(outer);
+    pivot.position.set(side * 0.07, 0.072, 0.025);
     g.add(pivot);
     return pivot;
   }
   const wingL = makeWing(-1);
   const wingR = makeWing(1);
 
-  // little legs, visible when perched, tucked away in flight
+  // legs, visible when perched, tucked away in flight - now with toes:
+  // three fanned forward, one back, thin cylinders lying flat.
   const legs = new THREE.Group();
+  const toeGeo = new THREE.CylinderGeometry(0.005, 0.0035, 0.05, 5);
+  const backToeGeo = new THREE.CylinderGeometry(0.005, 0.0035, 0.032, 5);
   for (const sx of [-0.05, 0.05]) {
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.15, 5), legMat);
     leg.position.set(sx, -0.15, 0.02);
     legs.add(leg);
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.07), legMat);
-    foot.position.set(sx, -0.22, 0.04);
+    const foot = new THREE.Group();
+    for (const a of [-0.45, 0, 0.45]) {
+      const toe = new THREE.Mesh(toeGeo, legMat);
+      toe.rotation.x = Math.PI / 2; // lie along Z
+      toe.rotation.y = a;
+      toe.position.set(Math.sin(a) * 0.02, 0, 0.022 + Math.cos(a) * 0.012);
+      foot.add(toe);
+    }
+    const backToe = new THREE.Mesh(backToeGeo, legMat);
+    backToe.rotation.x = Math.PI / 2;
+    backToe.position.set(0, 0, -0.016);
+    foot.add(backToe);
+    foot.position.set(sx, -0.222, 0.03);
     legs.add(foot);
   }
   g.add(legs);
