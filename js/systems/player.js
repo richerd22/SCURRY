@@ -149,12 +149,13 @@ function buildPawRig(camera) {
     [0.118, -0.255, -0.185, 0.041], [0.138, -0.195, -0.215, 0.035], [0.132, -0.14, -0.225, 0.025],
   ];
   tailPts.forEach(([x, y, z, r], i) => {
-    const seg = new THREE.Mesh(new THREE.SphereGeometry(r, 9, 7), i >= 4 ? tailTipMat : tailMat);
+    const seg = new THREE.Mesh(new THREE.SphereGeometry(r * 0.82, 9, 7), i >= 4 ? tailTipMat : tailMat);
     seg.scale.set(1, 1, 1.3);
     seg.position.set(x, y, z);
     seg.renderOrder = 4;
     tailGroup.add(seg);
   });
+  tailGroup.position.y = -0.035; // hug the bottom rim of the frame
   paws.add(tailGroup);
   camera.add(paws);
 }
@@ -179,6 +180,11 @@ function tryBite() {
   // resolve hits in main via S.onBite callback (dogs/ranger check range there)
   if (S.onBite) S.onBite();
 }
+
+// touch plumbing: the BITE button calls pressBite; JUMP/SPRINT buttons
+// write into the same key table the keyboard uses.
+export function pressBite() { tryBite(); }
+export function setTouchKey(code, down) { keys[code] = !!down; }
 
 // highest walkable surface at (x,z) that is at or below refY + stepTol
 function surfaceAt(x, z, refY, stepTol = 0.55) {
@@ -234,10 +240,14 @@ export function updatePlayer(dt, camera) {
   if (P.scramble > 0) P.scramble -= dt;
   if (P.begging > 0) { P.begging -= dt; animatePaws(dt, camera); return; }
 
-  const fwd = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
-  const str = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
+  // keyboard + analog touch stick, merged and clamped
+  let fwd = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
+  let str = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
+  if (S.touch) { fwd += -S.touch.y; str += S.touch.x; }
+  fwd = Math.max(-1, Math.min(1, fwd));
+  str = Math.max(-1, Math.min(1, str));
   const sprint = keys.ShiftLeft || keys.ShiftRight;
-  P.sprinting = !!sprint && fwd > 0;
+  P.sprinting = !!sprint && fwd > 0.3;
   const inWaterNow = inWater(P.pos.x, P.pos.z) && P.pos.y < 0.3;
 
   if (P.climbing) {
@@ -248,8 +258,9 @@ export function updatePlayer(dt, camera) {
     const wx = (-sin * fwd + cos * str);
     const wz = (-cos * fwd - sin * str);
     const wl = Math.hypot(wx, wz) || 1;
-    const speed = (P.sprinting ? 6.6 : 3.3) * (inWaterNow ? 0.45 : 1);
-    P.moving = (fwd !== 0 || str !== 0);
+    const mag = Math.min(1, Math.hypot(fwd, str)); // analog stick tilt
+    const speed = (P.sprinting ? 6.6 : 3.3) * (inWaterNow ? 0.45 : 1) * mag;
+    P.moving = mag > 0.12;
 
     if (P.grounded) {
       P.vel.x = wx / wl * speed * (P.moving ? 1 : 0);
@@ -274,8 +285,8 @@ export function updatePlayer(dt, camera) {
     } else {
       // air control: tail-steer hard toward wish dir, keep momentum
       const accel = 26;
-      P.vel.x += wx / wl * accel * dt * (P.moving ? 1 : 0);
-      P.vel.z += wz / wl * accel * dt * (P.moving ? 1 : 0);
+      P.vel.x += wx / wl * accel * dt * mag;
+      P.vel.z += wz / wl * accel * dt * mag;
       const hs = Math.hypot(P.vel.x, P.vel.z), maxH = 8.5;
       if (hs > maxH) { P.vel.x *= maxH / hs; P.vel.z *= maxH / hs; }
       P.vel.y -= 15.5 * dt;
@@ -422,7 +433,7 @@ function animatePaws(dt, camera) {
   // slow idle flick so it feels alive when it does appear
   const down = -P.pitch;
   const bellyT = Math.max(0, Math.min(1, (down - 0.62) / 0.3)) * 0.96;
-  const tailT = Math.max(0, Math.min(1, (down - 1.02) / 0.28)) * 0.95;
+  const tailT = Math.max(0, Math.min(1, (down - 1.02) / 0.28)) * 0.88;
   const kb = Math.min(1, dt * 7);
   bodyFade += (bellyT - bodyFade) * kb;
   tailFade += (tailT - tailFade) * kb;

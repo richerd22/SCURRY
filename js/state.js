@@ -48,6 +48,12 @@ export const S = {
   message: null,       // {text, until} big center toast
   gossipIndex: 0,
 
+  // touch controls (ui/touch.js fills; player.js reads)
+  isTouch: false,
+  touch: { x: 0, y: 0, sprint: false },  // analog stick: x strafe, y down-positive
+  debugShot: false,
+  lowQ: false,         // shot-mode / perf fallback: skip PMREM rebakes
+
   respawnPoint: null,  // bandstand roof (landmarks.js sets)
   hollowTreePos: null, // (trees.js sets)
 };

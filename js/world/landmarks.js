@@ -3,13 +3,18 @@
 
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
-import { groundHeight } from './world.js';
+import { groundHeight, terrainDisc } from './world.js';
+import { graniteTex, stateHouseFacade, glowTex } from './textures.js';
 
-const stone = new THREE.MeshStandardMaterial({ color: 0xb8b2a4, roughness: 0.9 });
-const granite = new THREE.MeshStandardMaterial({ color: 0x8f8b82, roughness: 0.95 });
-const brick = new THREE.MeshStandardMaterial({ color: 0x8a4a38, roughness: 0.9 });
+const graniteT = graniteTex();
+const stone = new THREE.MeshStandardMaterial({ map: graniteT, color: 0xd8d2c4, roughness: 0.9 });
+const granite = new THREE.MeshStandardMaterial({ map: graniteT, roughness: 0.95 });
+const facade = stateHouseFacade();
+const brick = new THREE.MeshStandardMaterial({
+  map: facade.map, emissiveMap: facade.emissiveMap, emissive: 0xffbe6e, emissiveIntensity: 0, roughness: 0.9,
+});
 const white = new THREE.MeshStandardMaterial({ color: 0xe9e6dd, roughness: 0.8 });
-const gold = new THREE.MeshStandardMaterial({ color: 0xd8a921, roughness: 0.3, metalness: 0.85 });
+const gold = new THREE.MeshStandardMaterial({ color: 0xd8a921, roughness: 0.24, metalness: 0.9, envMapIntensity: 2.2 });
 const bronze = new THREE.MeshStandardMaterial({ color: 0x6e5a33, roughness: 0.45, metalness: 0.7 });
 const greenMetal = new THREE.MeshStandardMaterial({ color: 0x2e4a38, roughness: 0.5, metalness: 0.4 });
 const darkWood = new THREE.MeshStandardMaterial({ color: 0x54402a, roughness: 1 });
@@ -60,12 +65,11 @@ function buildStateHouse(scene) {
   dome.position.set(0, 21.2, 0); dome.castShadow = true;
   g.add(dome);
   cyl(0.3, 0.5, 2.6, gold, 0, 27.2, 0, g, 8);                 // lantern spike
-  // windows: emissive-ish dark strips
-  const winMat = new THREE.MeshStandardMaterial({ color: 0x2c3440, roughness: 0.3, metalness: 0.4 });
-  for (let i = -6; i <= 6; i++) { if (i === 0) continue; box(1.6, 3.2, 0.2, winMat, i * 3.8, 8, 8.15, g, false); }
+  // (windows live in the facade texture now - they glow at dusk via emissiveMap)
   g.position.set(x, gy, z);
   scene.add(g);
   solidBox(x, z, 29, 10);
+  S.stateHouseMat = brick; // daycycle raises the window glow at dusk
 }
 
 // --- Soldiers and Sailors Monument on the central hill ---
@@ -174,6 +178,28 @@ function buildBridge(scene) {
     cable.rotation.x = Math.PI / 2;
     cable.scale.y = 1;
   }
+  // the arch under the deck (the real bridge's signature curve, flattened)
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(15.5, 0.55, 8, 28, Math.PI), deckMat);
+  arch.rotation.y = Math.PI / 2;
+  arch.scale.set(1, 0.09, 1);
+  arch.position.y = -0.5;
+  arch.castShadow = true;
+  g.add(arch);
+  // little globe lamps on the bridge towers, wired into the daycycle glow
+  const gTex = glowTex();
+  for (const tz of [-13.5, 13.5]) {
+    for (const sx of [-2.6, 2.6]) {
+      const bulbMat = new THREE.MeshStandardMaterial({ color: 0xd8d4c4, emissive: 0xffb45e, emissiveIntensity: 0 });
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), bulbMat);
+      bulb.position.set(sx, 5.6, tz);
+      g.add(bulb);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: gTex, color: 0xffbe78, transparent: true, opacity: 0, depthWrite: false }));
+      sprite.scale.set(3.6, 3.6, 1);
+      sprite.position.set(sx, 5.6, tz);
+      g.add(sprite);
+      S.lamps.push({ sprite, bulbMat, light: null, x: x + sx, z: tz });
+    }
+  }
   g.position.set(x, 0, z);
   scene.add(g);
   S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: -18, maxZ: 18, y: 1.15 });
@@ -241,6 +267,10 @@ function buildDucklings(scene) {
   g.position.set(x, gy, z);
   g.rotation.y = 0.8;
   scene.add(g);
+  // the ducklings stand on cobblestones
+  const cobble = terrainDisc(x, z, 3.4, granite, 0.03);
+  cobble.rotation.y = 0.8;
+  scene.add(cobble);
   S.solids.push({ x, z, r: 1.6 });
 }
 

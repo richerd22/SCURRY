@@ -1,6 +1,8 @@
 // SCURRY - dogs. Three off-leash menaces. They chase a ground-level squirrel,
 // bark up a fuss, and on contact knock your food loose and send you scrambling.
 // A well-timed BITE (click) boops the nose and sends them off, feelings hurt.
+// Visuals: CC0 Quaternius dogs (rigged + animated) swap in when they load;
+// the code-built dog stays as the fallback.
 
 import * as THREE from 'three';
 import { S } from '../state.js';
@@ -9,6 +11,7 @@ import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { dropCarried } from './food.js';
 import { isOnGroundLow } from './player.js';
+import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
 
 const COATS = [0x8a5a34, 0x3a3a3a, 0xc8b088, 0x6e4525];
 const dogs = [];
@@ -50,14 +53,50 @@ const PATROLS = [
 ];
 export function buildDogs(scene) {
   for (let i = 0; i < 3; i++) {
-    const mesh = makeDog(COATS[i]);
-    scene.add(mesh);
-    dogs.push({
-      mesh, wp: PATROLS[i], wi: 0, state: 'patrol', timer: 0,
+    const outer = new THREE.Group();
+    const proc = makeDog(COATS[i]);
+    outer.add(proc);
+    scene.add(outer);
+    const d = {
+      mesh: outer, proc, wp: PATROLS[i], wi: 0, state: 'patrol', timer: 0,
       pos: new THREE.Vector3(PATROLS[i][0][0], 0, PATROLS[i][0][1]),
       speed: 2.2, phase: Math.random() * 9, barkCd: 0,
-    });
+      mixer: null, actions: null, currentAction: null,
+    };
+    dogs.push(d);
+    attachDogModel(d, i);
   }
+}
+
+// Swap in a rigged CC0 dog (Quaternius): dog 1 is the Shiba, the others the
+// standard Dog. Clips: patrol=Walk, chase/flee=Run|Gallop, proud=Idle.
+function attachDogModel(d, i) {
+  const isShiba = i === 1;
+  loadModel(isShiba ? 'assets/models/ShibaInu.glb' : 'assets/models/Dog.glb').then((tpl) => {
+    if (!tpl) return;
+    const m = cloneModel(tpl);
+    fitHeight(m, isShiba ? 0.58 : 0.72);
+    shadowify(m);
+    d.mesh.add(m);
+    d.proc.visible = false;
+    const mixer = new THREE.AnimationMixer(m);
+    const A = {};
+    for (const name of ['Walk', 'Run', 'Gallop', 'Idle']) {
+      const clip = findClip(tpl.animations, name);
+      if (clip) A[name] = mixer.clipAction(clip);
+    }
+    d.mixer = mixer; d.actions = A;
+    playDogClip(d, 'Walk');
+  }).catch(() => { /* procedural dog stays */ });
+}
+
+function playDogClip(d, name) {
+  if (!d.actions) return;
+  const next = d.actions[name] || d.actions.Walk || d.actions.Idle;
+  if (!next || d.currentAction === next) return;
+  if (d.currentAction) d.currentAction.fadeOut(0.22);
+  next.reset().fadeIn(0.22).play();
+  d.currentAction = next;
 }
 
 export function nearestDogDist() {
@@ -107,14 +146,23 @@ export function updateDogs(dt) {
 
     d.pos.y = groundHeight(d.pos.x, d.pos.z);
     d.mesh.position.copy(d.pos);
-    // trot animation
-    const moving = d.state === 'chase' || d.state === 'flee' || d.state === 'patrol';
-    const f = d.state === 'patrol' ? 6 : 11;
-    const sw = moving ? Math.sin(now * f + d.phase) * 0.45 : 0;
-    d.mesh.userData.legs[0].rotation.x = sw; d.mesh.userData.legs[3].rotation.x = sw;
-    d.mesh.userData.legs[1].rotation.x = -sw; d.mesh.userData.legs[2].rotation.x = -sw;
-    d.mesh.userData.tail.rotation.z = Math.sin(now * (d.state === 'proud' ? 16 : 6) + d.phase) * 0.4;
-    d.mesh.userData.head.position.y = 0.78 + Math.sin(now * 3 + d.phase) * 0.02;
+    if (d.mixer) {
+      // rigged model: state drives the clip
+      if (d.state === 'chase' || d.state === 'flee') playDogClip(d, d.actions.Gallop ? 'Gallop' : 'Run');
+      else if (d.state === 'proud') playDogClip(d, 'Idle');
+      else playDogClip(d, 'Walk');
+      d.mixer.update(dt);
+    } else {
+      // procedural fallback: trot animation on the code-built dog
+      const moving = d.state === 'chase' || d.state === 'flee' || d.state === 'patrol';
+      const f = d.state === 'patrol' ? 6 : 11;
+      const sw = moving ? Math.sin(now * f + d.phase) * 0.45 : 0;
+      const u = d.proc.userData;
+      u.legs[0].rotation.x = sw; u.legs[3].rotation.x = sw;
+      u.legs[1].rotation.x = -sw; u.legs[2].rotation.x = -sw;
+      u.tail.rotation.z = Math.sin(now * (d.state === 'proud' ? 16 : 6) + d.phase) * 0.4;
+      u.head.position.y = 0.78 + Math.sin(now * 3 + d.phase) * 0.02;
+    }
   }
 }
 

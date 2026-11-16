@@ -5,9 +5,11 @@
 import * as THREE from 'three';
 import { S } from '../state.js';
 import { groundHeight } from './world.js';
+import { plankTex, glowTex } from './textures.js';
+import { loadModel, fitHeight } from '../systems/models.js';
 
 const iron = new THREE.MeshStandardMaterial({ color: 0x23262b, roughness: 0.6, metalness: 0.5 });
-const slat = new THREE.MeshStandardMaterial({ color: 0x5f4630, roughness: 1 });
+const slat = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 1 });
 const canMat = new THREE.MeshStandardMaterial({ color: 0x2c4632, roughness: 0.7, metalness: 0.3 });
 
 export const BENCH_SPOTS = [];   // {x, z, rotY, gy} for humans.js to seat people
@@ -52,7 +54,7 @@ function buildBenches(scene) {
 
 function buildLamps(scene) {
   const postGeo = new THREE.CylinderGeometry(0.06, 0.09, 3.4, 6);
-  const bulbGeo = new THREE.SphereGeometry(0.17, 8, 6);
+  const bulbGeo = new THREE.SphereGeometry(0.15, 8, 6);
   const lampSpots = [];
   // along the promenade + spines + garden loop
   for (let x = -28; x <= 192; x += 24) lampSpots.push([x, -24]);
@@ -60,7 +62,18 @@ function buildLamps(scene) {
   for (let z = -80; z <= 80; z += 26) { lampSpots.push([106, z]); lampSpots.push([-96, z + 8]); lampSpots.push([-168, z]); }
   for (let z = -70; z <= 70; z += 24) lampSpots.push([54, z]);
   lampSpots.push([-132, -52], [-132, 52], [-44, -40], [-44, 40], [140, 28], [126, 54]);
-  const glowTex = makeGlowTexture();
+  const glowTexture = glowTex();
+  // volumetric-feel light cones: additive gradient cones under each bulb,
+  // opacity driven by the daycycle lamp factor via S.lampConeMat
+  const coneMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+    uniforms: { uOpacity: { value: 0 }, uColor: { value: new THREE.Color(0xffb45e) } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform float uOpacity; uniform vec3 uColor; varying vec2 vUv;' +
+      'void main(){ float a = pow(clamp(vUv.y, 0.0, 1.0), 1.7) * uOpacity; gl_FragColor = vec4(uColor, a); }',
+  });
+  S.lampConeMat = coneMat;
+  const coneGeo = new THREE.ConeGeometry(1.7, 3.3, 12, 1, true);
   let lampIndex = 0;
   for (const [x, z] of lampSpots) {
     const gy = groundHeight(x, z);
@@ -68,10 +81,13 @@ function buildLamps(scene) {
     const post = new THREE.Mesh(postGeo, iron); post.position.y = 1.7; post.castShadow = true; g.add(post);
     const bulbMat = new THREE.MeshStandardMaterial({ color: 0xd8d4c4, emissive: 0xffb45e, emissiveIntensity: 0 });
     const bulb = new THREE.Mesh(bulbGeo, bulbMat); bulb.position.y = 3.45; g.add(bulb);
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffbe78, transparent: true, opacity: 0, depthWrite: false }));
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xffbe78, transparent: true, opacity: 0, depthWrite: false }));
     sprite.scale.set(4.5, 4.5, 1);
     sprite.position.y = 3.45;
     g.add(sprite);
+    const cone = new THREE.Mesh(coneGeo, coneMat);
+    cone.position.y = 1.78;
+    g.add(cone);
     // a real PointLight only every 4th lamp (shader budget); glow sprites carry the rest
     let light = null;
     if (lampIndex++ % 4 === 0) {
@@ -83,20 +99,25 @@ function buildLamps(scene) {
     scene.add(g);
     S.lamps.push({ sprite, bulbMat, light, x, z });
     S.solids.push({ x, z, r: 0.3 });
+    lampGroups.push({ g, post });
   }
+  swapLampPosts();
 }
 
-function makeGlowTexture() {
-  const cv = document.createElement('canvas'); cv.width = cv.height = 128;
-  const c = cv.getContext('2d');
-  const grad = c.createRadialGradient(64, 64, 2, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(255,210,140,0.85)');
-  grad.addColorStop(0.35, 'rgba(255,180,90,0.28)');
-  grad.addColorStop(1, 'rgba(255,170,80,0)');
-  c.fillStyle = grad; c.fillRect(0, 0, 128, 128);
-  const t = new THREE.CanvasTexture(cv);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+// CC0 Post Lantern (Kay Lousberg) replaces the plain cylinder posts where it
+// loads cleanly; the emissive bulb + sprite + cone stay ours for the glow.
+const lampGroups = [];
+function swapLampPosts() {
+  loadModel('assets/models/PostLantern.glb').then((tpl) => {
+    if (!tpl) return;
+    for (const { g, post } of lampGroups) {
+      const m = tpl.scene.clone(true);
+      fitHeight(m, 3.42);
+      m.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      post.visible = false;
+      g.add(m);
+    }
+  }).catch(() => { /* procedural posts stay */ });
 }
 
 function buildTrashCans(scene) {

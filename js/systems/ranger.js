@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { S } from '../state.js';
 import { groundHeight } from '../world/world.js';
-import { makeHuman } from './humans.js';
+import { makeHuman, setActorRole } from './humans.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { isOnGroundLow } from './player.js';
@@ -21,9 +21,9 @@ export function buildRanger(scene) {
   p.torso.material = new THREE.MeshStandardMaterial({ color: 0x39543c, roughness: 0.95 });
   const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.21, 0.1, 10),
     new THREE.MeshStandardMaterial({ color: 0x4a5a38, roughness: 1 }));
-  hat.position.y = 1.82; mesh.add(hat);
+  hat.position.y = 1.82; hat.userData.keep = true; mesh.add(hat);
   const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 12), hat.material);
-  brim.position.y = 1.77; mesh.add(brim);
+  brim.position.y = 1.77; brim.userData.keep = true; mesh.add(brim);
   // the net: pole + hoop + mesh cone, carried in the right hand
   const net = new THREE.Group();
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6),
@@ -37,7 +37,9 @@ export function buildRanger(scene) {
   bag.rotation.x = Math.PI; bag.position.set(0.55, 0.35, 0); net.add(bag);
   net.position.set(0.42, 0.9, 0.15);
   net.rotation.z = -0.4;
+  net.userData.keep = true;
   mesh.add(net);
+  setActorRole(mesh, 'ranger');
   scene.add(mesh);
   ranger = {
     mesh, net, wi: 0, state: 'patrol', stumble: 0, giveUp: 0,
@@ -91,9 +93,11 @@ export function updateRanger(dt) {
   else ranger.mesh.position.set(ranger.pos.x, ranger.mesh.position.y, ranger.pos.z);
   const speedF = ranger.state === 'chase' ? 10 : 5.5;
   const sw = Math.sin(now * speedF + ranger.phase) * (ranger.state === 'patrol' ? 0.3 : 0.55);
-  const p = ranger.mesh.userData.parts;
-  p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
-  p.armL.rotation.x = -sw * 0.6;
+  if (!ranger.mesh.userData.actor || !ranger.mesh.userData.actor.model) {
+    const p = ranger.mesh.userData.parts;
+    p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
+    p.armL.rotation.x = -sw * 0.6;
+  }
   ranger.net.rotation.z = -0.4 + (ranger.state === 'chase' ? Math.sin(now * 10) * 0.15 - 0.3 : 0);
 }
 

@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
+import { groundDetailTex, cityFacade, cloudTex } from './textures.js';
 
 // ---------- terrain height ----------
 function gauss(x, z, cx, cz, r) {
@@ -169,13 +170,29 @@ export function buildWorld(scene) {
     pos.setY(i, groundHeight(x, z));
   }
   geo.computeVertexNormals();
-  const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: paintGround(), roughness: 1 }));
+  const groundMat = new THREE.MeshStandardMaterial({ map: paintGround(), roughness: 1, envMapIntensity: 0.6 });
+  // micro-detail: blend a tiling grass-noise texture by world position so the
+  // lawn has grain at squirrel height instead of one blurry paint layer
+  const detail = groundDetailTex();
+  groundMat.onBeforeCompile = (sh) => {
+    sh.uniforms.uDetail = { value: detail };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWp;')
+      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWp;\nuniform sampler2D uDetail;')
+      .replace('#include <map_fragment>', '#include <map_fragment>\nfloat dtl = texture2D(uDetail, vWp.xz * 0.5).g;\ndiffuseColor.rgb *= 0.8 + dtl * 0.4;');
+  };
+  const ground = new THREE.Mesh(geo, groundMat);
   ground.position.set((MAP.minX + MAP.maxX) / 2, 0, (MAP.minZ + MAP.maxZ) / 2);
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // water: lagoon + frog pond (semi-transparent, gently animated in daycycle via userData)
-  const waterMat = new THREE.MeshStandardMaterial({ color: 0x2e5f6e, transparent: true, opacity: 0.82, roughness: 0.15, metalness: 0.35 });
+  buildWetPaths(scene);
+
+  // water: lagoon + frog pond. Low roughness + scene.environment = sky sheen;
+  // reads wet and reflective at dusk (the Saltline trick, pond-sized).
+  const waterMat = new THREE.MeshStandardMaterial({ color: 0x1e4a5a, transparent: true, opacity: 0.9, roughness: 0.07, metalness: 0.05, envMapIntensity: 1.6 });
   for (const [e, y] of [[MAP.lagoon, 0.02], [MAP.frogPond, 0.06]]) {
     const w = new THREE.Mesh(new THREE.CircleGeometry(1, 40), waterMat);
     w.rotation.x = -Math.PI / 2;
@@ -196,13 +213,19 @@ export function buildWorld(scene) {
     scene.add(rim);
   }
 
-  // sky dome (gradient shader, colors driven by daycycle)
+  // sky dome (gradient shader + sun disc, colors driven by daycycle)
   const skyMat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { top: { value: new THREE.Color(0x3a6ea8) }, mid: { value: new THREE.Color(0xf2b879) }, bot: { value: new THREE.Color(0xf7d9a8) } },
+    uniforms: {
+      top: { value: new THREE.Color(0x3a6ea8) }, mid: { value: new THREE.Color(0xf2b879) }, bot: { value: new THREE.Color(0xf7d9a8) },
+      sunDir: { value: new THREE.Vector3(0.5, 0.3, 0.2) }, sunTint: { value: new THREE.Color(0xffc98a) }, sunAmt: { value: 1 },
+    },
     vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 bot; varying vec3 vP;' +
-      'void main(){ float h = normalize(vP).y; vec3 c = h > 0.12 ? mix(mid, top, smoothstep(0.12, 0.65, h)) : mix(bot, mid, smoothstep(-0.08, 0.12, h)); gl_FragColor = vec4(c, 1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir; uniform vec3 sunTint; uniform float sunAmt; varying vec3 vP;' +
+      'void main(){ vec3 d = normalize(vP); float h = d.y; vec3 c = h > 0.12 ? mix(mid, top, smoothstep(0.12, 0.65, h)) : mix(bot, mid, smoothstep(-0.08, 0.12, h));' +
+      ' float sd = max(dot(d, normalize(sunDir)), 0.0);' +
+      ' c += sunTint * (pow(sd, 600.0) * 1.6 + pow(sd, 18.0) * 0.22) * sunAmt;' +
+      ' gl_FragColor = vec4(c, 1.0); }',
   });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 24, 16), skyMat);
   sky.userData.isSky = true;
@@ -222,7 +245,86 @@ export function buildWorld(scene) {
   scene.add(stars);
   S.starMat = starMat;
 
+  // clouds: big soft billboards drifting slowly, tinted by the daycycle
+  const cTex = cloudTex();
+  S.clouds = [];
+  S.cloudMat = new THREE.SpriteMaterial({ map: cTex, transparent: true, opacity: 0.55, depthWrite: false, fog: false });
+  let cseed = 4711;
+  const crnd = () => { cseed = (cseed * 16807) % 2147483647; return (cseed - 1) / 2147483646; };
+  for (let i = 0; i < 16; i++) {
+    const sp = new THREE.Sprite(S.cloudMat);
+    const a = crnd() * Math.PI * 2, r = 260 + crnd() * 420;
+    sp.position.set(Math.cos(a) * r, 110 + crnd() * 90, Math.sin(a) * r);
+    const sc = 150 + crnd() * 190;
+    sp.scale.set(sc, sc * 0.36, 1);
+    scene.add(sp);
+    S.clouds.push({ sp, speed: 0.7 + crnd() * 0.9 });
+  }
+
   buildPerimeter(scene);
+}
+
+// ---------- wet path ribbons ----------
+// Flat gravel ribbons that follow the terrain over every painted path, with a
+// low-roughness finish: the scene.environment sky sheen makes them read WET,
+// which is the whole Saltline look. Plaza discs get the same treatment.
+const wetPathMat = new THREE.MeshStandardMaterial({
+  color: 0xc9b28a, roughness: 0.16, metalness: 0.06, envMapIntensity: 1.5,
+  polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+});
+export function terrainDisc(cx, cz, r, mat, yOff = 0.045) {
+  const geo = new THREE.CircleGeometry(r, 36);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    pos.setY(i, groundHeight(cx + pos.getX(i), cz + pos.getZ(i)) + yOff);
+  }
+  geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(cx, 0, cz);
+  m.receiveShadow = true;
+  return m;
+}
+function buildWetPaths(scene) {
+  const verts = [], norms = [], idx = [];
+  let vi = 0;
+  const W2 = 1.8; // half width (paths are painted 3.4m wide)
+  function ribbon(line) {
+    // resample the polyline every ~2m so the ribbon hugs the terrain
+    const pts = [];
+    for (let i = 0; i < line.length - 1; i++) {
+      const [ax, az] = line[i], [bx, bz] = line[i + 1];
+      const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 2));
+      for (let j = (i === 0 ? 0 : 1); j <= n; j++) pts.push([ax + (bx - ax) * j / n, az + (bz - az) * j / n]);
+    }
+    const start = vi;
+    for (let i = 0; i < pts.length; i++) {
+      const [x, z] = pts[i];
+      const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)];
+      let dx = nx - px, dz = nz - pz;
+      const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
+      const ox = -dz * W2, oz = dx * W2;
+      verts.push(x + ox, groundHeight(x + ox, z + oz) + 0.04, z + oz, x - ox, groundHeight(x - ox, z - oz) + 0.04, z - oz);
+      norms.push(0, 1, 0, 0, 1, 0);
+      vi += 2;
+      if (i > 0) {
+        const a = start + (i - 1) * 2;
+        idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+    }
+  }
+  for (const line of PATHS) ribbon(line);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(norms, 3));
+  geo.setIndex(idx);
+  const mesh = new THREE.Mesh(geo, wetPathMat);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  // plazas
+  scene.add(terrainDisc(140, 42, 13, wetPathMat));
+  scene.add(terrainDisc(-25, -58, 10, wetPathMat));
+  scene.add(terrainDisc(60, -45, 12.5, wetPathMat));
 }
 
 // park perimeter: low iron fence + gates, city backdrop blocks beyond
@@ -264,20 +366,31 @@ function buildPerimeter(scene) {
   fenceRun(-62, -96, -62, -76); fenceRun(-62, -56, -62, 20); fenceRun(-62, 44, -62, 96);
   scene.add(group);
 
-  // city backdrop: simple extruded blocks + lit windows texture outside the park
-  const cityMat = new THREE.MeshStandardMaterial({ color: 0x6b6f78, roughness: 0.9 });
-  const cityMat2 = new THREE.MeshStandardMaterial({ color: 0x595048, roughness: 0.9 });
-  const winMat = new THREE.MeshStandardMaterial({ color: 0x3c4048, emissive: 0xffca7a, emissiveIntensity: 0.0 });
-  S.cityWinMat = winMat;
+  // city backdrop: textured facade blocks with lit-window emissive maps
+  // (windows come alive at dusk via daycycle), plus a few taller towers
+  const facadeSets = [
+    cityFacade(101, '#5d5a55'), cityFacade(202, '#4c4a4e'), cityFacade(303, '#65584a'),
+  ];
+  S.cityMats = facadeSets.map(({ map, emissiveMap }) => {
+    const m = new THREE.MeshStandardMaterial({
+      map, emissiveMap, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.92,
+    });
+    return m;
+  });
   const spots = [];
   for (let x = -200; x <= 200; x += 34) { spots.push([x + 8, -128, 26, 30 + Math.random() * 55]); spots.push([x, 130, 26, 24 + Math.random() * 40]); }
   for (let z = -100; z <= 100; z += 36) { spots.push([222, z, 24, 26 + Math.random() * 46]); spots.push([-228, z + 10, 24, 20 + Math.random() * 34]); }
+  // landmark towers: a slab, a prism, a setback tower - skyline silhouettes
+  spots.push([-168, -142, 30, 92], [64, -146, 24, 78], [196, 142, 28, 84], [-96, 146, 22, 66]);
+  let ci = 0;
   for (const [x, z, w, h] of spots) {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), Math.random() < 0.5 ? cityMat : cityMat2);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), S.cityMats[ci++ % S.cityMats.length]);
     b.position.set(x, h / 2 - 1, z);
     scene.add(b);
-    const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.92, h * 0.9, w * 0.92), winMat);
-    win.position.copy(b.position); win.scale.set(1.01, 1, 1.01);
-    scene.add(win);
+    // dark roof cap
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(w * 1.02, 1.2, w * 1.02),
+      new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 }));
+    cap.position.set(x, h - 0.4, z);
+    scene.add(cap);
   }
 }

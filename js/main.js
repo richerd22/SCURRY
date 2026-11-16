@@ -7,7 +7,7 @@ import { buildWorld } from './world/world.js';
 import { buildTrees } from './world/trees.js';
 import { buildLandmarks } from './world/landmarks.js';
 import { buildProps } from './world/props.js';
-import { initDaycycle, updateDaycycle } from './systems/daycycle.js';
+import { initDaycycle, updateDaycycle, setSunShadows, setShadowSize } from './systems/daycycle.js';
 import { initPlayer, updatePlayer } from './systems/player.js';
 import { buildHumans, updateHumans } from './systems/humans.js';
 import { initFood, updateFood, nearestFoodAction, buryAction } from './systems/food.js';
@@ -16,16 +16,25 @@ import { buildRanger, updateRanger, biteRanger } from './systems/ranger.js';
 import { buildHollow, initHollowInteractables, updateHollow } from './systems/hollow.js';
 import { initAudio, setMuted, isMuted } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
+import { initTouch } from './ui/touch.js';
+import { whenModelsSettled } from './systems/models.js';
+import { groundHeight } from './world/world.js';
+
+// ---------- device class ----------
+// Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
+const Q = new URLSearchParams(location.search);
+S.isTouch = (window.matchMedia && matchMedia('(pointer: coarse)').matches)
+  || 'ontouchstart' in window || Q.has('touch');
 
 // ---------- renderer / scene ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, S.isTouch ? 1.5 : 1.75));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.15;
 document.getElementById('app').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -105,11 +114,19 @@ function startGame() {
   S.paused = false;
   titleEl.style.display = 'none';
   pauseEl.style.display = 'none';
-  renderer.domElement.requestPointerLock();
+  // pointer lock is desktop-only; touch devices play without it (and iOS
+  // Safari / in-app browsers would throw or silently fail the request)
+  if (!S.isTouch && renderer.domElement.requestPointerLock) {
+    try {
+      const p = renderer.domElement.requestPointerLock();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) { /* no lock, no problem - mouse still works via click-drag fallback */ }
+  }
 }
 titleEl.addEventListener('click', startGame);
 pauseEl.addEventListener('click', startGame);
 document.addEventListener('pointerlockchange', () => {
+  if (S.debugShot) return;
   const locked = document.pointerLockElement === renderer.domElement;
   if (!locked && S.started) {
     S.paused = true;
@@ -120,6 +137,74 @@ document.addEventListener('pointerlockchange', () => {
   }
 });
 
+// ---------- touch controls (mobile requirement) ----------
+if (S.isTouch) {
+  initTouch({
+    onInteract: () => { if (S.started && !S.paused && currentE) currentE.action(); },
+    onBury: () => { if (S.started && !S.paused && currentF) currentF.action(); },
+  });
+  titleEl.querySelector('.go').textContent = 'TAP TO PLAY';
+  pauseEl.querySelector('.go').textContent = 'TAP TO RESUME';
+  const ctl = titleEl.querySelector('.controls');
+  if (ctl) ctl.innerHTML = '<b>LEFT STICK</b> scurry &nbsp; <b>DRAG</b> right side to look &nbsp; <b>SPRINT</b> toggle to run<br>' +
+    '<b>push into a trunk</b> to climb - canopy tops are walkable, leap tree to tree<br>' +
+    '<b>ACT</b> beg / take / snatch / slip through knot-holes &nbsp; <b>BURY</b> stash food (+1)<br>' +
+    '<b>BITE</b> - a comic boop for dog noses and ranger ankles<br>' +
+    'no fall damage. squirrels do not take fall damage. this is science.';
+  const help = document.getElementById('hud-help');
+  if (help) help.innerHTML = 'left stick: move - drag right side: look<br>jump / bite / act / bury buttons - sprint toggles';
+}
+
+// ---------- debug screenshot mode: ?shot=<pose>&t=<hour> ----------
+// Auto-starts without pointer lock so agents can verify visuals headlessly.
+// Poses: spawn, down (look at your own feet - the v0 horror check), garden,
+// statehouse, canopy, bench, cart, lamps. Sets window.__scurryReady when
+// models have settled and enough frames have rendered to capture.
+if (Q.has('shot')) {
+  S.debugShot = true;
+  S.started = true;
+  titleEl.style.display = 'none';
+  pauseEl.style.display = 'none';
+  if (Q.get('t')) S.timeHours = parseFloat(Q.get('t'));
+  const P = S.player;
+  const pose = (x, z, tx, tz, pitch = 0) => {
+    P.pos.set(x, groundHeight(x, z), z);
+    P.yaw = Math.atan2(-(tx - x), -(tz - z));
+    P.pitch = pitch;
+    P.grounded = true;
+  };
+  switch (Q.get('shot')) {
+    case 'down': pose(24, 30, 24, 20); P.pitch = -1.45; break;
+    case 'garden': pose(-96, -27, -132, 0); break;
+    case 'statehouse': pose(116, -36, 186, -92); break;
+    case 'bench': pose(48.6, -18.6, 52, -22); break;
+    case 'cart': pose(122.5, 50.5, 128, 56); break;
+    case 'lamps': pose(58, -8, 150, 44); break;
+    case 'canopy': {
+      const t = S.trees.find((tr) => tr.hollow) || S.trees[0];
+      P.pos.set(t.x + 2.2, t.canopyY - 0.55, t.z + 1.2);
+      P.yaw = Math.atan2(-(95 - P.pos.x), -(12 - P.pos.z));
+      P.pitch = -0.12;
+      P.grounded = true;
+      break;
+    }
+    default: break; // 'spawn' = the regular spawn pose
+  }
+  Promise.race([whenModelsSettled(), new Promise((r) => setTimeout(r, 7000))]).then(() => {
+    let frames = 0;
+    const tick = () => { if (++frames > 6) window.__scurryReady = true; else requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+  if (Q.has('lowq')) {
+    // software-renderer verification: same scene, cheaper pixels - no
+    // shadows, quarter grass, no PMREM rebakes (S.lowQ), 0.55 pixel ratio
+    S.lowQ = true;
+    renderer.setPixelRatio(0.55);
+    setSunShadows(false);
+    if (S.grassTufts) for (const t of S.grassTufts) t.count = Math.floor(S.grassTuftCount * 0.25);
+  }
+}
+
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -128,6 +213,23 @@ window.addEventListener('resize', () => {
 
 // ---------- the loop ----------
 const clock = new THREE.Clock();
+// mobile perf ladder: if a phone GPU can't hold ~40fps, step quality down
+// (pixel ratio, then shadow resolution, then shadows + grass density)
+let fpsEma = 60, perfTimer = 0, perfTier = 0;
+function perfLadder(dt) {
+  if (!S.isTouch || S.debugShot || !S.started) return;
+  fpsEma = fpsEma * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
+  perfTimer += dt;
+  if (perfTimer > 3 && fpsEma < 40 && perfTier < 3) {
+    perfTimer = 0; perfTier++;
+    if (perfTier === 1) renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
+    if (perfTier === 2) { renderer.setPixelRatio(1.1); setShadowSize(1024); }
+    if (perfTier === 3) {
+      setSunShadows(false);
+      if (S.grassTufts) for (const t of S.grassTufts) t.count = Math.floor(S.grassTuftCount * 0.45);
+    }
+  }
+}
 function warnings() {
   if (S.player.inHollow) return '';
   if (S.ranger && S.ranger.state === 'chase') return '! THE RANGER IS AFTER YOU - CLIMB SOMETHING !';
@@ -139,14 +241,14 @@ function warnings() {
 function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, clock.getDelta());
+  perfLadder(dt);
   if (S.started && !S.paused) {
     if (S.spottedFlash > 0) S.spottedFlash -= dt;
     updateDaycycle(dt);
     updatePlayer(dt, camera);
     updateHumans(dt);
     updateFood(dt);
-    updateDogs(dt);
-    updateRanger(dt);
+    if (!S.debugShot) { updateDogs(dt); updateRanger(dt); } // frozen in shot mode so poses hold
     updateHollow(dt);
     scanInteractions();
     const prompt = currentE ? currentE.label : (currentF ? currentF.label : '');

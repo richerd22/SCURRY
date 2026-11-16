@@ -2,11 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0c0f0a">
+<meta name="scurry-version" content="0.2.0">
 <title>SCURRY - a Boston Common squirrel game</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0c0f0a;
-    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    touch-action: none; -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
   #app, #app canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   .hud { position: fixed; z-index: 5; color: #f2ead2; text-shadow: 0 1px 3px rgba(0,0,0,.85);
     pointer-events: none; font-size: 14px; letter-spacing: .04em; }
@@ -39,9 +45,56 @@
     padding: 10px 30px; letter-spacing: .08em; }
   #pause { display: none; }
   #pause h1 { font-size: 44px; }
+
+  /* ---- touch controls (shown by ui/touch.js on touch devices) ---- */
+  #touchui { position: fixed; inset: 0; z-index: 6; display: none; pointer-events: none; }
+  #lookzone { position: absolute; top: 0; right: 0; width: 60%; height: 100%;
+    pointer-events: auto; touch-action: none; }
+  #stick-base { position: absolute; left: calc(20px + env(safe-area-inset-left));
+    bottom: calc(86px + env(safe-area-inset-bottom)); width: 126px; height: 126px;
+    border-radius: 50%; border: 1.5px solid rgba(242,234,210,.4);
+    background: rgba(12,15,10,.32); pointer-events: auto; touch-action: none; }
+  #stick-nub { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px;
+    margin: -28px 0 0 -28px; border-radius: 50%;
+    background: rgba(242,234,210,.4); border: 1.5px solid rgba(242,234,210,.55); }
+  .tbtn { position: absolute; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 1.5px solid rgba(242,234,210,.45);
+    background: rgba(12,15,10,.42); color: #f2ead2; font-weight: 700;
+    letter-spacing: .05em; pointer-events: auto; touch-action: none;
+    text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+  .tbtn:active { background: rgba(242,193,78,.5); }
+  .tbtn.on { background: rgba(242,193,78,.72); color: #0e120a; text-shadow: none; }
+  #btn-jump { right: calc(24px + env(safe-area-inset-right)); bottom: calc(80px + env(safe-area-inset-bottom));
+    width: 78px; height: 78px; font-size: 14px; }
+  #btn-bite { right: calc(118px + env(safe-area-inset-right)); bottom: calc(132px + env(safe-area-inset-bottom));
+    width: 62px; height: 62px; font-size: 12px; }
+  #btn-act { right: calc(28px + env(safe-area-inset-right)); bottom: calc(176px + env(safe-area-inset-bottom));
+    width: 62px; height: 62px; font-size: 12px; }
+  #btn-bury { right: calc(120px + env(safe-area-inset-right)); bottom: calc(46px + env(safe-area-inset-bottom));
+    width: 58px; height: 58px; font-size: 11px; }
+  #btn-sprint { left: calc(38px + env(safe-area-inset-left)); bottom: calc(232px + env(safe-area-inset-bottom));
+    width: 56px; height: 56px; font-size: 10.5px; }
+
+  /* ---- small screens / touch HUD ---- */
+  @media (max-width: 700px) {
+    .hud { font-size: 12px; }
+    #hud-stash { font-size: 16px; }
+    #hud-bar { font-size: 10.5px; }
+    #hud-topleft { top: calc(8px + env(safe-area-inset-top)); left: 12px; }
+    #hud-clock { top: calc(8px + env(safe-area-inset-top)); right: 12px; }
+    #hud-toast { padding: 0 6%; top: 19%; font-size: 13.5px; }
+    #hud-gossip { padding: 0 7%; bottom: 5%; font-size: 12.5px; }
+    .overlay .controls { font-size: 12px; line-height: 1.75; padding: 10px 14px; }
+    .overlay .go { font-size: 15px; padding: 10px 22px; }
+  }
+  body.touch #hud-help { display: none; }
+  body.touch #hud-prompt { bottom: 36%; font-size: 15px; }
 </style>
 <script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
 </script>
 </head>
 <body>
@@ -60,6 +113,16 @@
 <div class="hud" id="hud-help">WASD move - SHIFT scurry - SPACE jump - push into a trunk to climb<br>
 E interact / beg / snatch - F bury food - CLICK bite (boop) - M mute</div>
 <div id="fade"></div>
+
+<div id="touchui">
+  <div id="lookzone"></div>
+  <div id="stick-base"><div id="stick-nub"></div></div>
+  <div class="tbtn" id="btn-sprint">SPRINT</div>
+  <div class="tbtn" id="btn-jump">JUMP</div>
+  <div class="tbtn" id="btn-bite">BITE</div>
+  <div class="tbtn" id="btn-act">ACT</div>
+  <div class="tbtn" id="btn-bury">BURY</div>
+</div>
 
 <div class="overlay" id="title">
   <h1>SCURRY</h1>

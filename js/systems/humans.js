@@ -1,5 +1,7 @@
-// SCURRY - humans. Stylized code-built figures: path wanderers, bench sitters
-// (beg targets), picnic blanket owners (they look away... mostly), cart vendor.
+// SCURRY - humans. Path wanderers, bench sitters (beg targets), picnic
+// blanket owners (they look away... mostly), cart vendor.
+// Visuals: the CC0 Quaternius "Man" (rigged, Walk/Sitting/Idle clips) swaps
+// in when it loads; the code-built figures stay as the fallback.
 
 import * as THREE from 'three';
 import { S } from '../state.js';
@@ -8,12 +10,73 @@ import { BENCH_SPOTS } from '../world/props.js';
 import { spawnFood, tossFood } from './food.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
+import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
 
 const SKIN = [0xe8b98f, 0xc98a5e, 0x8a5a34, 0xf0cba8, 0x6e4525];
 const SHIRT = [0xb84a4a, 0x4a6eb8, 0x4a9a5e, 0xd9c84a, 0x7a4a9a, 0xe8e4da, 0x3a8a9a, 0xd97f3b];
 const PANTS = [0x3a4050, 0x5a4632, 0x2c2c34, 0x6e6e5a, 0x44586e];
 let ci = 0;
 function pick(arr) { return arr[(ci = (ci * 7 + 3) % 997) % arr.length]; }
+
+// ---- actor registry: every human group, with the role its model should play
+const actors = [];
+export function setActorRole(group, role) {
+  const a = actors.find((x) => x.group === group);
+  if (a) { a.role = role; applyActorClip(a); }
+}
+function registerActor(group) {
+  const a = { group, role: 'idle', mixer: null, actions: null, currentAction: null, model: false };
+  group.userData.actor = a;
+  actors.push(a);
+  return a;
+}
+function playActorClip(a, name) {
+  if (!a.actions) return;
+  const next = a.actions[name];
+  if (!next || a.currentAction === next) return;
+  if (a.currentAction) a.currentAction.fadeOut(0.25);
+  next.reset().fadeIn(0.25).play();
+  a.currentAction = next;
+}
+function applyActorClip(a) {
+  if (!a.mixer) return;
+  if (a.role === 'walk') playActorClip(a, 'Walk');
+  else if (a.role === 'sit' || a.role === 'groundsit') playActorClip(a, 'Sitting');
+  else if (a.role === 'ranger') playActorClip(a, S.ranger && S.ranger.state === 'chase' ? 'Run' : 'Walk');
+  else playActorClip(a, 'Idle');
+}
+// Load the Man template once, then swap every registered actor's body.
+let manStarted = false;
+function ensureManLoading() {
+  if (manStarted) return;
+  manStarted = true;
+  loadModel('assets/models/Man.glb').then((tpl) => {
+    if (!tpl) return;
+    for (const a of actors) {
+      const m = cloneModel(tpl);
+      fitHeight(m, 1.78);
+      shadowify(m);
+      if (a.role === 'ranger') { // green tint so the uniform reads
+        m.traverse((o) => {
+          if (o.isMesh) { o.material = o.material.clone(); o.material.color.multiply(new THREE.Color(0.72, 0.85, 0.66)); }
+        });
+      }
+      for (const c of [...a.group.children]) { if (!c.userData.keep) c.visible = false; }
+      a.group.add(m);
+      a.mixer = new THREE.AnimationMixer(m);
+      a.actions = {};
+      for (const name of ['Walk', 'Run', 'Idle', 'Sitting']) {
+        const clip = findClip(tpl.animations, name);
+        if (clip) a.actions[name] = a.mixer.clipAction(clip);
+      }
+      a.model = true;
+      if (a.role === 'groundsit' && a.group.userData.groundY !== undefined) {
+        a.group.position.y = a.group.userData.groundY - 0.04;
+      }
+      applyActorClip(a);
+    }
+  }).catch(() => { /* procedural humans stay */ });
+}
 
 export function makeHuman(scale = 1) {
   const g = new THREE.Group();
@@ -36,6 +99,8 @@ export function makeHuman(scale = 1) {
   g.add(legL, legR, torso, armL, armR, head, hair);
   g.scale.setScalar(scale);
   g.userData.parts = { legL, legR, armL, armR, torso, head };
+  registerActor(g);
+  ensureManLoading();
   return g;
 }
 
@@ -63,6 +128,7 @@ export function buildHumans(scene) {
     if (!spot) continue;
     const h = makeHuman(0.95 + Math.random() * 0.12);
     seatOnBench(h, spot);
+    setActorRole(h, 'sit');
     scene.add(h);
     const sitter = { mesh: h, x: spot.x, z: spot.z, cooldown: 0, phase: Math.random() * 9 };
     S.benchSitters.push(sitter);
@@ -76,6 +142,7 @@ export function buildHumans(scene) {
   const loopIdx = [0, 1, 4, 6, 8, 11]; // land paths only (10 is the bridge line - feet would get wet)
   for (let i = 0; i < 9; i++) {
     const h = makeHuman(0.93 + Math.random() * 0.15);
+    setActorRole(h, 'walk');
     scene.add(h);
     wanderers.push({
       mesh: h, path: PATHS[loopIdx[i % loopIdx.length]],
@@ -87,6 +154,8 @@ export function buildHumans(scene) {
   for (const b of S.blankets) {
     for (let k = 0; k < 2; k++) {
       const h = makeHuman(0.95);
+      h.userData.groundY = b.gy;
+      setActorRole(h, 'groundsit');
       const ox = b.x + (k ? 1 : -1) * 1.1, oz = b.z + (k ? 0.6 : -0.7);
       h.position.set(ox, b.gy - 0.42, oz);
       h.rotation.y = Math.atan2(b.x - ox, b.z - oz);
@@ -100,6 +169,7 @@ export function buildHumans(scene) {
   // pretzel vendor
   if (S.pretzelCart) {
     const v = makeHuman(1.0);
+    setActorRole(v, 'idle');
     const cp = S.pretzelCart;
     v.position.set(cp.x - 0.4, cp.y, cp.z - 1.3);
     v.rotation.y = 2.6;
@@ -125,6 +195,12 @@ function startBeg(sitter) {
 
 export function updateHumans(dt) {
   const now = performance.now() / 1000;
+  // sourced-model actors: advance mixers, keep the ranger's clip honest
+  for (const a of actors) {
+    if (!a.mixer) continue;
+    if (a.role === 'ranger') applyActorClip(a);
+    a.mixer.update(dt);
+  }
   for (const s of S.benchSitters) {
     if (s.cooldown > 0) s.cooldown -= dt;
     s.mesh.rotation.z = Math.sin(now * 0.8 + s.phase) * 0.02;
@@ -146,10 +222,12 @@ export function updateHumans(dt) {
     const gy = groundHeight(x, z);
     w.mesh.position.set(x, gy + Math.abs(Math.sin(now * 7 + w.phase)) * 0.04, z);
     w.mesh.rotation.y = Math.atan2((b[0] - a[0]) * w.dir, (b[1] - a[1]) * w.dir);
-    const p = w.mesh.userData.parts;
-    const sw = Math.sin(now * 7 + w.phase) * 0.5;
-    p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
-    p.armL.rotation.x = -sw * 0.7; p.armR.rotation.x = sw * 0.7;
+    if (!w.mesh.userData.actor || !w.mesh.userData.actor.model) {
+      const p = w.mesh.userData.parts;
+      const sw = Math.sin(now * 7 + w.phase) * 0.5;
+      p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
+      p.armL.rotation.x = -sw * 0.7; p.armR.rotation.x = sw * 0.7;
+    }
   }
   // blanket owners: gaze wanders; sometimes they look right at the blanket
   for (const b of S.blankets) {
