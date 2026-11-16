@@ -15,6 +15,9 @@ import { buildDogs, updateDogs, biteDogs, nearestDogDist } from './systems/dogs.
 import { buildRanger, updateRanger, biteRanger } from './systems/ranger.js';
 import { buildHawk, updateHawk, biteHawk } from './systems/hawk.js';
 import { buildHollow, initHollowInteractables, updateHollow } from './systems/hollow.js';
+import { buildBurrows, initBurrows, updateBurrows, debugEnterBurrow } from './systems/burrows.js';
+import { buildGeese, updateGeese } from './systems/geese.js';
+import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
 import { initAudio, setMuted, isMuted } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
@@ -54,8 +57,12 @@ buildDogs(scene);
 buildRanger(scene);
 buildHawk(scene);
 buildHollow(scene);
+buildGeese(scene);
+buildCrows(scene);
+buildBurrows(scene);
 initFood();
 initHollowInteractables();
+initBurrows();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
@@ -89,7 +96,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // bite: boop whatever is in range
-S.onBite = () => { biteDogs() || biteRanger() || biteHawk(); };
+S.onBite = () => { biteDogs() || biteRanger() || biteHawk() || biteCrow(); };
 
 // ranger net catch: fade, relocate to the bandstand roof, stash raided.
 // Hawk Dua reuses the same fade with opts {pos, message, grounded}: a
@@ -169,6 +176,7 @@ if (S.isTouch) {
 // models have settled and enough frames have rendered to capture.
 if (Q.has('shot')) {
   S.debugShot = true;
+  S.shotPose = Q.get('shot');
   S.started = true;
   titleEl.style.display = 'none';
   pauseEl.style.display = 'none';
@@ -195,6 +203,14 @@ if (Q.has('shot')) {
       P.grounded = true;
       break;
     }
+    case 'burrow': debugEnterBurrow('entry'); break;   // inside an entry chamber, torch-lit
+    case 'market': debugEnterBurrow('market'); break;  // the rat exchange, deep end
+    case 'geese': // on the deck, in warn range of the flock but outside charge range
+      pose(-132, 12, -132, 0); P.pos.y = 1.15; P.grounded = true;
+      break;
+    case 'crow': // by the pretzel cart; crows.js freezes crow #0 mid-swoop in front
+      pose(124.5, 52.5, 128, 56);
+      break;
     default: break; // 'spawn' = the regular spawn pose
   }
   Promise.race([whenModelsSettled(), new Promise((r) => setTimeout(r, 7000))]).then(() => {
@@ -238,8 +254,9 @@ function perfLadder(dt) {
   }
 }
 function warnings() {
-  if (S.player.inHollow) return '';
+  if (S.player.inHollow || S.player.inBurrow) return '';
   if (S.ranger && S.ranger.state === 'chase') return '! THE RANGER IS AFTER YOU - CLIMB SOMETHING !';
+  if (S.gooseWarn > 0) return '! THE GEESE ARE OBJECTING - WAIT, BRIBE THEM, OR GO AROUND !';
   if (S.spottedFlash > 0) return '! A DOG HAS YOUR SCENT !';
   if (nearestDogDist() < 7 && S.player.grounded && !S.player.climbing) return 'a dog is eyeing you...';
   return '';
@@ -257,6 +274,9 @@ function loop() {
     updateFood(dt);
     if (!S.debugShot) { updateDogs(dt); updateRanger(dt); updateHawk(dt); } // frozen in shot mode so poses hold
     updateHollow(dt);
+    updateBurrows(dt);
+    updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
+    updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateCanopy(dt);
     scanInteractions();
     const prompt = currentE ? currentE.label : (currentF ? currentF.label : '');

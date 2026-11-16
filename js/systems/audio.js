@@ -99,6 +99,9 @@ export const sfx = {
     tone(3100, 750, 0.55, 'sawtooth', 0.07, 0.02);
   },
   gossip() { tone(1100, 1300, 0.06, 'sine', 0.08); tone(1300, 1500, 0.06, 'sine', 0.08, 0.08); },
+  clink() { tone(3400, 2900, 0.05, 'square', 0.07); tone(4300, 3800, 0.07, 'square', 0.05, 0.045); },
+  honk() { tone(340, 260, 0.16, 'sawtooth', 0.2); tone(330, 250, 0.14, 'sawtooth', 0.14, 0.05); },
+  caw() { tone(1150, 700, 0.13, 'sawtooth', 0.13); noiseBurst(0.1, 1800, 0.08); tone(1050, 650, 0.11, 'sawtooth', 0.1, 0.16); },
 };
 
 // --- ambience: sparse synthesized birdsong by day, crickets by night ---

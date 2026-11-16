@@ -50,6 +50,16 @@ Modules never import each other in circles; systems read/write `S`.
   `humans.js` actor registry (role -> animation clip; ranger included,
   green-tinted), `dogs.js`, `ranger.js`, `food.js`, `hollow.js`,
   `audio.js` (all synthesized; every call guarded).
+- `js/systems/` round v0.5 - `burrows.js` tunnel network + rat market
+  (interior at (3000, 0, 3000), rect-union walkable clamp, 6 entrances,
+  caps economy lives here; `S.caps` is session-only - save.js does not
+  persist it yet), `geese.js` bridge flock (deck found via
+  `S.platformBoxes`, `S.fadeCatch` relocation, `S.gooseWarn` drives the
+  HUD line), `crows.js` food thieves (perch on lamps, `S.shotPose` crow
+  tableau). Shared wiring they depend on: `player.js` `collideWalls`
+  exempts BOTH `inHollow` and `inBurrow` from the park-bounds clamp;
+  `food.js` exports `removeFoodItem` and values the market croissant at
+  3 stash in `BURY_VALUES`; `audio.js` has `clink`/`honk`/`caw`.
 - `js/ui/` - `hud.js`, `touch.js` (stick feeds `S.touch`, buttons write
   the same key table the keyboard uses via `setTouchKey`).
 
@@ -64,7 +74,12 @@ squirrel, freezes dogs/ranger, and sets `window.__scurryReady` once
 models settle + a few frames render. Poses: `spawn`, `down` (THE body
 check - looking straight down must show at most a hint of belly/tail at
 the frame rim), `garden`, `statehouse`, `bench`, `cart`, `lamps`,
-`canopy`. Add `&lowq=1` for software renderers (0.55 pixel ratio, no
+`canopy`, plus v0.5: `burrow` (inside an entry chamber), `market` (the
+rat Exchange), `geese` (on the deck in warn range - geese are NOT frozen
+in shot mode, the warn tableau is the point), `crow` (crows.js freezes
+crow #0 mid-swoop in front of the player, who is posed carrying a
+pretzel by the cart; crows are not frozen either). `S.shotPose` carries
+the pose name to systems that self-stage. Add `&lowq=1` for software renderers (0.55 pixel ratio, no
 shadows, quarter grass, no PMREM) and `&touch=1` to force the touch UI.
 In a real browser you can also just open these URLs and look.
 
@@ -104,7 +119,7 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   allocations in the loop; reuse vectors.
 - PMREM rebakes happen only when the day-phase segment changes.
 
-## Known state / next rounds (as of v0.4, Nov 15 2026)
+## Known state / next rounds (as of v0.5, Nov 16 2026)
 
 - v0.3 (commit 35a13a6): full-quality grade pass (warm golden-hour hemi
   blend, PMREM horizon lift, water emissive sheen - pond/lagoon reflect
@@ -136,10 +151,22 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   ~2.3 MB each (shared textures duplicated per file); during a hawk
   screech the HUD warning reuses the dog-scent line (shared
   spottedFlash).
-- Roadmap (owner's direction): burrow tunnels + rat black market,
-  Public Garden geese (lagoon bridge bosses), food-stealing crows,
-  Fenway + City Hall as teleport-reached expansion maps (Sketchfab
-  models are WANTED in the ledger - account-gated, need a human grab).
+- v0.5 (Nov 16 2026): burrow tunnels + rat black market
+  (`systems/burrows.js` - 6 entrances, hub-and-ring rect network at
+  (3000,0,3000), 2 storage chambers, caps collectible + the Exchange:
+  3 caps -> a croissant that buries for 3), Public Garden geese
+  (`systems/geese.js` - 3 on the lagoon bridge; honk-warn, charge,
+  wait-out / food-toll / altitude counterplay; catch = bridge-end
+  relocation, stash intact), food-stealing crows (`systems/crows.js` -
+  3 perchers, stalk/swoop/snatch to perch, bite swats them into a 60 s
+  sulk). All verified zero-console-error in shot mode (burrow, market,
+  geese, crow poses). Known limits: caps are session-only (not in the
+  save yet); the crow reads blobby at point-blank range (fine at swoop
+  distance); goose deck height is read from the landmarks platformBox
+  (y=1.15) with a 0.55 fallback.
+- Roadmap (owner's direction): Fenway + City Hall as teleport-reached
+  expansion maps (Sketchfab models are WANTED in the ledger -
+  account-gated, need a human grab).
 - **Multiplayer is roadmap-only - no netcode yet.** Design note: a
   WebSocket relay on a Cloudflare Worker + Durable Object fits the
   existing stack; sync transforms + anim state at 10-15 Hz with

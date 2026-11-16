@@ -14,7 +14,11 @@ const FOOD_STYLE = {
   pretzel:  { color: 0xa06a28, s: 0.06 },
   sandwich: { color: 0xe3d3a2, s: 0.07 },
   peanut:   { color: 0xc8a86a, s: 0.045 },
+  croissant:{ color: 0xd9a860, s: 0.075 },  // rat-market premium; buries for 3 (BURY_VALUES)
 };
+// stash value per food type when buried; everything is 1 except the
+// rat market's croissant - three caps of shinies buys three stash.
+const BURY_VALUES = { croissant: 3 };
 const geoCache = new THREE.SphereGeometry(1, 8, 6);
 
 function makeFoodMesh(type) {
@@ -201,6 +205,11 @@ function removeFood(f) {
   S.scene.remove(f.mesh);
   S.foods.splice(S.foods.indexOf(f), 1);
 }
+// shared removal for other systems (geese eating off the bridge deck)
+export function removeFoodItem(f) {
+  if (S.foods.indexOf(f) === -1) return;
+  removeFood(f);
+}
 
 export function buryAction() {
   const P = S.player.pos;
@@ -211,11 +220,15 @@ export function buryAction() {
   return {
     label: 'F - bury the ' + S.carried,
     action: () => {
+      const type = S.carried;
+      const value = BURY_VALUES[type] || 1;
       S.carried = null;
       setCarriedVisual(null);
-      S.stash++;
+      S.stash += value;
       sfx.dig();
-      toast('buried. stash: ' + S.stash + '. future you says thanks.', 2.4);
+      toast(value > 1
+        ? 'buried. stash: ' + S.stash + ' (+' + value + ' - the good stuff). future you is eating well.'
+        : 'buried. stash: ' + S.stash + '. future you says thanks.', 2.4);
       if (S.onStashChange) S.onStashChange();
     },
   };

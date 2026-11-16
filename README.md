@@ -2,7 +2,8 @@
 
 A first-person squirrel game set on Boston Common + Public Garden.
 You are a squirrel. Beg from humans, steal from picnics, bury everything,
-mind the dogs, and the ranger has a net. Winter is coming.
+mind the dogs, the ranger, the bridge geese, and the crows. Below the park,
+the rats run a market. Winter is coming.
 
 **Play it live: https://scurry.cold.fyi** (this repo is the site - GitHub
 Pages serves `main` at the root). Or serve this folder statically and open
@@ -19,7 +20,7 @@ Desktop:
 | Shift | sprint |
 | Space | big squirrel jump (strong air control - tail-steer) |
 | Push into a trunk | climb it; canopy tops are walkable; leap tree to tree |
-| E | beg / take food / snatch picnic food / raid trash / slip through knot-holes |
+| E | beg / take food / snatch picnic food / raid trash / slip through knot-holes and burrow mouths |
 | F | bury carried food on grass (stash +1) |
 | Left click | BITE - a comic boop; escapes dogs and the ranger |
 | M | mute |
@@ -36,6 +37,31 @@ Mobile (touch devices get a full control layer - no pointer lock needed):
 No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
+
+## What's in v0.5
+
+Everything from v0.4 (canopy highways, Hawk Dua, save persistence), plus:
+
+- **The Burrows + the rat black market.** A torch-lit tunnel network under
+  the Common: six entrances (root holes at big trees, a drain by the Frog
+  Pond, a monument-hill burrow, a lagoon drain), two storage chambers, and
+  shortcut travel between all of them. Dogs, the ranger, the hawk, and the
+  geese never go down - it is the one safe map. Deep in the network, the
+  rats run THE EXCHANGE: bottle caps (a new shiny ground collectible) trade
+  at 3 caps for a croissant - the good stuff, which buries for +3 stash.
+  No credit. No dogs.
+- **Public Garden geese.** Three geese hold the lagoon bridge. They
+  honk-warn before they charge, and getting caught is a flapping
+  relocation to the bridge end - stash intact, dignity pending. Three ways
+  past: wait them out (stand still on the deck and they shuffle aside),
+  pay the food toll (carry food close and they take it as a bribe), or go
+  around entirely - canopy above, water below.
+- **Food-stealing crows.** Three crows perch near the pretzel cart, the
+  picnic blankets, and the Garden. Carry food in the open near one for too
+  long and it swoops, snatches the item, and drops it at its perch -
+  recoverable, if you race it or climb after it. Counterplay: bury the
+  food, climb, or BITE the crow mid-snatch (feather puff; it remembers
+  for a while).
 
 ## What's in v0.2
 
@@ -88,7 +114,9 @@ js/state.js         shared state + world registries
 js/world/           world.js (terrain/paths/water/sky) - trees.js -
                     landmarks.js - props.js - textures.js (canvas textures)
 js/systems/         player.js - humans.js - food.js - dogs.js - ranger.js -
-                    hollow.js - daycycle.js - audio.js - models.js (GLB loading)
+                    hollow.js - burrows.js (tunnels + rat market) -
+                    geese.js - crows.js - hawk.js - canopy.js - save.js -
+                    daycycle.js - audio.js - models.js (GLB loading)
 js/ui/              hud.js - touch.js (mobile controls)
 assets/models/      sourced GLBs in use (originals + ledger in the library)
 docs/               PLAYER-FAQ.md - AGENT-GUIDE.md

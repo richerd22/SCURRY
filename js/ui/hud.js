@@ -29,12 +29,12 @@ export function initHUD() {
   }
 }
 
-const FOOD_NAMES = { acorn: 'acorn', pretzel: 'pretzel bit', sandwich: 'sandwich scrap', peanut: 'peanut' };
+const FOOD_NAMES = { acorn: 'acorn', pretzel: 'pretzel bit', sandwich: 'sandwich scrap', peanut: 'peanut', croissant: 'croissant (the good stuff)' };
 
 export function updateHUD(promptText, warnText) {
   observeSave(); // save persistence: dirty-checked, writes only on change
   if (!el['hud-stash']) return;
-  el['hud-stash'].textContent = 'STASH ' + S.stash;
+  el['hud-stash'].textContent = 'STASH ' + S.stash + (S.caps > 0 ? ' · CAPS ' + S.caps : '');
   const barLen = 24;
   const filled = Math.min(barLen, Math.round(S.stash / 60 * barLen));
   el['hud-bar'].textContent = 'winter [' + '#'.repeat(filled) + '-'.repeat(barLen - filled) + ']';
