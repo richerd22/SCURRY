@@ -234,6 +234,55 @@ export function arcadeTex() {
   return toTex(cv);
 }
 
+// --- fluted column shading: soft vertical light/shadow bands over granite ---
+export function fluteTex() {
+  const [cv, g] = canvas(256, 256);
+  const R = rng(63);
+  g.fillStyle = '#a8a294'; g.fillRect(0, 0, 256, 256);
+  for (let x = 0; x < 256; x++) {
+    const s = Math.sin((x / 256) * 20 * Math.PI * 2);
+    g.fillStyle = s > 0 ? 'rgba(255,252,240,' + (s * 0.16) + ')' : 'rgba(30,28,24,' + (-s * 0.22) + ')';
+    g.fillRect(x, 0, 1, 256);
+  }
+  for (let i = 0; i < 2400; i++) {
+    g.fillStyle = 'rgba(60,56,48,' + R() * 0.16 + ')';
+    g.fillRect(R() * 256, R() * 256, 1.6, 1.6);
+  }
+  const t = toTex(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+// --- bronze relief panel: dark bronze with raised shield + laurel hints ---
+export function reliefTex() {
+  const [cv, g] = canvas(256, 128);
+  const R = rng(18);
+  g.fillStyle = '#4c3a20'; g.fillRect(0, 0, 256, 128);
+  for (let i = 0; i < 1500; i++) {
+    g.fillStyle = 'rgba(' + (140 + R() * 60) + ',' + (105 + R() * 40) + ',50,' + R() * 0.13 + ')';
+    g.fillRect(R() * 256, R() * 128, 2.4, 2.4);
+  }
+  g.strokeStyle = 'rgba(226,196,130,0.85)'; g.lineWidth = 3;
+  g.beginPath(); g.ellipse(128, 62, 30, 38, 0, 0, 7); g.stroke();
+  g.beginPath(); g.ellipse(128, 62, 20, 28, 0, 0, 7); g.stroke();
+  g.beginPath(); g.moveTo(128, 34); g.lineTo(128, 92); g.stroke();
+  for (const s of [-1, 1]) { // laurel sprays
+    g.lineWidth = 2;
+    g.beginPath();
+    g.arc(128 + s * 58, 66, 30, s > 0 ? 2.2 : -0.9, s > 0 ? 4.1 : 0.95);
+    g.stroke();
+    for (let i = 0; i < 6; i++) {
+      const a = (s > 0 ? 2.4 : -0.7) + i * 0.28 * s;
+      g.beginPath();
+      g.ellipse(128 + s * 58 + Math.cos(a) * 30, 66 + Math.sin(a) * 30, 5, 2.4, a, 0, 7);
+      g.fillStyle = 'rgba(226,196,130,0.7)'; g.fill();
+    }
+  }
+  g.strokeStyle = 'rgba(226,196,130,0.6)'; g.lineWidth = 2.4;
+  g.strokeRect(7, 7, 242, 114);
+  return toTex(cv);
+}
+
 // --- grass blades alpha texture for instanced tufts ---
 export function grassBladeTex() {
   const [cv, g] = canvas(128, 128);

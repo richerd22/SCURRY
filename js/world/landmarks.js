@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundHeight, terrainDisc } from './world.js';
-import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex } from './textures.js';
+import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex } from './textures.js';
 
 const graniteT = graniteTex();
 const stone = new THREE.MeshStandardMaterial({ map: graniteT, color: 0xd8d2c4, roughness: 0.9 });
@@ -106,18 +106,43 @@ function buildStateHouse(scene) {
 }
 
 // --- Soldiers and Sailors Monument on the central hill ---
+const columnMat = new THREE.MeshStandardMaterial({ map: fluteTex(), roughness: 0.9 });
+const reliefMat = new THREE.MeshStandardMaterial({ map: reliefTex(), roughness: 0.55, metalness: 0.55 });
 function buildMonument(scene) {
   const g = new THREE.Group();
   const x = 60, z = -45, gy = groundHeight(x, z);
   box(11, 1.2, 11, granite, 0, 0.6, 0, g);
   box(8.5, 1.2, 8.5, stone, 0, 1.8, 0, g);
   box(6, 2.2, 6, granite, 0, 3.5, 0, g);
-  cyl(1.15, 1.5, 17, stone, 0, 13.2, 0, g, 14);
-  box(3.4, 1, 3.4, stone, 0, 22.2, 0, g);
-  // abstract figure on top
-  cyl(0.32, 0.42, 1.9, bronze, 0, 23.6, 0, g, 8);
+  // bronze relief panels on the pedestal faces
+  for (const [px, pz, ry] of [[0, 3.03, 0], [0, -3.03, 0], [3.03, 0, 1], [-3.03, 0, 1]]) {
+    box(ry ? 0.1 : 3.4, 1.5, ry ? 3.4 : 0.1, reliefMat, px, 3.5, pz, g, false);
+  }
+  // four corner figures on the bottom tier (War, Peace, and friends)
+  for (const [fx, fz] of [[-4.9, -4.9], [4.9, -4.9], [-4.9, 4.9], [4.9, 4.9]]) {
+    box(0.55, 0.5, 0.55, granite, fx, 1.45, fz, g);
+    cyl(0.16, 0.23, 1.05, bronze, fx, 2.23, fz, g, 7);
+    const fh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 7), bronze);
+    fh.position.set(fx, 2.95, fz); fh.castShadow = true; g.add(fh);
+    S.solids.push({ x: x + fx, z: z + fz, r: 0.45 });
+  }
+  // the column: lathe-turned with entasis + fluting, capital on top
+  cyl(1.7, 1.85, 0.5, stone, 0, 4.85, 0, g, 14);
+  {
+    const prof = [[1.52, 0], [1.47, 2], [1.38, 6], [1.30, 10], [1.22, 14], [1.16, 16.6]]
+      .map(([r, y]) => new THREE.Vector2(r, y));
+    const col = new THREE.Mesh(new THREE.LatheGeometry(prof, 18), columnMat);
+    col.position.set(0, 4.6, 0); col.castShadow = true; col.receiveShadow = true;
+    g.add(col);
+  }
+  cyl(1.5, 1.18, 0.75, stone, 0, 21.55, 0, g, 14);
+  box(3.1, 0.5, 3.1, stone, 0, 22.2, 0, g);
+  // allegorical figure on top, flag staff in hand
+  cyl(0.32, 0.42, 1.9, bronze, 0, 23.4, 0, g, 8);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), bronze);
-  head.position.set(0, 24.8, 0); head.castShadow = true; g.add(head);
+  head.position.set(0, 24.6, 0); head.castShadow = true; g.add(head);
+  cyl(0.035, 0.035, 2.4, bronze, 0.62, 24.1, 0, g, 5);
+  box(0.07, 1.05, 0.72, bronze, 0.62, 24.75, 0.38, g, false);
   g.position.set(x, gy, z);
   scene.add(g);
   S.solids.push({ x, z, r: 3.1 }); // pedestal + column core; the steps stay walkable
@@ -130,16 +155,31 @@ function buildMonument(scene) {
 function buildBandstand(scene) {
   const g = new THREE.Group();
   const x = 140, z = 42, gy = groundHeight(x, z);
-  const deck = cyl(7.5, 8, 1.1, stone, 0, 0.55, 0, g, 8);
+  const deck = cyl(7.5, 8, 1.1, stone, 0, 0.55, 0, g, 28);
   deck.receiveShadow = true;
+  cyl(8.4, 8.7, 0.35, stone, 0, 0.17, 0, g, 28); // ground step ring
   for (let i = 0; i < 8; i++) {
     const a = i / 8 * Math.PI * 2 + Math.PI / 8;
-    cyl(0.22, 0.22, 4.6, white, Math.cos(a) * 6.4, 3.4, Math.sin(a) * 6.4, g, 8);
+    const cx = Math.cos(a) * 6.4, cz = Math.sin(a) * 6.4;
+    cyl(0.22, 0.22, 4.6, white, cx, 3.4, cz, g, 8);
+    box(0.52, 0.26, 0.52, white, cx, 5.78, cz, g, false); // capitals
+    box(0.46, 0.3, 0.46, white, cx, 1.25, cz, g, false);  // bases
   }
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(8.6, 3.4, 8), new THREE.MeshStandardMaterial({ color: 0x707a72, roughness: 0.7, metalness: 0.3 }));
-  roof.position.y = 7.4; roof.castShadow = true;
-  g.add(roof);
-  cyl(0.2, 0.2, 1.6, gold, 0, 9.8, 0, g, 6);
+  cyl(6.75, 6.75, 0.5, white, 0, 5.95, 0, g, 24); // entablature ring
+  { // the roof: a shallow dome, not a cone - apex kept at the old 9.1 line
+    const roofMat = new THREE.MeshStandardMaterial({
+      color: 0xc9c9bd, roughness: 0.55, metalness: 0.25, side: THREE.DoubleSide,
+    });
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(8.8, 24, 10, 0, Math.PI * 2, 0, 1.36), roofMat);
+    dome.scale.y = 0.42;
+    dome.position.y = 5.33;
+    dome.castShadow = true;
+    g.add(dome);
+  }
+  cyl(0.1, 0.15, 0.9, gold, 0, 9.45, 0, g, 6);
+  const finial = new THREE.Mesh(new THREE.SphereGeometry(0.23, 8, 7), gold);
+  finial.position.set(0, 10.05, 0); finial.castShadow = true;
+  g.add(finial);
   g.position.set(x, gy, z);
   scene.add(g);
   // no solid box: the stage edge is a squirrel-sized step up (player step tolerance handles it)
