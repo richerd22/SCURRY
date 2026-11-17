@@ -38,6 +38,20 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6
+
+- **The canopy bridges are real limbs now.** Every one of the 49 branch
+  routes (527 m of them, Charles Street snag crossing included) used to
+  be drawn as a stack of straight cylinder segments. Each bridge is now
+  a single swept, tapered tube that follows the same sag as the walk
+  line: swollen where it leaves the trunk, thinner mid-span, with a
+  slow radius ripple, a gentle sideways wander, ridged bark running
+  with the grain, end caps, and twig stubs on the longer spans. No two
+  bridges alike - the variation is seeded per bridge, so the park is
+  the same park every load. The invisible stepping boxes you actually
+  walk on never moved: all 98 endpoint walks re-verified, footfall
+  for footfall identical.
+
 ## What's in v0.5.1
 
 A small polish round on top of v0.5:

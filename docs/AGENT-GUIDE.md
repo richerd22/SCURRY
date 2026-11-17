@@ -120,7 +120,7 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   allocations in the loop; reuse vectors.
 - PMREM rebakes happen only when the day-phase segment changes.
 
-## Known state / next rounds (as of v0.5, Nov 16 2026)
+## Known state / next rounds (as of v0.6, Nov 16 2026)
 
 - v0.3 (commit 35a13a6): full-quality grade pass (warm golden-hour hemi
   blend, PMREM horizon lift, water emissive sheen - pond/lagoon reflect
@@ -184,6 +184,15 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   pose (profile: beak + tapered body), spawn/down clean, zero console
   errors. Note: head-on at golden hour the crow is still mostly
   silhouette - it's a black bird at sunset; judge it in profile.
+- v0.6 (Nov 16 2026): canopy bridge organic pass (`systems/canopy.js`
+  `buildBridgeLimb` - the visible limb under each stepping-box route is
+  now one swept BufferGeometry tube: seeded per-bridge taper (end swell
+  0.74-1.24x), radius ripple, lateral wander <= ~0.23 m, ridged
+  out-of-round sections, bark UVs with the grain, end caps, twig stubs
+  on spans > 9 m. Crown pinned ~0.185 below the walk line, matching the
+  old cylinders' clearance. Purely visual - platformBoxes untouched;
+  walktest re-verified 98/98 endpoints, zero console errors. The old
+  `limbGeo` cylinder is still used for cache/perch stub limbs.)
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

@@ -10,7 +10,8 @@
 // therefore a chain of small axis-aligned stepping boxes laid along the
 // line between two canopy discs (boxes because platformBoxes cannot
 // rotate), heights interpolated with a slight sag, plus a visible bark
-// limb cylinder under the chain. Every route endpoint is a registered
+// limb swept under the chain (v0.6: an organic tube - tapered, wandering,
+// twigged - the boxes are the road, the tube is just the wood). Every route endpoint is a registered
 // S.trees entry, so the existing trunk-climb system reaches both ends.
 //
 // Build order: trees.js calls buildCanopy() at the end of buildTrees(),
@@ -73,6 +74,7 @@ function computeNetwork(trees) {
 // ------------------------------------------------------------ bridge build
 let barkMat, snagMat;
 const limbGeo = new THREE.CylinderGeometry(0.11, 0.15, 1, 6);
+const twigGeo = new THREE.CylinderGeometry(0.008, 0.03, 1, 5);
 const UP = new THREE.Vector3(0, 1, 0);
 
 function limb(scene, from, to, mat) {
@@ -85,6 +87,107 @@ function limb(scene, from, to, mat) {
   m.quaternion.setFromUnitVectors(UP, dir.normalize());
   m.castShadow = true;
   scene.add(m);
+}
+
+// deterministic per-bridge rng (textures.js LCG style - same park every load)
+function bridgeRng(a, b) {
+  let s = (Math.round((a.x + 220) * 131 + (a.z + 140) * 17) * 48271 +
+    Math.round((b.x + 220) * 131 + (b.z + 140) * 17) * 69621) % 2147483646 + 1;
+  return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+// v0.6 organic pass: the visible bridge limb is one swept tube, not a
+// stack of straight cylinder segments. It follows the same sag profile
+// as the stepping boxes (yAt), crown pinned ~0.185 below the walk line
+// (the clearance the old cylinders kept, minus a whisper of noise) so
+// feet meet wood exactly where they did before. Per-bridge seeded
+// variation: end-swollen taper, a slow radius ripple, a gentle lateral
+// wander (<= ~0.23m - well inside the 1.4m stepping pads), slightly
+// ridged out-of-round cross-sections, bark UVs running with the grain,
+// end caps, and 0-2 twig stubs on longer spans. Purely visual: the
+// stepping boxes above are untouched, so walks/collisions cannot move.
+const LIMB_RADIAL = 8;
+function buildBridgeLimb(scene, a, b, yAt, d) {
+  const R = bridgeRng(a, b);
+  const baseR = 0.15 + R() * 0.05;
+  const wanderAmp = 0.09 + R() * 0.14;
+  const wanderFreq = 2.0 + R() * 1.8;
+  const wanderPhase = R() * Math.PI * 2;
+  const ripA = R() * Math.PI * 2, ripB = R() * Math.PI * 2;
+  const ridgePhase = R() * Math.PI * 2;
+  const dx = b.x - a.x, dz = b.z - a.z;
+  const px = -dz / d, pz = dx / d; // unit perpendicular, horizontal
+  const n = Math.max(6, Math.ceil(d / 0.75));
+  const centers = [], radii = [], tangents = [], cum = [0];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const swell = 0.74 + 0.5 * Math.pow(Math.abs(2 * t - 1), 1.6);
+    const ripple = 1 + 0.085 * Math.sin(t * 9.3 + ripA) + 0.05 * Math.sin(t * 21.7 + ripB);
+    const r = baseR * swell * ripple;
+    const wander = Math.sin(Math.PI * t) * wanderAmp * Math.sin(wanderPhase + t * wanderFreq);
+    const crown = yAt(t) - 0.185 + 0.02 * Math.sin(t * 13.1 + ripB);
+    centers.push(new THREE.Vector3(a.x + dx * t + px * wander, crown - r, a.z + dz * t + pz * wander));
+    radii.push(r);
+    if (i > 0) cum.push(cum[i - 1] + centers[i].distanceTo(centers[i - 1]));
+  }
+  for (let i = 0; i <= n; i++) {
+    const p = centers[Math.max(0, i - 1)], q = centers[Math.min(n, i + 1)];
+    tangents.push(new THREE.Vector3().subVectors(q, p).normalize());
+  }
+  const pos = [], uv = [], idx = [];
+  const side = new THREE.Vector3(), upv = new THREE.Vector3();
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    side.crossVectors(UP, tangents[i]).normalize();
+    upv.crossVectors(tangents[i], side).normalize();
+    for (let j = 0; j <= LIMB_RADIAL; j++) {
+      const th = (j / LIMB_RADIAL) * Math.PI * 2;
+      const ridge = 1 + 0.055 * Math.sin(3 * th + ridgePhase + t * 5.0);
+      const rr = radii[i] * ridge, co = Math.cos(th), si = Math.sin(th) * 0.94;
+      pos.push(
+        centers[i].x + (side.x * co + upv.x * si) * rr,
+        centers[i].y + (side.y * co + upv.y * si) * rr,
+        centers[i].z + (side.z * co + upv.z * si) * rr);
+      uv.push(j / LIMB_RADIAL, cum[i] / 1.35);
+    }
+  }
+  const ring = LIMB_RADIAL + 1;
+  for (let i = 0; i < n; i++) for (let j = 0; j < LIMB_RADIAL; j++) {
+    const r0 = i * ring + j, r1 = r0 + ring;
+    idx.push(r0, r0 + 1, r1, r1, r0 + 1, r1 + 1);
+  }
+  // end caps: fans to a point tucked half a radius past each end ring
+  const capS = pos.length / 3;
+  const cs = centers[0].clone().addScaledVector(tangents[0], -radii[0] * 0.5);
+  pos.push(cs.x, cs.y, cs.z); uv.push(0.5, 0);
+  for (let j = 0; j < LIMB_RADIAL; j++) idx.push(capS, j + 1, j);
+  const capE = pos.length / 3;
+  const ce = centers[n].clone().addScaledVector(tangents[n], radii[n] * 0.5);
+  pos.push(ce.x, ce.y, ce.z); uv.push(0.5, cum[n] / 1.35);
+  const base = n * ring;
+  for (let j = 0; j < LIMB_RADIAL; j++) idx.push(capE, base + j, base + j + 1);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, barkMat);
+  mesh.castShadow = true;
+  scene.add(mesh);
+  // twig stubs on longer spans, angled up off the crown, roots buried
+  const twigs = d > 9 ? (R() < 0.75 ? 2 : 1) : (R() < 0.45 ? 1 : 0);
+  for (let k = 0; k < twigs; k++) {
+    const i = 2 + Math.floor(R() * (n - 4));
+    const from = centers[i].clone(); from.y += radii[i] * 0.55;
+    const dir = new THREE.Vector3(px * (R() - 0.5) * 1.4, 1, pz * (R() - 0.5) * 1.4).normalize();
+    const to = from.clone().addScaledVector(dir, 0.35 + R() * 0.45);
+    const tw = new THREE.Mesh(twigGeo, barkMat);
+    tw.scale.set(1, from.distanceTo(to), 1);
+    tw.position.copy(from).lerp(to, 0.5);
+    tw.quaternion.setFromUnitVectors(UP, dir);
+    tw.castShadow = true;
+    scene.add(tw);
+  }
 }
 
 // One walkable route between trees a and b: stepping boxes + a sagged limb.
@@ -115,15 +218,8 @@ function buildBridge(scene, a, b) {
       y: yAt(t) - 0.16, // feet ride just above the limb's crown
     });
   }
-  // visible limb follows the same profile, in a few straight segments
-  const segs = Math.max(2, Math.round(d / 2.5));
-  let prev = new THREE.Vector3(a.x, ya - 0.31, a.z);
-  for (let i = 1; i <= segs; i++) {
-    const t = i / segs;
-    const p = new THREE.Vector3(a.x + (b.x - a.x) * t, yAt(t) - 0.31, a.z + (b.z - a.z) * t);
-    limb(scene, prev, p);
-    prev = p;
-  }
+  // visible limb: one swept organic tube under the stepping boxes (v0.6)
+  buildBridgeLimb(scene, a, b, yAt, d);
   return d;
 }
 
