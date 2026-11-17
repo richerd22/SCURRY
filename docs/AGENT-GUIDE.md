@@ -193,6 +193,14 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   old cylinders' clearance. Purely visual - platformBoxes untouched;
   walktest re-verified 98/98 endpoints, zero console errors. The old
   `limbGeo` cylinder is still used for cache/perch stub limbs.)
+- v0.6.1 (Nov 16 2026): golden-hour tuft floor (`trees.js` tuftMat gains
+  `emissiveMap: bladeTex` + `S.tuftMat` registration; `daycycle.js`
+  drives its emissive from hemiMid/lampWarm at 0.3, same pattern as
+  waterMat; instance lightness floor 0.32 -> 0.37). Verified: down/spawn
+  shots at t=18 show blade texture where the frame was uniform black;
+  t=11 midday unchanged; zero console errors. Caveat: shot mode is
+  lowq (no PMREM env), so the full golden-hour lawn grade still wants
+  a real-GPU eyeball.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

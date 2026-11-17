@@ -140,7 +140,13 @@ function buildUnderstory(scene) {
   const tuftGeo2 = tuftGeo.clone(); tuftGeo2.rotateY(Math.PI / 2);
   const tuftMat = new THREE.MeshStandardMaterial({
     map: bladeTex, alphaTest: 0.42, side: THREE.DoubleSide, roughness: 1,
+    // golden-hour floor (v0.6.1): the same blade texture doubles as the
+    // emissive map, and daycycle keys the emissive colour to the horizon
+    // - without it the cards' unlit faces crush to black silhouettes
+    // against the sunlit lawn at low sun. See daycycle.js (S.tuftMat).
+    emissiveMap: bladeTex, emissive: 0x000000,
   });
+  S.tuftMat = tuftMat;
   const COUNT = 5200;
   const tufts = new THREE.InstancedMesh(tuftGeo, tuftMat, COUNT);
   const tufts2 = new THREE.InstancedMesh(tuftGeo2, tuftMat, COUNT);
@@ -155,7 +161,7 @@ function buildUnderstory(scene) {
     M.compose(new THREE.Vector3(x, y, z), Q, SC.set(s, s * (0.8 + rnd() * 0.5), s));
     tufts.setMatrixAt(ti, M);
     tufts2.setMatrixAt(ti, M);
-    col.setHSL(0.26 + rnd() * 0.05, 0.5, 0.32 + rnd() * 0.2);
+    col.setHSL(0.26 + rnd() * 0.05, 0.5, 0.37 + rnd() * 0.2);
     tufts.setColorAt(ti, col); tufts2.setColorAt(ti, col);
     ti++;
   }

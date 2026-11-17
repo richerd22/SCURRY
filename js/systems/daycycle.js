@@ -181,6 +181,15 @@ export function updateDaycycle(dt) {
     S.waterMat.emissive.copy(hemiMid).lerp(lampWarm, lamp * 0.45);
     S.waterMat.emissiveIntensity = 0.22 + lamp * 0.2;
   }
+  // grass tuft floor (v0.6.1): at low sun the tuft cards' unlit faces went
+  // black against the lawn. Their emissive (textured by the blade map, set
+  // in trees.js) rides the same horizon colour as the water sheen, warmed
+  // by the lamps after dark - a floor, not a glow: 0.3 keeps midday
+  // unchanged to the eye while golden hour keeps its blade detail.
+  if (S.tuftMat) {
+    S.tuftMat.emissive.copy(hemiMid).lerp(lampWarm, lamp * 0.35);
+    S.tuftMat.emissiveIntensity = 0.3;
+  }
   for (const L of S.lamps) {
     L.sprite.material.opacity = lamp * 0.85;
     L.bulbMat.emissiveIntensity = lamp * 2.2;

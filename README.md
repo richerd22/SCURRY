@@ -38,6 +38,16 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.1
+
+- **Golden hour keeps its grass.** The instanced grass tufts used to
+  crush to black silhouettes against the lawn at low sun - their unlit
+  faces had nothing to live on. The tuft material now carries a
+  horizon-keyed emissive floor (the blade texture doubles as the
+  emissive map, and the day cycle warms it toward lamplight after
+  dark), and the tuft colour range sits a touch lighter. Midday is
+  unchanged to the eye; sunset keeps its blade detail.
+
 ## What's in v0.6
 
 - **The canopy bridges are real limbs now.** Every one of the 49 branch
