@@ -570,23 +570,32 @@ function buildSwanBoats(scene) {
 }
 
 // --- Make Way for Ducklings, Garden path near the Charles St gate ---
+// Polished v0.6.13: necks (mother's tall, ducklings' stubby), flattened
+// bills instead of round cones, tail wedges, chunky duckling heads, and
+// the line straightened into a proper single file on a gentle arc,
+// each duck yawed along the file like it's actually following her.
 function buildDucklings(scene) {
   const g = new THREE.Group();
-  function duck(s) {
+  function duck(s, headScale = 1, neckH = 0.3) {
     const d = new THREE.Group();
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.5 * s, 10, 8), bronze);
     body.scale.set(1, 0.85, 1.3); body.position.y = 0.42 * s; body.castShadow = true; d.add(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24 * s, 9, 7), bronze);
-    head.position.set(0, 0.78 * s, 0.5 * s); head.castShadow = true; d.add(head);
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.09 * s, 0.3 * s, 7), bronze);
-    beak.rotation.x = Math.PI / 2; beak.position.set(0, 0.74 * s, 0.78 * s); d.add(beak);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.16 * s, 0.34 * s, 7), bronze);
+    tail.position.set(0, 0.56 * s, -0.58 * s); tail.rotation.x = -0.7; tail.castShadow = true; d.add(tail);
+    const neck = cyl(0.12 * s, 0.17 * s, neckH * s, bronze, 0, (0.62 + neckH / 2) * s, 0.4 * s, d, 7);
+    neck.rotation.x = 0.22;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24 * s * headScale, 9, 7), bronze);
+    head.position.set(0, (0.68 + neckH) * s, 0.52 * s); head.castShadow = true; d.add(head);
+    const bill = new THREE.Mesh(new THREE.ConeGeometry(0.1 * s, 0.3 * s, 7), bronze);
+    bill.rotation.x = Math.PI / 2; bill.scale.set(1.35, 1, 0.45);
+    bill.position.set(0, (0.66 + neckH) * s, 0.78 * s); d.add(bill);
     return d;
   }
-  const mother = duck(1.15); g.add(mother);
+  const mother = duck(1.15, 1, 0.42); g.add(mother);
   for (let i = 0; i < 8; i++) {
-    const d = duck(0.52);
-    d.position.set(Math.sin(i * 1.7) * 0.35, 0, -0.95 - i * 0.62);
-    d.rotation.y = Math.sin(i * 2.3) * 0.2;
+    const d = duck(0.52, 1.3, 0.18);
+    d.position.set(Math.sin(i * 0.55) * 0.22, 0, -0.95 - i * 0.6);
+    d.rotation.y = -0.2 * Math.cos(i * 0.55);
     g.add(d);
   }
   const x = -78, z = 34, gy = groundHeight(x, z);

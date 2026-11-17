@@ -394,12 +394,13 @@ function swapHeroTrees(scene) {
     });
   }
 
-  // Hero coverage (v0.6.9): a hero clone is 2 primitives replacing a
-  // ~11-mesh procedural tree, so widening coverage IMPROVES the look
-  // and cuts draw calls at once. Picks are deduped through `used` -
-  // every elm becomes a hero at most once. Priority order: the Mall,
-  // the Garden, the Frog Pond grove, the hand-placed grove clusters,
-  // and the spawn lawn (the first trees a new player ever sees).
+  // Hero coverage (v0.6.9, widened v0.6.13): a hero clone is 2
+  // primitives replacing a ~11-mesh procedural tree, so widening
+  // coverage IMPROVES the look and cuts draw calls at once. Picks
+  // are deduped through `used` - every elm becomes a hero at most
+  // once. Priority order: the Mall, the Garden, the Frog Pond
+  // grove, the hand-placed grove clusters, and the spawn lawn
+  // (the first trees a new player ever sees).
   const used = new Set();
   const take = (list, cap) => {
     const out = [];
@@ -416,7 +417,7 @@ function swapHeroTrees(scene) {
   const mallAll = elmVisuals
     .filter(({ rec }) => rec.x >= -30 && rec.x <= 196 && Math.abs(rec.z + 18) <= 13)
     .sort((a, b) => (Math.abs(a.rec.z + 18) - Math.abs(b.rec.z + 18)) || (a.rec.x - b.rec.x));
-  const mall = take(mallAll, 16);
+  const mall = take(mallAll, 22);
   const mallModels = ['Tree2.gltf', 'Tree3.gltf', 'Tree4.gltf'];
 
   // Public Garden specimens: a spread of Garden elms across the west half.
@@ -425,24 +426,24 @@ function swapHeroTrees(scene) {
     .sort((a, b) => a.rec.x - b.rec.x);
   const gardenPick = [];
   if (gardenAll.length) {
-    const stride = Math.max(1, Math.floor(gardenAll.length / 10));
+    const stride = Math.max(1, Math.floor(gardenAll.length / 16));
     for (let i = 0; i < gardenAll.length; i += stride) gardenPick.push(gardenAll[i]);
   }
-  const garden = take(gardenPick, 10);
+  const garden = take(gardenPick, 16);
   const gardenModels = ['Tree3.gltf', 'Tree5.gltf', 'Tree4.gltf', 'Tree2.gltf'];
 
   // Frog Pond grove: the elms ringing the pond + the Hollow tree's grove.
   const pondAll = elmVisuals
     .filter(({ rec }) => Math.hypot(rec.x - 95, rec.z - 12) < 38 || Math.hypot(rec.x - 80, rec.z + 8) < 18)
     .sort((a, b) => Math.hypot(a.rec.x - 95, a.rec.z - 12) - Math.hypot(b.rec.x - 95, b.rec.z - 12));
-  const pond = take(pondAll, 6);
+  const pond = take(pondAll, 8);
 
   // The hand-placed grove clusters (NW Common, SW lawn, NE Common).
   const groveAll = elmVisuals
     .filter(({ rec }) => [[30, -60], [20, 60], [170, -60], [176, 70]]
       .some(([cx, cz]) => Math.hypot(rec.x - cx, rec.z - cz) < 16))
     .sort((a, b) => a.rec.x - b.rec.x);
-  const groves = take(groveAll, 6);
+  const groves = take(groveAll, 8);
 
   // Pathside elms: the trees a walking squirrel actually passes under -
   // placement guarantees they stand >= 3.4 m off a path, the near ones
@@ -450,13 +451,13 @@ function swapHeroTrees(scene) {
   const pathAll = elmVisuals
     .filter(({ rec }) => distToPaths(rec.x, rec.z) < 7.5)
     .sort((a, b) => distToPaths(a.rec.x, a.rec.z) - distToPaths(b.rec.x, b.rec.z));
-  const pathside = take(pathAll, 10);
+  const pathside = take(pathAll, 16);
 
   // Spawn lawn: whatever stands near the player's first view (24, 30).
   const spawnAll = elmVisuals
     .filter(({ rec }) => Math.hypot(rec.x - 24, rec.z - 30) < 32)
     .sort((a, b) => Math.hypot(a.rec.x - 24, a.rec.z - 30) - Math.hypot(b.rec.x - 24, b.rec.z - 30));
-  const spawn = take(spawnAll, 4);
+  const spawn = take(spawnAll, 6);
 
   const place = ({ group, rec }, file) => {
     let use = file;

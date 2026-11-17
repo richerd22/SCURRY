@@ -281,6 +281,21 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   solidBox unchanged. New `washington` shot pose (front three-
   quarter from (-125, 83.5)). Before/after shots verified, zero
   console errors.
+- v0.6.13 (Nov 17 2026): ducklings polished + hero coverage
+  widened. Ducklings (landmarks.js duck()): necks (mother taller),
+  flattened scaled-cone bills, tail wedges, duckling headScale
+  1.3; the file is now a gentle single-file arc (sin(i*0.55)*0.22,
+  yaw -0.2cos(i*0.55)) instead of the old zigzag wander. Hero caps
+  (trees.js swapHeroTrees): Mall 22, Garden 16, pond 8, groves 8,
+  pathside 16, spawn 6 -> measured 55 of 123 elms are heroes,
+  spawn-view draw calls 662 (down from 664 at 39 heroes), tris
+  182k. New shot pose: ducklings. NOTE: the /tmp/shottools harness
+  was wiped by a VM restart mid-round and rebuilt (copies now in
+  ~/workspace/gamewell/harness/); the rebuilt walktest replicates
+  player.js surfaceAt with the game's 1.6 landing tolerance and
+  passes 102/102 / 554.4 m. Two bridges (Common SE pair + Garden
+  pair) have steep ramps with ~0.75 m drops onto stepping boxes -
+  fine under no-fall-damage, noted in case a future test tightens.
 - v0.6.12 (Nov 17 2026): Brewer Fountain + Park St headhouse
   rebuilt (landmarks.js). Fountain: lathe pedestal + two lathe
   bowls (bronzeDS = DoubleSide bronze clone) with water discs,

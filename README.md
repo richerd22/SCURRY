@@ -38,6 +38,19 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.13
+
+- **Mrs. Mallard got her line in order.** The Ducklings were
+  blobs with beak cones wandering in a zigzag. Now mother has a
+  proper neck and a flat bill, the eight ducklings have chunky
+  heads and tail nubs, and the whole family walks a single file
+  on a gentle arc down the Garden path, each duckling angled
+  along the line like it's actually following her.
+- **More real trees.** The detailed sourced elms now stand at 55
+  spots in the park, up from 39 - and the park still renders in
+  fewer draw calls than it did with 39, because one good tree
+  keeps replacing eleven pieces of a fake one.
+
 ## What's in v0.6.12
 
 - **Brewer Fountain is the Brewer Fountain.** Three stacked
