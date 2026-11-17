@@ -271,6 +271,16 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   replacing a ~11-mesh procedural tree, so spawn-view draw calls
   FELL 712 -> 664 (lowq) while tris rose 112k -> 161k. Remaining
   procedural trees are the far scatter fill.
+- v0.6.10 (Nov 17 2026): Washington statue rebuilt (landmarks.js
+  buildWashington). The old horse was boxes with its legs sunk inside
+  the pedestal (verified by a before-shot: a slab with bronze lumps).
+  Now composed spheres (barrel/chest/rump), tapered neck + mane,
+  skull + tapered muzzle + ear cones, two-segment legs (front-left
+  raised, hoof off the stone), two-segment tail, saddle + blanket,
+  rider with thighs / reins arm / coat / tricorn. Pedestal and
+  solidBox unchanged. New `washington` shot pose (front three-
+  quarter from (-125, 83.5)). Before/after shots verified, zero
+  console errors.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

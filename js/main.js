@@ -193,6 +193,7 @@ if (Q.has('shot')) {
     case 'garden': pose(-96, -27, -132, 0); break;
     case 'statehouse': pose(116, -36, 186, -92); break;
     case 'bridge': pose(-110, 3, -132, 0); break; // lagoon bridge elevation from across the water
+    case 'washington': pose(-125, 83.5, -132, 76); break; // the General, Garden south mall, front three-quarter
     case 'bandstand': pose(127, 29, 140, 42); break;
     case 'monument': pose(47, -32, 60, -45); break;
     case 'bench': pose(48.6, -18.6, 52, -22); break;

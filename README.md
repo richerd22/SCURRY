@@ -38,6 +38,16 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.10
+
+- **Washington got his horse back.** The Garden's equestrian statue
+  was, charitably, abstract - a bronze torso on a stone slab, legs
+  lost inside the pedestal. It is now an actual horse: barrel, chest
+  and rump, an arched neck, a tapered muzzle, two-segment legs with
+  one foreleg raised the way the General's stands, a flowing tail,
+  and a rider with thighs, a reins arm and a tricorn. He reads from
+  across the lawn now.
+
 ## What's in v0.6.9
 
 - **The trees grew up.** The park's procedural elms wore perfect

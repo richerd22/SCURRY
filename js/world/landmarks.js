@@ -390,26 +390,84 @@ function buildDucklings(scene) {
 }
 
 // --- George Washington statue, Garden south mall ---
+// Rebuilt v0.6.10: the old horse was boxes with its legs buried inside
+// the pedestal. Now a composed equestrian silhouette - barrel/chest/
+// rump spheres, two-segment legs (one foreleg raised, as the General's
+// horse stands), arched neck, tapered muzzle, and a rider with thighs,
+// reins arm and a tricorn. All bronze, all procedural.
 function buildWashington(scene) {
   const g = new THREE.Group();
   const x = -132, z = 76, gy = groundHeight(x, z);
   box(4.4, 2.2, 3.2, granite, 0, 1.1, 0, g);
   box(3.6, 0.7, 2.6, stone, 0, 2.55, 0, g);
-  // horse, abstract low-poly
+  const TOP = 2.9; // pedestal cap surface; hooves stand here
   const horse = new THREE.Group();
-  const body = box(1, 1.05, 2.5, bronze, 0, 3.4, 0, horse);
-  body.rotation.x = -0.1;
-  const neck = box(0.55, 1.3, 0.8, bronze, 0, 4.2, 1.35, horse); neck.rotation.x = 0.6;
-  box(0.42, 0.5, 1, bronze, 0, 4.75, 1.9, horse).rotation.x = 0.5;
-  for (const [lx, lz, lift] of [[-0.32, 0.9, 0], [0.32, 0.9, 0.35], [-0.32, -0.95, 0.3], [0.32, -0.95, 0]]) {
-    const leg = cyl(0.11, 0.09, 1.6 - lift, bronze, lx, 2.1 + lift / 2, lz, horse, 6);
-    if (lift) leg.rotation.x = -0.5;
+  const sph = (r, sx, sy, sz, px, py, pz, parent) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 9), bronze);
+    m.scale.set(sx, sy, sz); m.position.set(px, py, pz);
+    m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+  };
+  // barrel + chest + rump: three overlapping spheres read as one body
+  sph(1, 0.58, 0.60, 1.28, 0, TOP + 1.80, 0, horse);
+  sph(0.54, 1, 1, 1, 0, TOP + 1.88, 0.92, horse);   // chest
+  sph(0.57, 1, 1, 1, 0, TOP + 1.92, -0.92, horse);  // rump
+  // neck: tapered, leaning up-forward off the chest, plus a mane strip
+  const neck = cyl(0.21, 0.33, 1.25, bronze, 0, TOP + 2.62, 1.42, horse, 9);
+  neck.rotation.x = 0.55;
+  const mane = box(0.09, 1.05, 0.30, bronze, 0, TOP + 2.72, 1.16, horse, false);
+  mane.rotation.x = 0.55;
+  // head: skull + tapered muzzle angled down, two ear cones
+  sph(0.30, 0.92, 1.0, 1.35, 0, TOP + 3.22, 1.86, horse);
+  const muzzle = cyl(0.10, 0.155, 0.52, bronze, 0, TOP + 3.02, 2.18, horse, 8);
+  muzzle.rotation.x = 1.05;
+  for (const ex of [-0.11, 0.11]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.22, 6), bronze);
+    ear.position.set(ex, TOP + 3.52, 1.70); ear.rotation.x = -0.25; ear.castShadow = true;
+    horse.add(ear);
   }
-  box(0.3, 0.9, 0.5, bronze, 0, 3.6, -1.55, horse).rotation.x = -0.4; // tail
-  // rider
-  cyl(0.2, 0.26, 1.1, bronze, 0, 4.6, -0.1, horse, 7);
-  const rh = new THREE.Mesh(new THREE.SphereGeometry(0.21, 9, 7), bronze);
-  rh.position.set(0, 5.35, -0.1); rh.castShadow = true; horse.add(rh);
+  // legs: two segments each. Front-left is raised (bent, hoof off the
+  // stone) - the pose the real statue holds.
+  function leg(lx, lz, raised) {
+    if (raised) {
+      const up = cyl(0.105, 0.135, 0.85, bronze, lx, TOP + 1.42, lz + 0.22, horse, 7);
+      up.rotation.x = -0.85;
+      const lo = cyl(0.075, 0.095, 0.72, bronze, lx, TOP + 1.02, lz + 0.52, horse, 7);
+      lo.rotation.x = 0.75;
+      box(0.15, 0.08, 0.24, bronze, lx, TOP + 0.70, lz + 0.42, horse, false);
+    } else {
+      cyl(0.11, 0.14, 0.88, bronze, lx, TOP + 1.28, lz, horse, 7);
+      cyl(0.075, 0.10, 0.82, bronze, lx, TOP + 0.44, lz + 0.03, horse, 7);
+      box(0.16, 0.09, 0.24, bronze, lx, TOP + 0.045, lz + 0.04, horse, false);
+    }
+  }
+  leg(-0.30, 0.82, true);    // front-left raised
+  leg(0.30, 0.82, false);    // front-right
+  leg(-0.30, -0.85, false);  // hind-left
+  leg(0.30, -0.85, false);   // hind-right
+  // tail: two tapering segments flowing off the rump
+  const tail1 = cyl(0.07, 0.13, 0.75, bronze, 0, TOP + 1.95, -1.52, horse, 7);
+  tail1.rotation.x = -0.45;
+  const tail2 = cyl(0.045, 0.07, 0.65, bronze, 0, TOP + 1.45, -1.72, horse, 7);
+  tail2.rotation.x = -0.18;
+  // saddle + draped blanket
+  box(1.12, 0.34, 1.18, bronze, 0, TOP + 2.18, -0.05, horse, false);
+  box(0.92, 0.13, 0.98, bronze, 0, TOP + 2.38, -0.05, horse, false);
+  // the General: thighs down the horse's sides, torso, reins arm, tricorn
+  for (const s of [-1, 1]) {
+    const thigh = cyl(0.095, 0.115, 0.78, bronze, s * 0.44, TOP + 2.02, 0.12, horse, 7);
+    thigh.rotation.z = s * -0.30; thigh.rotation.x = 0.35;
+  }
+  const torso = cyl(0.20, 0.27, 0.98, bronze, 0, TOP + 2.95, -0.10, horse, 9);
+  torso.rotation.x = 0.07;
+  const coat = cyl(0.36, 0.30, 0.42, bronze, 0, TOP + 2.48, -0.30, horse, 9);
+  coat.rotation.x = -0.25;
+  const armR = cyl(0.07, 0.085, 0.72, bronze, 0.34, TOP + 2.90, 0.28, horse, 6);
+  armR.rotation.x = 0.85; armR.rotation.z = -0.35;
+  const armL = cyl(0.07, 0.085, 0.70, bronze, -0.34, TOP + 2.82, -0.18, horse, 6);
+  armL.rotation.z = 0.38;
+  sph(0.20, 1, 1.08, 1, 0, TOP + 3.62, -0.06, horse); // head
+  cyl(0.31, 0.31, 0.05, bronze, 0, TOP + 3.76, -0.06, horse, 12); // tricorn brim
+  sph(0.19, 1, 0.62, 1, 0, TOP + 3.80, -0.06, horse);             // tricorn crown
   g.add(horse);
   g.position.set(x, gy, z);
   scene.add(g);
