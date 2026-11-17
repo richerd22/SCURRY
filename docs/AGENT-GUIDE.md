@@ -525,6 +525,65 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   (texture-first behind them), and Beacon's curved bay
   turrets keep their painted windows (flat panes cannot
   follow the curve).
+- v0.6.24 (Nov 17 2026): TD GARDEN - integrated in code,
+  ASSET HELD on licensing (js/systems/garden.js, new; food.js
+  gains 'popcorn'). The second burrow destination: a door on
+  the rat market's WEST wall (NORTHBOUND / THE OTHER GARDEN -
+  the stall owns the north wall, Fenway owns the east), "E -
+  take the north run" -> emergence through the parquet just
+  east of the centre-court logo; GDN anchor (-6000, 0, 6000).
+  The building is the celtics+arena INTERIOR from Richard's
+  haul (parquet, bowl, jumbotron), converted in-sandbox from
+  its DAE twin by the banked numpy converter
+  (assets-library/models/td-garden-interior/convert_dae_to_glb.py):
+  159,329 tris rendered (134,161 unique declared; component
+  instancing makes up the rest), 83 materials, 38 textures,
+  6.99 MB. Calibration: the DAE (inches, Z-up) measures ~2x
+  the real arena, so in game at uniform 0.5, placement puts
+  the parquet centre on the GDN origin, floor y=0; the court
+  runs local x -15.1..15.1, the jumbotron screens hang at
+  y 9.8..14.7 over centre court. LICENSING (the point of the
+  round): the haul recorded NO author/license for this file,
+  so the GLB is banked in the asset library ONLY - it is NOT
+  in play/assets/models/ and was NOT pushed. garden.js gates
+  the load behind a RELEASED flag (false) so the live site
+  never even requests it (an un-gated load 404s on every boot
+  and logs a console resource error for every player - the
+  bar is a clean console); the harness sets
+  window.__scurryGardenAsset and route-fulfills the GLB from
+  the library for local proof. Release = Richard's licensing
+  call, then flip RELEASED + drop the file in; no other code
+  change. Ground: Fenway's Raycaster grid does not scale to
+  159k tris, so sampleHeights buckets the model's triangles
+  on a 4 m XZ grid and answers columns with 2D barycentric
+  tests; highest surface under a 19 m cap wins (top rows
+  ~17.5 m, roof ~26 m), the hanging jumbotron rig (RIG_MATS,
+  surveyed material names) excluded so centre court samples
+  the parquet. Clamp = 24-gon ellipse inside the bowl
+  footprint. Court + lower bowl are traversable (the bowl
+  pose settles at 5.22 m on a tier). Lighting is arena
+  lighting: 5 constant PointLights + emissive Jumbotron/logo
+  screens - the 23:01 shot is as lit as the 11:01 one,
+  independent of the day cycle. Life: 5 caps (trophy on the
+  centre-court logo, one under each basket, two in the bowl)
+  + popcorn x2 / peanut via spawnFood. New shot poses:
+  tdgarden, tdgardenbowl, tdgardenjumbo ('garden' was
+  already the Public Garden pose - the first cut collided
+  and silently posed in the park; check new pose names
+  against the switch). Verified LOCALLY with the asset
+  route-fulfilled: court (player y 0.00 on the parquet),
+  bowl (settles 5.22 m), jumbo (TD GARDEN signage + Celtics
+  screens legible overhead), night court, the market door;
+  without the asset: clean console, the zone is apron + hole
+  + lights and works. Walktest 102/102, zero console errors
+  everywhere. Gaps, plainly: the live Garden has no building
+  until the license clears (by design); the model's own
+  palette runs pale/warm under SwiftShader (lowq, no PMREM -
+  wants a real-GPU eyeball like everything else); one
+  jumbotron face's texture reads mirrored (the source
+  model's own back-face painting, not the converter); the
+  scorer's-table strip samples as a ~2.2 m walkable ledge -
+  a feature, probably.
 - Roadmap (owner's direction): City Hall as the next
   teleport-reached expansion map (Fenway shipped in v0.6.22;
   Sketchfab models are WANTED in the ledger - account-gated,

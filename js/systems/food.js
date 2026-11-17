@@ -14,6 +14,7 @@ const FOOD_STYLE = {
   pretzel:  { color: 0xa06a28, s: 0.06 },
   sandwich: { color: 0xe3d3a2, s: 0.07 },
   peanut:   { color: 0xc8a86a, s: 0.045 },
+  popcorn:  { color: 0xf5edd6, s: 0.05 },   // arena spill (TD Garden destination)
   croissant:{ color: 0xd9a860, s: 0.075 },  // rat-market premium; buries for 3 (BURY_VALUES)
 };
 // stash value per food type when buried; everything is 1 except the

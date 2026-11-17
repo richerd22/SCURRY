@@ -34,6 +34,7 @@ export const S = {
     inHollow: false,
     inBurrow: false,    // underground in the burrow network (systems/burrows.js)
     inFenway: false,    // popped up at Fenway Park (systems/fenway.js)
+    inGarden: false,    // popped up at TD Garden (systems/garden.js)
     moving: false,
     sprinting: false,
   },

@@ -17,6 +17,7 @@ import { buildHawk, updateHawk, biteHawk } from './systems/hawk.js';
 import { buildHollow, initHollowInteractables, updateHollow } from './systems/hollow.js';
 import { buildBurrows, initBurrows, updateBurrows, debugEnterBurrow } from './systems/burrows.js';
 import { buildFenway, initFenway, updateFenway, debugEnterFenway } from './systems/fenway.js';
+import { buildGarden, initGarden, updateGarden, debugEnterGarden } from './systems/garden.js';
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
@@ -62,10 +63,12 @@ buildGeese(scene);
 buildCrows(scene);
 buildBurrows(scene);
 buildFenway(scene);
+buildGarden(scene);
 initFood();
 initHollowInteractables();
 initBurrows();
 initFenway();
+initGarden();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
@@ -237,6 +240,9 @@ if (Q.has('shot')) {
     case 'fenwaymonster': debugEnterFenway('monster'); break; // centre field, facing the wall
     case 'fenwaywall': debugEnterFenway('wall'); break;       // at the Monster's feet, looking up
     case 'fenwaytop': debugEnterFenway('top'); break;         // ON the Monster, looking back at the yard
+    case 'tdgarden': debugEnterGarden('court'); break;        // centre court, the parquet + the screen ('garden' was taken - the Public Garden)
+    case 'tdgardenbowl': debugEnterGarden('bowl'); break;     // lower bowl seats, across the court
+    case 'tdgardenjumbo': debugEnterGarden('jumbo'); break;   // centre court, nose up at the jumbotron
     case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
     case 'geese': // on the deck, in warn range of the flock but outside charge range
       pose(-132, 12, -132, 0); P.pos.y = 1.15; P.grounded = true;
@@ -296,7 +302,7 @@ function perfLadder(dt) {
   }
 }
 function warnings() {
-  if (S.player.inHollow || S.player.inBurrow || S.player.inFenway) return '';
+  if (S.player.inHollow || S.player.inBurrow || S.player.inFenway || S.player.inGarden) return '';
   if (S.ranger && S.ranger.state === 'chase') return '! THE RANGER IS AFTER YOU - CLIMB SOMETHING !';
   if (S.gooseWarn > 0) return '! THE GEESE ARE OBJECTING - WAIT, BRIBE THEM, OR GO AROUND !';
   if (S.hawkFlash > 0) return '! HAWK DUA HAS YOU MARKED - GET UNDER COVER !';
@@ -320,6 +326,7 @@ function loop() {
     updateHollow(dt);
     updateBurrows(dt);
     updateFenway(dt);
+    updateGarden(dt);
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateCanopy(dt);

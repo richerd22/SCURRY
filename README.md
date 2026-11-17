@@ -38,6 +38,22 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.24
+
+- **The other Garden.** The rat market has a second door now -
+  west wall, marked NORTHBOUND / THE OTHER GARDEN. Take the north
+  run and you pop up through the parquet at centre court in an
+  empty TD Garden: the full seating bowl, the banners, the big
+  screen glowing over the court. The arena lights burn day and
+  night - it's a game that isn't happening, lit like one that
+  is. Run the parquet, climb the seats, hunt the caps (one is
+  sitting on the centre-court logo, because it had to be).
+  Spilled popcorn included. One honest note: the building is a
+  sourced model whose paperwork is still being sorted out, so
+  the door, the run and the lights ship now and the Garden
+  itself fades in when its license clears - the game doesn't
+  wait on it either way.
+
 ## What's in v0.6.23
 
 - **Fenway after dark, and a squirrel on the Monster.** The
@@ -274,6 +290,11 @@ poly.pizza):
 - Fenway Park - **Bruce Garner, Nathan King, and Mason Thrall**
   (3D Warehouse; used under the 3D Warehouse Terms of Use, not CC0 -
   this line is the exception to the "all CC0" note above)
+- TD Garden interior - author and license **not recorded** (model
+  haul): the converted model is held in the project asset library
+  and is **not distributed with the game**; `garden.js` loads it
+  best-effort if it is ever cleared and placed at
+  `assets/models/garden.glb`
 
 Everything else is procedural: canvas textures, code-built landmarks, and
 synthesized WebAudio. No AI-generated imagery anywhere, ever.
@@ -290,7 +311,9 @@ js/systems/         player.js - humans.js - food.js - dogs.js - ranger.js -
                     hollow.js - burrows.js (tunnels + rat market) -
                     geese.js - crows.js - hawk.js - canopy.js - save.js -
                     daycycle.js - audio.js - models.js (GLB loading) -
-                    fenway.js (Fenway Park, via the burrows' long run)
+                    fenway.js (Fenway Park, via the burrows' long run) -
+                    garden.js (TD Garden, via the burrows' north run;
+                    model license-held, loads best-effort)
 js/ui/              hud.js - touch.js (mobile controls)
 assets/models/      sourced GLBs in use (originals + ledger in the library)
 docs/               PLAYER-FAQ.md - AGENT-GUIDE.md
