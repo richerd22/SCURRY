@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundHeight, terrainDisc } from './world.js';
-import { graniteTex, stateHouseFacade, glowTex } from './textures.js';
+import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex } from './textures.js';
 
 const graniteT = graniteTex();
 const stone = new THREE.MeshStandardMaterial({ map: graniteT, color: 0xd8d2c4, roughness: 0.9 });
@@ -51,20 +51,53 @@ export function buildLandmarks(scene) {
 }
 
 // --- Massachusetts State House, NE hill edge, gold dome ---
+const drumMat = new THREE.MeshStandardMaterial({ map: drumTex(), roughness: 0.75 });
+const arcadeMat = new THREE.MeshStandardMaterial({ map: arcadeTex(), roughness: 0.9 });
 function buildStateHouse(scene) {
   const g = new THREE.Group();
   const x = 186, z = -92, gy = groundHeight(x, z);
   box(56, 13, 16, brick, 0, 6.5, 0, g);                       // main block
   box(60, 2, 19, white, 0, 1, 0, g);                          // base trim
+  box(56, 1.9, 0.25, arcadeMat, 0, 1.0, 9.56, g, false);      // ground-floor arcade on the plinth face
   box(58, 1.6, 18, white, 0, 13.6, 0, g);                     // cornice
+  for (const px of [-27.6, 27.6]) box(0.9, 11, 0.3, white, px, 7.2, 8.08, g, false); // corner pilasters
+  // balustrade along the front cornice
+  box(58, 0.38, 0.3, white, 0, 14.62, 8.2, g, false);
+  for (let px = -27; px <= 27; px += 3.4) box(0.22, 0.55, 0.22, white, px, 14.35, 8.2, g, false);
   box(18, 5, 12, brick, 0, 15.5, 0, g);                       // drum block
   for (let i = -2; i <= 2; i++) cyl(0.55, 0.55, 7, white, i * 3.4, 9.5, 9.6, g, 8); // portico columns
   box(20, 1.2, 4, white, 0, 13.4, 9.6, g);                    // portico lintel
-  cyl(4.6, 5.2, 3.4, white, 0, 19.5, 0, g, 16);               // dome drum
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(4.6, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), gold);
-  dome.position.set(0, 21.2, 0); dome.castShadow = true;
-  g.add(dome);
-  cyl(0.3, 0.5, 2.6, gold, 0, 27.2, 0, g, 8);                 // lantern spike
+  { // triangular pediment over the portico - the Bulfinch signature
+    const tri = new THREE.Shape();
+    tri.moveTo(-10.6, 0); tri.lineTo(10.6, 0); tri.lineTo(0, 2.7); tri.closePath();
+    const ped = new THREE.Mesh(new THREE.ExtrudeGeometry(tri, { depth: 3.2, bevelEnabled: false }), white);
+    ped.position.set(0, 14.05, 8.0);
+    ped.castShadow = true; ped.receiveShadow = true;
+    g.add(ped);
+  }
+  cyl(4.6, 5.2, 3.4, drumMat, 0, 19.5, 0, g, 20);             // dome drum, windowed
+  cyl(5.35, 5.35, 0.45, white, 0, 21.3, 0, g, 20);            // drum cornice ring
+  { // the dome: a lathe bell profile, not a hemisphere
+    const prof = [[4.95, 0], [4.9, 0.5], [4.55, 1.6], [3.9, 2.7], [2.9, 3.6], [1.7, 4.25], [0.55, 4.6], [0.02, 4.7]]
+      .map(([r, y]) => new THREE.Vector2(r, y));
+    const dome = new THREE.Mesh(new THREE.LatheGeometry(prof, 22), gold);
+    dome.position.set(0, 21.5, 0); dome.castShadow = true;
+    g.add(dome);
+  }
+  // lantern: columned cupola, mini dome, gilded pinecone finial
+  cyl(1.05, 1.2, 0.5, white, 0, 26.35, 0, g, 12);
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2;
+    cyl(0.09, 0.09, 1.3, white, Math.cos(a) * 0.8, 27.25, Math.sin(a) * 0.8, g, 6);
+  }
+  cyl(1.12, 1.12, 0.3, white, 0, 28.05, 0, g, 12);
+  const miniDome = new THREE.Mesh(new THREE.SphereGeometry(1.0, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), gold);
+  miniDome.position.set(0, 28.2, 0); miniDome.castShadow = true;
+  g.add(miniDome);
+  const cone = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 7), gold);
+  cone.position.set(0, 29.45, 0); cone.scale.set(1, 1.25, 1); cone.castShadow = true;
+  g.add(cone);
+  cyl(0.05, 0.05, 0.5, gold, 0, 29.95, 0, g, 6);
   // (windows live in the facade texture now - they glow at dusk via emissiveMap)
   g.position.set(x, gy, z);
   scene.add(g);

@@ -188,6 +188,52 @@ export function cityFacade(seed, base) {
   return { map, emissiveMap };
 }
 
+// --- State House dome drum: white drum, arched windows all around ---
+export function drumTex() {
+  const [cv, g] = canvas(512, 128);
+  const R = rng(77);
+  g.fillStyle = '#e6e2d8'; g.fillRect(0, 0, 512, 128);
+  for (let i = 0; i < 900; i++) {
+    g.fillStyle = 'rgba(120,112,96,' + R() * 0.12 + ')';
+    g.fillRect(R() * 512, R() * 128, 3, 3);
+  }
+  for (let i = 0; i < 8; i++) {
+    const x = 16 + i * 64;
+    g.fillStyle = '#f7f4ec';
+    g.beginPath();
+    g.moveTo(x - 4, 112); g.lineTo(x - 4, 34); g.arc(x + 16, 34, 20, Math.PI, 0); g.lineTo(x + 36, 112); g.closePath(); g.fill();
+    g.fillStyle = '#26303c';
+    g.beginPath();
+    g.moveTo(x, 108); g.lineTo(x, 36); g.arc(x + 16, 36, 16, Math.PI, 0); g.lineTo(x + 32, 108); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(190,214,235,0.45)'; g.fillRect(x + 4, 44, 10, 30);
+    g.fillStyle = '#f7f4ec'; g.fillRect(x + 14, 36, 3, 72);
+  }
+  const t = toTex(cv);
+  t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
+
+// --- State House ground-floor arcade: dark arched openings on the plinth ---
+export function arcadeTex() {
+  const [cv, g] = canvas(1024, 64);
+  const R = rng(41);
+  g.fillStyle = '#e9e6dd'; g.fillRect(0, 0, 1024, 64);
+  for (let i = 0; i < 1600; i++) {
+    g.fillStyle = 'rgba(120,112,96,' + R() * 0.1 + ')';
+    g.fillRect(R() * 1024, R() * 64, 3, 2);
+  }
+  for (let i = 0; i < 11; i++) {
+    const x = 26 + i * 92, w = 42;
+    g.fillStyle = '#221a15';
+    g.beginPath();
+    g.moveTo(x, 64); g.lineTo(x, 28); g.arc(x + w / 2, 28, w / 2, Math.PI, 0); g.lineTo(x + w, 64); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(0,0,0,0.4)'; g.fillRect(x + 6, 42, w - 12, 22);
+    g.fillStyle = 'rgba(214,190,150,0.25)'; g.fillRect(x + 4, 30, 3, 30);
+    g.fillStyle = '#f4f1e8'; g.fillRect(x + w / 2 - 4, 1, 8, 11); // keystone
+  }
+  return toTex(cv);
+}
+
 // --- grass blades alpha texture for instanced tufts ---
 export function grassBladeTex() {
   const [cv, g] = canvas(128, 128);
