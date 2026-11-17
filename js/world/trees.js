@@ -105,10 +105,64 @@ export function buildTrees(scene) {
   buildUnderstory(scene);
   buildHollowTree(scene);
   swapHeroTrees(scene);
+  buildMallWaypoint(scene);
   // canopy highways go last: every tree/platform/solid must be registered
   // first (systems/canopy.js reads the finished registries, incl. the snag
   // it adds itself for the Charles Street crossing)
   buildCanopy(scene);
+}
+
+// The western Mall waypoint elm (v0.6.2): the two elms flanking the west
+// end of the Mall stand 27.9 m apart - far beyond bridge reach - which
+// left the whole western Mall row off the canopy network. One planted
+// elm at their midpoint, broad-crowned like the old Mall elms, brings
+// both legs inside admission (d ~13.9 m, crown gap < 7 m, dy < 0.7 m).
+// Fixed constants, no rnd(): the seeded scatter's park must not move.
+// Appended after the scatter + hero swap, before buildCanopy, exactly
+// like the Hollow tree - registries only ever grow at the tail.
+function buildMallWaypoint(scene) {
+  const x = -20.8, z = -12.8, gy = groundHeight(x, z);
+  const canopyR = 4.5, canopyY = 9.6;
+  const h = canopyY - gy - 0.6;
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.58, 1, 7), trunkMat);
+  trunk.scale.set(1, h, 1);
+  trunk.position.y = h / 2;
+  trunk.castShadow = true;
+  tree.add(trunk);
+  const branchGeo = new THREE.CylinderGeometry(0.09, 0.16, 1, 5);
+  for (let i = 0; i < 4; i++) {
+    const b = new THREE.Mesh(branchGeo, trunkMat);
+    const bl = 2.6 + (i % 2) * 0.7;
+    b.scale.set(1, bl, 1);
+    b.position.y = h * (0.66 + (i % 3) * 0.1);
+    b.rotation.z = 0.85;
+    b.rotation.y = i * 1.7 + 0.4;
+    b.translateY(bl / 2);
+    tree.add(b);
+  }
+  const leafGeo = new THREE.SphereGeometry(1, 10, 8);
+  const blobs = [[0, 0, 1], [1.9, 0.7, 0.72], [-1.8, 0.5, 0.78], [0.6, -1.7, 0.7], [-0.9, 1.6, 0.66]];
+  blobs.forEach(([bx, bz, bs], i) => {
+    const leafMesh = new THREE.Mesh(leafGeo, leafMats[i % leafMats.length]);
+    const r = canopyR * bs;
+    leafMesh.scale.set(r, r * 0.55, r);
+    leafMesh.position.set(bx, h + 0.6 + (i % 2) * 0.5, bz);
+    leafMesh.castShadow = true;
+    tree.add(leafMesh);
+  });
+  const crown = new THREE.Mesh(leafGeo, leafMats[2]);
+  const cr = canopyR * 0.66;
+  crown.scale.set(cr, cr * 0.6, cr);
+  crown.position.set(0, h + 1.7, 0);
+  crown.castShadow = true;
+  tree.add(crown);
+  tree.position.set(x, gy, z);
+  scene.add(tree);
+  const rec = { x, z, r: 0.55, gy, trunkTop: gy + h, canopyY, canopyR };
+  S.trees.push(rec);
+  S.platforms.push({ x, z, r: canopyR * 0.92, y: canopyY - 0.55 });
+  S.solids.push({ x, z, r: 0.62 });
 }
 
 // Bushes + grass tufts: the squirrel-height detail layer. At 25cm eye height

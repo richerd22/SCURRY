@@ -147,8 +147,8 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   closed). fadeCatch in main.js now takes optional {pos, message,
   grounded} - ranger behaviour unchanged.
 - Known warts: foreground grass tufts read as dark silhouettes at
-  golden hour; western Mall row has no canopy bridge (crowns 27.9 m
-  apart - needs a planted tree/snag if wanted); split tree GLBs are
+  golden hour (floored in v0.6.1, still wants a real-GPU eyeball);
+  split tree GLBs are
   ~2.3 MB each (shared textures duplicated per file); during a hawk
   screech the HUD warning reuses the dog-scent line (shared
   spottedFlash).
@@ -201,6 +201,13 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   t=11 midday unchanged; zero console errors. Caveat: shot mode is
   lowq (no PMREM env), so the full golden-hour lawn grade still wants
   a real-GPU eyeball.
+- v0.6.2 (Nov 16 2026): western Mall waypoint elm (`trees.js`
+  `buildMallWaypoint` - one fixed-constant elm at (-20.8,-12.8),
+  canopyR 4.5, canopyY 9.6, appended after the scatter so the seeded
+  park layout is untouched). The 27.9 m Mall gap now bridges as two
+  legs (13.9 m / gap 6.4 and 14.0 m / gap 6.9): network is 51 bridges /
+  554.4 m, walktest 102/102, zero console errors. The old "western
+  Mall row has no canopy bridge" wart is CLOSED.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

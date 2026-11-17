@@ -38,6 +38,15 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.2
+
+- **The western Mall is on the network now.** The two elms flanking
+  the west end of the Mall stood 27.9 m apart - no bridge could span
+  it, and the whole western row was a canopy dead end. A broad-crowned
+  waypoint elm now stands at their midpoint (the Mall always had one
+  more elm in it, honestly), and both legs bridge cleanly: the network
+  is 51 routes and 554 m, every endpoint walk re-verified.
+
 ## What's in v0.6.1
 
 - **Golden hour keeps its grass.** The instanced grass tufts used to
