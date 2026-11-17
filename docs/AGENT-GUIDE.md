@@ -281,6 +281,21 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   solidBox unchanged. New `washington` shot pose (front three-
   quarter from (-125, 83.5)). Before/after shots verified, zero
   console errors.
+- v0.6.11 (Nov 17 2026): swan boats rebuilt (landmarks.js
+  buildSwanBoats). Extruded plan-view hull (raked bow, rail cap,
+  plank deck), 5 slatted bench rows, arched canvas canopy (open
+  cylinder segment) on slim posts, and a composed mute swan at the
+  stern: lathe-free sphere body/breast/folded wings/tail, ONE
+  CatmullRom tube S-neck, head + black mask + knob + orange beak.
+  The boats DRIFT: userData.drift ellipses on each lagoon lobe
+  (west cx lagoon.x-22 rx8/rz4.5, 170 s; east cx lagoon.x+22 rx7/
+  rz4, 190 s reversed) - daycycle's boat loop integrates drift +
+  bob + roll and yaws to the tangent. Loops verified clear of the
+  bridge deck box (x -134.7..-129.3) and inside the lagoon ellipse
+  with hull margin; goose deck logic untouched (boats never touch
+  platformBoxes). New `swanboats` shot pose (south shore, close on
+  the west loop). Hollow gossip line updated (they no longer
+  "sleep at the dock"). Walktest 102/102, zero console errors.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundHeight, terrainDisc } from './world.js';
-import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex } from './textures.js';
+import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
 const stone = new THREE.MeshStandardMaterial({ map: graniteT, color: 0xd8d2c4, roughness: 0.9 });
@@ -323,39 +323,119 @@ function buildBridge(scene) {
   S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: 17.5, maxZ: 21.5, y: 0.5 });
 }
 
-// --- swan boats docked on the lagoon ---
+// --- swan boats on the lagoon ---
+// Rebuilt v0.6.11: the old boats were a slab hull, three bench backs and
+// a neck of stacked cylinders. Now: an extruded plan-view hull with a
+// raked bow, slatted bench rows under an arched canvas canopy, and the
+// full mute swan at the stern - S-curve neck (one swept tube), folded
+// wings, black knob + mask, orange beak. The boats DRIFT: each runs a
+// slow ellipse on its own lobe of the lagoon (daycycle owns the motion
+// via userData.drift), never crossing the bridge or the goose deck.
+const swanBlack = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.55 });
+const swanBeak = new THREE.MeshStandardMaterial({ color: 0xe07b28, roughness: 0.55 });
+const benchWood = new THREE.MeshStandardMaterial({ color: 0x8a6a42, roughness: 0.85 });
 function buildSwanBoats(scene) {
-  const boatMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: 0.7 });
-  const canopyMat = new THREE.MeshStandardMaterial({ color: 0x9db8c9, roughness: 0.8 });
-  function boat(x, z, rotY) {
-    const g = new THREE.Group();
-    box(3.2, 0.8, 8.5, boatMat, 0, 0.4, 0, g);
-    box(3.4, 0.25, 8.7, darkWood, 0, 0.9, 0, g);
-    for (let i = 0; i < 3; i++) box(2.8, 0.5, 0.3, darkWood, 0, 1.1, -2.6 + i * 2.4, g); // bench backs
-    for (const px of [-1.3, 1.3]) cyl(0.07, 0.07, 1.7, darkWood, px, 1.7, 0.5, g, 6);
-    const can = box(3.3, 0.18, 5.4, canopyMat, 0, 2.6, 0.5, g);
-    can.rotation.x = 0.03;
-    // the swan: neck curve from cylinders + head
-    const neckMat = white;
-    let nx = 0, ny = 1.2, nz = -4.6;
-    for (let i = 0; i < 4; i++) {
-      const seg = cyl(0.16 - i * 0.02, 0.18 - i * 0.02, 0.85, neckMat, nx, ny + i * 0.55, nz + i * 0.16, g, 8);
-      seg.rotation.x = -0.35 + i * 0.22;
+  const boatMat = new THREE.MeshStandardMaterial({ color: 0xf0ebdd, roughness: 0.6 });
+  const canvasMat = new THREE.MeshStandardMaterial({ color: 0xf4f0e4, roughness: 0.9, side: THREE.DoubleSide });
+  const deckMat = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.9 });
+
+  // plan-view hull outline (shape y = -world z: bow at shape +y)
+  const hullShape = new THREE.Shape();
+  hullShape.moveTo(0, 4.8);
+  hullShape.quadraticCurveTo(0.95, 4.5, 1.58, 3.3);
+  hullShape.lineTo(1.75, -3.5);
+  hullShape.quadraticCurveTo(1.76, -4.25, 1.45, -4.45);
+  hullShape.lineTo(-1.45, -4.45);
+  hullShape.quadraticCurveTo(-1.76, -4.25, -1.75, -3.5);
+  hullShape.lineTo(-1.58, 3.3);
+  hullShape.quadraticCurveTo(-0.95, 4.5, 0, 4.8);
+  const hullGeo = new THREE.ExtrudeGeometry(hullShape, { depth: 0.72, bevelEnabled: false });
+  hullGeo.rotateX(-Math.PI / 2);
+
+  function swan(g) {
+    const s = new THREE.Group();
+    // body + breast + folded wings + upswept tail
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.62, 14, 11), white);
+    body.scale.set(1.02, 0.78, 1.42); body.position.set(0, 0.42, 0.1); body.castShadow = true; s.add(body);
+    const breast = new THREE.Mesh(new THREE.SphereGeometry(0.34, 11, 9), white);
+    breast.scale.set(0.9, 1.05, 0.9); breast.position.set(0, 0.62, -0.55); breast.castShadow = true; s.add(breast);
+    for (const sx of [-1, 1]) {
+      const wing = new THREE.Mesh(new THREE.SphereGeometry(0.5, 11, 9), white);
+      wing.scale.set(0.32, 0.55, 1.25);
+      wing.position.set(sx * 0.52, 0.66, 0.12);
+      wing.rotation.z = -sx * 0.15; wing.rotation.x = -0.1;
+      wing.castShadow = true; s.add(wing);
     }
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), neckMat);
-    head.position.set(0, 3.6, -3.8); head.scale.set(0.8, 0.85, 1.35); head.castShadow = true; g.add(head);
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.42, 8),
-      new THREE.MeshStandardMaterial({ color: 0xe07b28, roughness: 0.6 }));
-    beak.rotation.x = -Math.PI / 2 - 0.25; beak.position.set(0, 3.5, -4.25); g.add(beak);
-    g.position.set(x, 0.05, z);
-    g.rotation.y = rotY;
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 8), white);
+    tail.position.set(0, 0.78, 0.98); tail.rotation.x = 0.93; tail.castShadow = true; s.add(tail);
+    // the S-neck: one swept tube, base at the breast, crown curving back
+    const neckPts = [
+      new THREE.Vector3(0, 0.62, -0.52), new THREE.Vector3(0, 1.15, -0.72),
+      new THREE.Vector3(0, 1.7, -0.62), new THREE.Vector3(0, 2.18, -0.7),
+      new THREE.Vector3(0, 2.46, -0.9),
+    ];
+    const neck = new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(neckPts), 20, 0.155, 9), white);
+    neck.castShadow = true; s.add(neck);
+    // head + mute-swan face: black mask + knob, orange beak tipped down
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 11, 9), white);
+    head.scale.set(0.78, 0.82, 1.35); head.position.set(0, 2.5, -0.98); head.castShadow = true; s.add(head);
+    const mask = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 7), swanBlack);
+    mask.scale.set(0.95, 0.75, 0.7); mask.position.set(0, 2.51, -1.1); s.add(mask);
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), swanBlack);
+    knob.position.set(0, 2.61, -1.04); s.add(knob);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.4, 8), swanBeak);
+    beak.rotation.x = -Math.PI / 2 + 0.3; beak.position.set(0, 2.44, -1.22); s.add(beak);
+    s.position.set(0, 0.86, 4.32);
+    g.add(s);
+  }
+
+  function boat(drift) {
+    const g = new THREE.Group();
+    const hull = new THREE.Mesh(hullGeo, boatMat);
+    hull.castShadow = true; hull.receiveShadow = true; g.add(hull);
+    const rail = new THREE.Mesh(hullGeo, darkWood);
+    rail.scale.set(1.045, 1, 1.03); rail.position.y = 0.7; rail.scale.y = 0.16; g.add(rail);
+    const deck = new THREE.Mesh(new THREE.ShapeGeometry(hullShape), deckMat);
+    deck.geometry.rotateX(-Math.PI / 2);
+    deck.scale.set(0.94, 1, 0.97); deck.position.y = 0.73; deck.receiveShadow = true; g.add(deck);
+    // bench rows facing the bow (-z): seat + leaning back + side stringers
+    for (let i = 0; i < 5; i++) {
+      const bz = -2.4 + i * 1.1;
+      box(2.9, 0.09, 0.5, benchWood, 0, 1.0, bz, g);
+      const back = box(2.9, 0.55, 0.09, benchWood, 0, 1.3, bz + 0.29, g);
+      back.rotation.x = -0.12;
+      for (const sx of [-1.35, 1.35]) box(0.08, 0.27, 0.5, benchWood, sx, 0.86, bz, g, false);
+    }
+    // canopy: arched canvas on four slim posts, edge rails to finish it
+    for (const px of [-1.4, 1.4]) for (const pz of [-2.6, 2.3]) cyl(0.05, 0.05, 1.62, white, px, 1.6, pz, g, 6);
+    const roof = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.9, 1.9, 5.6, 14, 1, true, Math.PI - 0.8, 1.6), canvasMat);
+    roof.rotation.x = Math.PI / 2; roof.position.set(0, 0.98, -0.15);
+    roof.castShadow = true; g.add(roof);
+    for (const sx of [-1.36, 1.36]) box(0.07, 0.07, 5.6, white, sx, 2.3, -0.15, g, false);
+    // stern deck the swan rides on
+    box(3.3, 0.14, 1.7, benchWood, 0, 0.8, 3.85, g);
+    swan(g);
     g.userData.bobPhase = Math.random() * 6;
+    g.userData.drift = drift;
+    const p0 = driftPoint(drift, 0);
+    g.position.set(p0.x, 0.05, p0.z);
+    g.rotation.y = p0.yaw;
     scene.add(g);
     (S.boats = S.boats || []).push(g);
     return g;
   }
-  boat(MAP.lagoon.x - 20, -13, 0.5);
-  boat(MAP.lagoon.x + 24, 14, -2.4);
+  function driftPoint(d, t) {
+    const th = d.ph + t * d.w;
+    const x = d.cx + d.rx * Math.cos(th), z = d.cz + d.rz * Math.sin(th);
+    const vx = -d.rx * Math.sin(th) * d.w, vz = d.rz * Math.cos(th) * d.w;
+    return { x, z, yaw: Math.atan2(-vx, -vz) };
+  }
+  // west lobe + east lobe loops; both stay clear of the bridge deck
+  // (x -134.7..-129.3) and inside the lagoon ellipse with hull to spare
+  boat({ cx: MAP.lagoon.x - 22, cz: -12, rx: 8, rz: 4.5, w: (Math.PI * 2) / 170, ph: 0.6 });
+  boat({ cx: MAP.lagoon.x + 22, cz: 13, rx: 7, rz: 4, w: -(Math.PI * 2) / 190, ph: 3.4 });
 }
 
 // --- Make Way for Ducklings, Garden path near the Charles St gate ---

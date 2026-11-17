@@ -22,7 +22,7 @@ const GOSSIP = [
   'ELDER: geese hold the garden bridge at dawn. we do not negotiate with geese. (yet.)',
   'ELDER: a hawk works the monument hill on clear days. watch the shadows, not the sky.',
   'ELDER: winter is coming. it is always coming. bury accordingly.',
-  'ELDER: the swan boats sleep at the dock. the swans themselves answer to no one.',
+  'ELDER: the swan boats circle the lagoon all day. the swans themselves answer to no one.',
   'ELDER: crows will trade shiny things. someday we will learn their prices.',
 ];
 

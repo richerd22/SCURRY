@@ -38,6 +38,17 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.11
+
+- **The swan boats are swan boats.** They were a slab, three bench
+  backs and a neck made of stacked cans. Now each one has a real
+  hull with a raked bow, five slatted bench rows under an arched
+  canvas canopy, and the full mute swan at the stern - S-curved
+  neck, folded wings, black knob and mask, orange beak. And they
+  move: each boat drifts a slow loop on its own half of the lagoon,
+  the way the real ones circle all day. The geese have opinions
+  about this but the bridge is still theirs.
+
 ## What's in v0.6.10
 
 - **Washington got his horse back.** The Garden's equestrian statue

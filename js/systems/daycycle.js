@@ -209,9 +209,17 @@ export function updateDaycycle(dt) {
     c.sp.position.x += c.speed * dt;
     if (c.sp.position.x > 820) c.sp.position.x = -820;
   }
-  // boats bob, water shimmers
+  // boats bob, water shimmers; swan boats also drift their lagoon loops
   const now = performance.now() / 1000;
   if (S.boats) for (const boat of S.boats) {
+    const d = boat.userData.drift;
+    if (d) {
+      const th = d.ph + now * d.w;
+      boat.position.x = d.cx + d.rx * Math.cos(th);
+      boat.position.z = d.cz + d.rz * Math.sin(th);
+      const vx = -d.rx * Math.sin(th) * d.w, vz = d.rz * Math.cos(th) * d.w;
+      boat.rotation.y = Math.atan2(-vx, -vz);
+    }
     boat.position.y = 0.05 + Math.sin(now * 0.7 + boat.userData.bobPhase) * 0.05;
     boat.rotation.z = Math.sin(now * 0.5 + boat.userData.bobPhase) * 0.012;
   }
