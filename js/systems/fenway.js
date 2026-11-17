@@ -359,11 +359,16 @@ export function buildFenway(scene) {
     sky2.userData.isSky = true;
     g.add(sky2);
   }
-  // a surround apron so the island's edge has something to sit on
-  const apron = new THREE.Mesh(new THREE.PlaneGeometry(760, 560),
+  // a surround apron so the island's edge has something to sit on.
+  // v0.6.25: enlarged to carry the BPDA neighborhood (fenwayhood.js) -
+  // the fitted buildings span x -542..381, z -434..488 around home, so
+  // the plate is 1150 x 1000 centred a touch south; still well inside
+  // the 900 m sky dome.
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(1150, 1000),
     new THREE.MeshStandardMaterial({ color: 0x59544a, roughness: 1 }));
   apron.rotation.x = -Math.PI / 2;
   apron.position.y = -0.12;
+  apron.position.z = 27;
   g.add(apron);
 
   // the hole home: a dirt mound ring + black mouth, burrow-style
@@ -530,11 +535,13 @@ export function initFenway() {
 
 // ---------------------------------------------------------------- update
 let monsterToast = false;
+let debugFree = false; // shot-mode aerial pose: park the clamp (see debugEnterFenway 'hood')
 export function updateFenway(dt) {
   const P = S.player;
   updateFenwaySky(dt);
   updateFenwayNight();
   if (!P.inFenway) return;
+  if (debugFree && S.debugShot) return; // the aerial verification pose floats outside the field on purpose
   const lx = P.pos.x - FEN.x, lz = P.pos.z - FEN.z;
   if (Math.abs(lx) > 500 || Math.abs(lz) > 500) {
     // paranoia clamp, same spirit as the burrows hub deposit
@@ -566,13 +573,30 @@ export function updateFenway(dt) {
 }
 
 // ------------------------------------------------------------ debug poses
-// which: 'plate' | 'monster' | 'wall'
+// which: 'plate' | 'monster' | 'wall' | 'top' | 'citgo' | 'hood'
 export function debugEnterFenway(which) {
   const P = S.player;
   P.inHollow = false; P.inBurrow = false; P.inFenway = true;
   P.climbing = null; P.vel.set(0, 0, 0); P.grounded = true;
   discovered = true;
-  if (which === 'monster') {
+  debugFree = which === 'hood';
+  if (which === 'citgo') {
+    // ON the Monster, turned around: the CITGO sign over left field
+    // (panel centre surveyed at local (116.6, 18.25, -278.5)). The
+    // stand point is the wall's back rim (z -57.2, the ledge's high
+    // edge): from the ledge's middle the wall's own cap sits at a
+    // squirrel's eye height and hides the sign, from the rim the
+    // sightline is clear - raycast-verified against the live scene.
+    P.pos.set(FEN.x - 12, fenGround(-12, -57.2) + 0.1, FEN.z - 57.2);
+    P.yaw = Math.atan2(-(116.6 - -12), -(-278.5 - -57.2));
+    P.pitch = 0.04;
+  } else if (which === 'hood') {
+    // outside the park entirely: aerial over the Pike corridor, the
+    // neighborhood around the yard (debugFree parks the field clamp)
+    P.pos.set(FEN.x + 150, 30, FEN.z - 150);
+    P.yaw = Math.atan2(-(0 - 150), -(-10 - -150));
+    P.pitch = -0.13;
+  } else if (which === 'monster') {
     P.pos.set(FEN.x + 55, 0.5, FEN.z - 18);
     P.yaw = 0.15; P.pitch = 0.12; // open centre field, facing the wall
   } else if (which === 'wall') {

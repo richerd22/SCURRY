@@ -17,6 +17,7 @@ import { buildHawk, updateHawk, biteHawk } from './systems/hawk.js';
 import { buildHollow, initHollowInteractables, updateHollow } from './systems/hollow.js';
 import { buildBurrows, initBurrows, updateBurrows, debugEnterBurrow } from './systems/burrows.js';
 import { buildFenway, initFenway, updateFenway, debugEnterFenway } from './systems/fenway.js';
+import { buildFenwayHood, updateFenwayHood } from './systems/fenwayhood.js';
 import { buildGarden, initGarden, updateGarden, debugEnterGarden } from './systems/garden.js';
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
@@ -63,6 +64,7 @@ buildGeese(scene);
 buildCrows(scene);
 buildBurrows(scene);
 buildFenway(scene);
+buildFenwayHood(scene);
 buildGarden(scene);
 initFood();
 initHollowInteractables();
@@ -240,6 +242,8 @@ if (Q.has('shot')) {
     case 'fenwaymonster': debugEnterFenway('monster'); break; // centre field, facing the wall
     case 'fenwaywall': debugEnterFenway('wall'); break;       // at the Monster's feet, looking up
     case 'fenwaytop': debugEnterFenway('top'); break;         // ON the Monster, looking back at the yard
+    case 'fenwaycitgo': debugEnterFenway('citgo'); break;     // ON the Monster, turned around: the CITGO sign over left field
+    case 'fenwayhood': debugEnterFenway('hood'); break;       // outside the park, aerial over the Pike: the neighborhood around the yard
     case 'tdgarden': debugEnterGarden('court'); break;        // centre court, the parquet + the screen ('garden' was taken - the Public Garden)
     case 'tdgardenbowl': debugEnterGarden('bowl'); break;     // lower bowl seats, across the court
     case 'tdgardenjumbo': debugEnterGarden('jumbo'); break;   // centre court, nose up at the jumbotron
@@ -326,6 +330,7 @@ function loop() {
     updateHollow(dt);
     updateBurrows(dt);
     updateFenway(dt);
+    updateFenwayHood(dt);
     updateGarden(dt);
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)

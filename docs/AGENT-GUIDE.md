@@ -584,6 +584,82 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   model's own back-face painting, not the converter); the
   scorer's-table strip samples as a ~2.2 m walkable ledge -
   a feature, probably.
+- v0.6.25 (Nov 17 2026): FENWAY GETS ITS NEIGHBORHOOD
+  (js/systems/fenwayhood.js, new; fenway.js apron + two debug
+  poses; main.js wiring). Fenway sat on a plain grey apron -
+  outside the walls was void. Now: 174 BPDA massing buildings
+  (City of Boston open data, tile BOS_F_5, PDDL - clean to
+  ship), converted from the city's OBJ models with surveyed
+  footprints + heights, banked as
+  assets/models/fenway-neighborhood.glb (2.73 MB, 38,297 tris:
+  hood-walls with box-projected facade UVs + per-building
+  vertex tints, hood-roofs plain). Transform: home plate =
+  the park shell's catalog centroid + (-90.1, +164.9) ft in
+  the OBJ frame, rotate -7.2 deg, seat at (Z_ft - Gnd_El_Ft);
+  validated against the tile catalog and a raster fit to the
+  Warehouse park model. 341 extracted -> 174 kept, every drop
+  logged (version dupes, >20% overlap with the park model,
+  >55% street-ribbon overlap, all Approved Demo status,
+  sub-3 m fragments, centroids >460 m). Converter + method:
+  assets-library/models/fenway-neighborhood-bpda/. Streets in
+  the park's street treatment: Lansdowne St along the
+  Monster, Brookline Ave, Boylston St - asphalt, raised
+  walks, zebras, 21 iron lamps, 16 parked cars, NO collision
+  (backdrop; the clamp keeps the player off them). Jersey St
+  gets NO ribbon: the Warehouse model's own photo slabs fill
+  that corridor and a ribbon would bury/poke through them.
+  THE CITGO SIGN: hand-built (code geometry + canvas
+  trimark/wordmark - the haul's CITGO SKP is terms-unknown
+  and stays out) standing on its BPDA host shell
+  (BOS-J3ZCV-XBDQO-P85WZ - the city catalog literally names
+  it "CITGO Sign"): panel 18.3 x 18.3 m at local
+  (116.6, -278.5), top at the shell's surveyed 27.4 m,
+  facing home plate. Sightlines raycast twice (converted
+  geometry pre-build, live scene post-build): CLEAR from
+  the Monster top's back rim (z -57.2) and the grandstand
+  line; blocked from field level by the park's own wall -
+  also true of the real sign; from the ledge's middle the
+  wall's own cap sits at a squirrel's eye height and hides
+  it, so the fenwaycitgo pose stands on the rim. Two
+  blockers removed with cause: 595-603 Newbury St (status
+  Approved Demo - demolition-approved, not standing
+  streetscape) and 498-528 Commonwealth Ave (a History
+  model claiming 31.4 m over a 4-5 storey streetscape).
+  Night discipline: the walls material + lamp bulbs ride
+  S.cityMats (deterministic ~18% lit windows, warm); the
+  sign burns off S.lampFactor and its material is fog:false
+  - the scene's night fog far is 230 m (a Common-scale mood
+  grade) and would swallow the 257 m sightline whole; a
+  floodlit landmark punching through haze is the honest
+  read, and the unlit massing keeps the fog. CLAMP
+  DECISION: the field clamp STAYS - the neighborhood is
+  backdrop, deliberately. No honest gate exists (the
+  grandstand + Jersey slabs wall the south, the Monster
+  walls the north) and a teleport hop would break the
+  burrow fiction worse than the fence does; the Monster
+  climb and the burrow door flow are untouched. Apron
+  enlarged 760x560 -> 1150x1000 (offset z +27) to carry
+  buildings spanning x -542..381, z -434..488; the hood's
+  instanced streets carry real bounding spheres so they
+  cull out of Common-side frames. New shot poses:
+  fenwaycitgo, fenwayhood (aerial at (150, 30, -150) over
+  the Pike corridor; fenway.js parks the clamp for it via
+  debugFree && S.debugShot only - gameplay never sees it).
+  Verified: walktest 102/102, zero console errors on every
+  shot; citgo day (trimark reads over the Kenmore
+  rooftops), citgo night (sign lit, windows warm), hood
+  aerial, fenwaytop day + fenway plate (interior
+  unregressed - rooftops now show over the outfield walls),
+  spawn. Gaps, plainly: the shells are flat-shaded LOD -
+  right at backdrop distance, soft up close, and nobody
+  can get close; the Warehouse park model is
+  anisotropically distorted (the Monster reads ~0.65x real
+  height) while the BPDA city is true-scale, so cross-wall
+  sightlines are approximate by a few metres; registration
+  is +/-10 m at 300 m, so a few fitted buildings sit a
+  street-width off their real frontage; the sign's letters
+  are sub-pixel at game distance - the trimark carries it,
+  same as the real sign at 300 m.
 - Roadmap (owner's direction): City Hall as the next
   teleport-reached expansion map (Fenway shipped in v0.6.22;
   Sketchfab models are WANTED in the ledger - account-gated,

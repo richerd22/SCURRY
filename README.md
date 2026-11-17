@@ -38,6 +38,24 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.25
+
+- **Fenway has a neighborhood now.** Emerge behind home
+  plate and look over the walls: there is a city out there.
+  174 buildings from the City of Boston's own 3D model
+  (open data, public domain) stand around the park at
+  their surveyed footprints and heights - the Lansdowne
+  St frontage across from the Monster, the Brookline Ave
+  corridor, Kenmore Square, the Boylston St blocks - with
+  streets, sidewalks, crossings, streetlamps and parked
+  cars to match, and windows that warm up after dark. And
+  over the Monster, at its real bearing and distance, the
+  CITGO sign: hand-built, red trimark and all, lit at
+  night. Climb the Monster, walk to the back rim of the
+  wall top, turn around. The field is still the squirrel's
+  whole Fenway - the city is backdrop, no gate out - but
+  the void is gone.
+
 ## What's in v0.6.24
 
 - **The other Garden.** The rat market has a second door now -
