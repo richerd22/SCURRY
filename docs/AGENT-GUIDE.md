@@ -398,6 +398,42 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   was wiped by a service restart mid-round; rebuilt as symlinks
   into ~/workspace/nolimits-revival/harness/node_modules (three
   0.160.0 - the right version) and NODE_PATH pointed there.
+- v0.6.20 (Nov 17 2026): State House foundation (landmarks.js
+  buildStateHouse). The terrace plateau (groundHeight's tx falloff
+  west of x=172) left the block floating up to 5.35 m at its SW
+  corner - confirmed by a before-shot from the SW. Fix: per-10 m-band
+  granite plinths, each sampled from groundHeight over its band and
+  run from 0.7 m under the band's lowest ground up into the base
+  trim (top y=1.0, 18 deep vs the trim's 19, so they read as a base
+  course). Only the two west bands trigger. Footprint, position and
+  solidBox unchanged; after-shot shows the west end seated into the
+  slope. Walktest 102/102, zero errors.
+- v0.6.21 (Nov 17 2026): fence-line relief extended from Beacon to
+  Tremont + Charles (streetwalls.js). Tremont: lintel + sill on
+  every tremontFacade office window - 360 + 360 instances, offsets
+  from the texture grid (cols px 15+i*61 ww 38 -> z offs -4.04 /
+  -1.42 / +1.20 / +3.82 on the -x face where u runs +z; rows wy
+  46+i*57 wh 38 over the unit's own h). Charles: same treatment on
+  the storefrontFacade upper windows - 36 + 36 (cols px 14+i*60
+  ww 42 -> z offs +2.25 / +0.80 / -0.65 / -2.11 on the +x face where
+  u runs -z; wy 26 wh 82 of 320 over H=7.8). NO R() calls in either
+  relief pass - seeded layouts byte-stable, verified by exact
+  instance counts + first-instance positions in-page, plus the
+  tremontclose shot. Cost: +4 draw calls, +9.5k tris (spawn view
+  685 -> 676 calls run-variance, 209.0k -> 218.5k tris). Storefront
+  glass on both streets keeps awnings instead of relief, by design.
+- Fenway conversion spike (Nov 17 2026, report-only, NO game
+  change): the BPDA cluster converts cleanly - merged + banked as
+  game-local OBJ/GLB at assets-library/bpda/fenway-spike/
+  (1,795 v / 3,057 tris; numpy pipeline in the spike README).
+  Richard's detailed Fenway SKPs do NOT convert in-sandbox: the
+  geometry is model.dat (proprietary SketchUp binary), no reader
+  exists here (assimp has no SKP, Blender needs the SDK bridge, the
+  SDK is license-gated/absent), and no DAE twin of Fenway is in the
+  haul. Unlock = a human SketchUp export (SKP -> DAE/OBJ), after
+  which the same pipeline applies. The whole-city USDZ is both
+  unreadable here (no pxr) and too coarse at Fenway. Full verdict:
+  assets-library/bpda/fenway-spike/README.md.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).
