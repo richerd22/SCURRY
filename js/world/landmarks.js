@@ -156,27 +156,69 @@ function buildParkStStation(scene) {
   solidBox(x, z, 3.6, 2.6);
 }
 
-// --- Public Garden lagoon bridge ---
+// --- Public Garden lagoon bridge (1861 suspension bridge) ---
 function buildBridge(scene) {
   const g = new THREE.Group();
   const x = MAP.lagoon.x, z = 0;
   const deckMat = new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.85 });
+  const cableMat = new THREE.MeshStandardMaterial({ color: 0x3c4147, metalness: 0.75, roughness: 0.45 });
   // flat deck (the suspension dressing carries the look; flat keeps squirrel feet honest)
   box(5.4, 0.5, 36, deckMat, 0, 0.9, 0, g);
-  // railings
-  for (const sx of [-2.6, 2.6]) {
-    box(0.12, 0.9, 35, white, sx, 1.55, 0, g);
+  // deck fascia: a finished white edge so the slab reads as a built bridge, not a plank
+  for (const sx of [-2.68, 2.68]) box(0.14, 0.36, 36.2, white, sx, 0.9, 0, g);
+  // stone abutments grounding both ends
+  for (const az of [-18.6, 18.6]) box(6.4, 1.5, 2.6, granite, 0, 0.35, az, g);
+  // railings: top + mid rails on a run of slim balusters
+  const balusters = new THREE.InstancedMesh(new THREE.BoxGeometry(0.045, 0.85, 0.045), white, 66);
+  {
+    const d = new THREE.Object3D();
+    let bi = 0;
+    for (const sx of [-2.6, 2.6]) {
+      box(0.1, 0.1, 35, white, sx, 2.02, 0, g);
+      box(0.05, 0.05, 34.6, white, sx, 1.58, 0, g, false);
+      for (let bz = -16.8; bz <= 16.8; bz += 1.05) {
+        d.position.set(sx, 1.57, bz);
+        d.updateMatrix();
+        balusters.setMatrixAt(bi++, d.matrix);
+      }
+    }
+    balusters.count = bi;
+    balusters.receiveShadow = true;
+    g.add(balusters);
   }
-  // suspension towers + cables
-  const cableMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.4 });
+  // suspension towers: column pairs, top + mid beams, X-braced between
   for (const tz of [-13.5, 13.5]) {
-    for (const sx of [-2.6, 2.6]) cyl(0.14, 0.14, 5.2, white, sx, 2.6, tz, g, 6);
-    box(5.6, 0.3, 0.3, white, 0, 5.2, tz, g);
+    for (const sx of [-2.6, 2.6]) cyl(0.14, 0.17, 5.2, white, sx, 2.6, tz, g, 8);
+    box(5.9, 0.3, 0.34, white, 0, 5.2, tz, g);
+    box(5.6, 0.22, 0.24, white, 0, 2.3, tz, g);
+    for (const s of [1, -1]) {
+      const brace = box(5.9, 0.09, 0.09, white, 0, 3.75, tz, g, false);
+      brace.rotation.z = s * 0.487;
+    }
   }
+  // main cables: one sagging catenary per side, anchored on the abutments,
+  // cresting the tower beams and dipping toward the deck at midspan
+  const cableY = (zz) => 2.62 + 2.73 * Math.pow(zz / 13.5, 2);
   for (const sx of [-2.6, 2.6]) {
-    const cable = cyl(0.035, 0.035, 30, cableMat, sx, 3.4, 0, g, 4);
-    cable.rotation.x = Math.PI / 2;
-    cable.scale.y = 1;
+    const pts = [];
+    pts.push(new THREE.Vector3(sx, 1.15, -19.5), new THREE.Vector3(sx, 3.3, -16.8),
+      new THREE.Vector3(sx, 5.35, -13.5));
+    for (let zz = -10; zz <= 10; zz += 2.5) pts.push(new THREE.Vector3(sx, cableY(zz), zz));
+    pts.push(new THREE.Vector3(sx, 5.35, 13.5), new THREE.Vector3(sx, 3.3, 16.8),
+      new THREE.Vector3(sx, 1.15, 19.5));
+    const tube = new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 72, 0.045, 5), cableMat);
+    tube.castShadow = true;
+    g.add(tube);
+    // vertical suspender rods, cable to deck edge
+    const rodGeo = new THREE.CylinderGeometry(0.02, 0.02, 1, 4);
+    for (let zz = -12; zz <= 12; zz += 2) {
+      const top = cableY(zz) - 0.03, len = top - 1.15;
+      const rod = new THREE.Mesh(rodGeo, cableMat);
+      rod.scale.y = len;
+      rod.position.set(sx, 1.15 + len / 2, zz);
+      g.add(rod);
+    }
   }
   // the arch under the deck (the real bridge's signature curve, flattened)
   const arch = new THREE.Mesh(new THREE.TorusGeometry(15.5, 0.55, 8, 28, Math.PI), deckMat);

@@ -192,6 +192,9 @@ if (Q.has('shot')) {
     case 'down': pose(24, 30, 24, 20); P.pitch = -1.45; break;
     case 'garden': pose(-96, -27, -132, 0); break;
     case 'statehouse': pose(116, -36, 186, -92); break;
+    case 'bridge': pose(-110, 3, -132, 0); break; // lagoon bridge elevation from across the water
+    case 'bandstand': pose(127, 29, 140, 42); break;
+    case 'monument': pose(47, -32, 60, -45); break;
     case 'bench': pose(48.6, -18.6, 52, -22); break;
     case 'cart': pose(122.5, 50.5, 128, 56); break;
     case 'lamps': pose(58, -8, 150, 44); break;
