@@ -38,6 +38,27 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.29
+
+- **The burrows run east now.** The rat market has a
+  third door - south wall, signed EASTBOUND / CITY HALL.
+  It lets out through a planter on City Hall Plaza:
+  eleven acres of brick, the ceremonial steps, a
+  fountain you can wade in, the Government Center
+  headhouse, and the building itself - nine floors of
+  argument, poured in concrete, 56 metres of it,
+  standing on its podium exactly like the real one.
+- **The plaza is empty and it is all yours.** No dogs,
+  no rangers, no geese with opinions. Five bottle caps
+  are stashed around it, including one on the podium
+  terrace at the facade's feet - the squirrel's-eye
+  view the architects argued about. Pretzels by the
+  headhouse. The T will not take you anywhere, but it
+  looks great.
+- The building model is the City of Boston's own 3D
+  data (BPDA, public domain) - the same open-data
+  family as the Fenway neighborhood shells.
+
 ## What's in v0.6.28
 
 - **The holdouts + the water pass.** The home park's

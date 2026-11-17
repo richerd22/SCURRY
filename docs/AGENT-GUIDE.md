@@ -822,8 +822,86 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   map (v0.6.27). Everything else is the owner's
   real-device pass: mobile perf at 121 hero trees,
   the golden-hour grade on a real GPU.
-- Roadmap (owner's direction): City Hall as the next
-  teleport-reached expansion map (Fenway shipped in v0.6.22;
+- v0.6.29 (Nov 17 2026): CITY HALL PLAZA - THE EAST
+  DESTINATION (js/systems/cityhall.js, new). The rat
+  market's SOUTH wall gets the third door (the stall owns
+  the north wall, Fenway the east, TD Garden the west):
+  dark mouth + EASTBOUND / CITY HALL signs at TUN.x+45,
+  TUN.z+5.96, built from cityhall.js so burrows.js is
+  untouched. "E - take the east run" -> emergence through
+  a planter bed just south of the ceremonial steps; the
+  same mouth returns ("E - dive back to the burrows").
+  Anchor CH = (6000, 0, 3000), due east - NOT (6000, 0,
+  -6000): groundHeight()'s State House terrace term
+  (8.0 * smooth01((x-146)/26) * smooth01((-z-50)/22))
+  extends infinitely over the x>172, z<-72 quadrant, so
+  a -6000 plaza stands on an 8 m phantom plateau (found
+  the hard way: the player "grounded" at y=8 over the
+  plaza). At z +3000 the heightfield answers a clean
+  flat 0. Future far anchors: keep z > -72 or x < 172.
+  The building is the BANKED BPDA shell (BOS-6JW0O-0UKVU,
+  tile BOS_H_4, PDDL - City of Boston open data;
+  ATTRIBUTION.md row added): 338 tris, already in
+  game-local metres (90 x 128 m footprint, 55.9 m tall),
+  rotated 90 deg (long axis east-west), seated on a code
+  podium (156 x 102 m, top y 1.5) with the facade 13 m
+  back from the podium edge, re-skinned warm concrete
+  (source material is untextured grey). The shell's
+  measured shape (raycast grid, harness/chprobe4.js):
+  a stepped wedding-cake massing - low wing edge at the
+  southern extreme, the tall face ~8 m behind it
+  stepping 24 m -> 43.5 m, the 55.86 m crown mid-roof.
+  It ships UNDRESSED on purpose: three fin attempts
+  (flat, vertex-sampled, raycast) all fought the
+  envelope, and the profile is already the building's
+  signature - what reads flat in lowq stills is the
+  single material, which production light carries.
+  The plaza composition around it is the dressing. The haul's
+  detailed City Hall SKP/DAE files are terms-unknown:
+  REFERENCE ONLY, never shipped - CITGO discipline.
+  The plaza is all code: brick slab (seeded canvas
+  brick texture) x -95..95, z -2..97; full-width
+  ceremonial steps (analytic bands 1.0 / 0.5); terraced
+  fountain at (28, 45) - rim 0.5, wading water 0.12,
+  small pulsing jet; Government Center headhouse (glass
+  box, T roundel, stair pit) at (62, 10); planters,
+  benches, six lamps (two real PointLights on
+  S.lampFactor); 20 backdrop streetwall shells wearing
+  a window-grid canvas (day map + sparse lit emissiveMap,
+  in S.cityMats) ringing the plaza a street away -
+  backdrop only, Fenway-hood rules. Ground is analytic
+  (cityGround()); containment is a polygon clamp (plaza
+  rect + podium terrace strip to z -12.4; the facade
+  line is scenery - the building is not a floor). Caps
+  40-44 ride the GLB-load callback like Fenway's (the
+  trophy cap sits on the podium terrace at the facade's
+  feet), plus a pretzel by the headhouse and two
+  peanuts. Plaza life is deliberately still: no dogs,
+  no ranger, no geese - an empty plaza is the fiction,
+  and the systems do not extend out here cheaply.
+  Debug poses: cityhall, cityhallplaza, cityhallfacade,
+  cityhallreturn, cityhalldoor. Proof harness:
+  harness/chtravel.js - FRAME-based waits (SwiftShader
+  runs ~0.5-1 fps at these views; wall-clock sleeps
+  prove NOTHING, a 900 ms sleep can contain zero
+  frames), firing the REAL interactables both ways,
+  stepping the analytic ground table, and teleporting
+  outside the clamp to watch it pull back.
+  Verified: chtravel PASS (both directions through the
+  REAL interactables, all 7 analytic ground steps exact,
+  clamp recovery to (94.7, 49.9)), walktest 102/102
+  local + live, node --check all JS, zero console
+  errors everywhere. Perf: spawn view 565 calls /
+  335,108 tris - calls identical to v0.6.28 (the
+  destination is frustum-culled 8.5 km away; the tri
+  delta is animated-scene variance); the plaza's own
+  wide view is 168 calls / 52,972 tris. Evidence:
+  v0.6-shots/cityhall-{before,after}/ (market south
+  wall before/after, emergence, plaza wide, facade
+  elevation, return door).
+- Roadmap (owner's direction): City Hall shipped as the
+  east teleport-reached expansion map in v0.6.29 (Fenway
+  shipped in v0.6.22, TD Garden in v0.6.24/26;
   Sketchfab models are WANTED in the ledger - account-gated,
   need a human grab).
 - **Multiplayer is roadmap-only - no netcode yet.** Design note: a

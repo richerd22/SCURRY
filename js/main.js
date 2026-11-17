@@ -19,6 +19,7 @@ import { buildBurrows, initBurrows, updateBurrows, debugEnterBurrow } from './sy
 import { buildFenway, initFenway, updateFenway, debugEnterFenway } from './systems/fenway.js';
 import { buildFenwayHood, updateFenwayHood } from './systems/fenwayhood.js';
 import { buildGarden, initGarden, updateGarden, debugEnterGarden } from './systems/garden.js';
+import { buildCityHall, initCityHall, updateCityHall, debugEnterCityHall } from './systems/cityhall.js';
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
@@ -66,11 +67,13 @@ buildBurrows(scene);
 buildFenway(scene);
 buildFenwayHood(scene);
 buildGarden(scene);
+buildCityHall(scene);
 initFood();
 initHollowInteractables();
 initBurrows();
 initFenway();
 initGarden();
+initCityHall();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
@@ -251,6 +254,11 @@ if (Q.has('shot')) {
     case 'tdgarden': debugEnterGarden('court'); break;        // centre court, the parquet + the screen ('garden' was taken - the Public Garden)
     case 'tdgardenbowl': debugEnterGarden('bowl'); break;     // lower bowl seats, across the court
     case 'tdgardenjumbo': debugEnterGarden('jumbo'); break;   // centre court, nose up at the jumbotron
+    case 'cityhall': debugEnterCityHall('emerge'); break;        // out of the planter, the plaza + the hall ahead
+    case 'cityhallplaza': debugEnterCityHall('plaza'); break;    // the wide: whole plaza, building behind the podium
+    case 'cityhallfacade': debugEnterCityHall('facade'); break;  // on the podium terrace at the facade's feet, nose up
+    case 'cityhallreturn': debugEnterCityHall('return'); break;  // on the plaza facing the burrow mouth you'd dive back down
+    case 'cityhalldoor': debugEnterCityHall('door'); break;      // in the rat market, facing the new EASTBOUND door
     case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
     case 'geese': // on the deck, in warn range of the flock but outside charge range
       pose(-132, 12, -132, 0); P.pos.y = 1.15; P.grounded = true;
@@ -336,6 +344,7 @@ function loop() {
     updateFenway(dt);
     updateFenwayHood(dt);
     updateGarden(dt);
+    updateCityHall(dt);
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateCanopy(dt);
