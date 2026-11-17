@@ -59,6 +59,22 @@ function buildStateHouse(scene) {
   const x = 186, z = -92, gy = groundHeight(x, z);
   box(56, 13, 16, brick, 0, 6.5, 0, g);                       // main block
   box(60, 2, 19, white, 0, 1, 0, g);                          // base trim
+  // foundation steps (v0.6.20): the terrace plateau falls away west and
+  // the block floated up to 5.4 m over the slope at its SW corner. Each
+  // 10 m band whose ground dips below the plateau gets a granite plinth
+  // from 0.7 m under its lowest sampled ground up into the base trim.
+  // Steps stay inside the trim outline (18 deep vs 19) and the
+  // footprint/solidBox do not move.
+  for (let bx = -30; bx < 30; bx += 10) {
+    let mn = Infinity;
+    for (let sx = bx; sx <= bx + 10; sx += 1.25)
+      for (let sz = -9.5; sz <= 9.5; sz += 1.25)
+        mn = Math.min(mn, groundHeight(x + sx, z + sz));
+    if (mn < gy - 0.05) {
+      const bot = mn - gy - 0.7, top = 1.0;
+      box(10, top - bot, 18, granite, bx + 5, (top + bot) / 2, 0, g);
+    }
+  }
   box(56, 1.9, 0.25, arcadeMat, 0, 1.0, 9.56, g, false);      // ground-floor arcade on the plinth face
   box(58, 1.6, 18, white, 0, 13.6, 0, g);                     // cornice
   for (const px of [-27.6, 27.6]) box(0.9, 11, 0.3, white, px, 7.2, 8.08, g, false); // corner pilasters
