@@ -293,6 +293,7 @@ export function buildTremontRow(scene, groundHeight) {
 
   // the streetwall row: 11 m units, storefront below, offices above
   const bodies = [[], [], []], cornices = [], caps = [], awnings = [];
+  const trelLintels = [], trelSills = [];
   for (let z = -99; z + 11 <= 99.5; z += 11) {
     const cz = z + 5.5, v = (R() * 3) | 0, h = 15 + R() * 9;
     const base = groundHeight(CX, cz) - 0.6, tone = 0.82 + R() * 0.3;
@@ -303,11 +304,27 @@ export function buildTremontRow(scene, groundHeight) {
       p: [FRONT - 0.95, base + h * 0.215 + 0.1, cz], s: [2.1, 0.09, 9.6], rz: 0.38,
       c: awnCols[(R() * awnCols.length) | 0],
     });
+    // fence-line relief (v0.6.21): the Beacon treatment extended - a real
+    // stone lintel + sill on every office window, placed from the
+    // tremontFacade grid (cols px 15+i*61 ww 38, rows wy 46+i*57 wh 38,
+    // 256x512 canvas over the 11 m unit). The front is the -x face, where
+    // canvas u runs toward +z. The storefront glass keeps its awnings.
+    // No R() calls here: the seeded row layout must not shift.
+    for (let i = 0; i < 5; i++) {
+      const wy = 46 + i * 57;
+      const topY = base + h * (1 - wy / 512), botY = base + h * (1 - (wy + 38) / 512);
+      for (const off of [-4.04, -1.42, 1.20, 3.82]) {
+        trelLintels.push({ p: [FRONT - 0.05, topY + 0.13, cz + off], s: [0.14, 0.24, 1.95] });
+        trelSills.push({ p: [FRONT - 0.05, botY - 0.08, cz + off], s: [0.2, 0.15, 1.9] });
+      }
+    }
   }
   bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), mats[i], items)); });
   scene.add(instanced(boxGeo(), stoneMat, cornices));
   scene.add(instanced(boxGeo(), capMat, caps));
   scene.add(instanced(boxGeo(), awnMat, awnings));
+  if (trelLintels.length) scene.add(instanced(boxGeo(), stoneMat, trelLintels));
+  if (trelSills.length) scene.add(instanced(boxGeo(), stoneMat, trelSills));
 }
 
 // ---------- Charles Street: shopfronts + streetscape between the parks ----------
@@ -392,7 +409,9 @@ export function buildCharlesStreet(scene, groundHeight) {
   const awnMat = new THREE.MeshStandardMaterial({ roughness: 0.9 });
   const awnCols = [0x2e4a34, 0x6e2430, 0x24344e, 0x1c1c1e, 0x74552a];
   const parapetMat = new THREE.MeshStandardMaterial({ color: 0x59524a, roughness: 1 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0xcfc4ae, roughness: 0.9 });
   const shopBodies = [[], [], []], awnings = [], parapets = [];
+  const crelLintels = [], crelSills = [];
   const FRONT = -63.8, DEPTH = 7.5, H = 7.8;
   for (const [z0, z1] of [[-58, -26], [-8, 22]]) {
     S.solidBoxes.push({ minX: FRONT - DEPTH, maxX: FRONT, minZ: z0, maxZ: z1 });
@@ -406,9 +425,21 @@ export function buildCharlesStreet(scene, groundHeight) {
         p: [FRONT + 0.95, base + 3.08, cz], s: [2.2, 0.09, 5.5], rz: -0.38,
         c: awnCols[(R() * awnCols.length) | 0],
       });
+      // fence-line relief (v0.6.21): lintel + sill on the upper windows,
+      // from the storefrontFacade grid (cols px 14+i*60 ww 42, wy 26
+      // wh 82, 256x320 canvas over the 6.2 m unit). The front is the +x
+      // face, where canvas u runs toward -z. The shopfront glass below
+      // keeps its awning; no R() calls here (seeded layout stays put).
+      const topY = base + H * (1 - 26 / 320), botY = base + H * (1 - 108 / 320);
+      for (const off of [2.25, 0.80, -0.65, -2.11]) {
+        crelLintels.push({ p: [FRONT + 0.05, topY + 0.13, cz + off], s: [0.14, 0.22, 1.2] });
+        crelSills.push({ p: [FRONT + 0.05, botY - 0.08, cz + off], s: [0.2, 0.14, 1.15] });
+      }
     }
   }
   shopBodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), shopMats[i], items)); });
   scene.add(instanced(boxGeo(), awnMat, awnings));
   scene.add(instanced(boxGeo(), parapetMat, parapets));
+  if (crelLintels.length) scene.add(instanced(boxGeo(), trimMat, crelLintels));
+  if (crelSills.length) scene.add(instanced(boxGeo(), trimMat, crelSills));
 }
