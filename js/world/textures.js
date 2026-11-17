@@ -283,6 +283,59 @@ export function reliefTex() {
   return toTex(cv);
 }
 
+// --- Hancock-style glass facade: tight uniform mirror grid, blue-grey ---
+export function glassFacade(seed) {
+  const W = 256, H = 512;
+  const [cv, g] = canvas(W, H);
+  const [ev, e] = canvas(W, H);
+  const R = rng(seed);
+  const grad = g.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#54687c'); grad.addColorStop(0.5, '#3d4f63'); grad.addColorStop(1, '#4a5e73');
+  g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
+  const cols = 9, rows = 26;
+  for (let cx = 0; cx < cols; cx++) {
+    for (let ry = 0; ry < rows; ry++) {
+      const x = 8 + cx * 27, y = 8 + ry * 19;
+      g.fillStyle = 'rgba(190,216,238,' + (0.12 + R() * 0.3) + ')';
+      g.fillRect(x, y, 22, 14);
+      if (R() < 0.16) {
+        e.fillStyle = R() < 0.75 ? 'rgba(255,196,110,1)' : 'rgba(190,214,255,1)';
+        e.fillRect(x + 1, y + 1, 20, 12);
+      }
+    }
+  }
+  const map = toTex(cv), emissiveMap = toTex(ev, false);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  emissiveMap.wrapS = emissiveMap.wrapT = THREE.RepeatWrapping;
+  return { map, emissiveMap };
+}
+
+// --- clock face for the Custom House-style tower ---
+export function clockTex() {
+  const [cv, g] = canvas(128, 128);
+  g.fillStyle = '#20242a'; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = '#ece7da';
+  g.beginPath(); g.arc(64, 64, 52, 0, 7); g.fill();
+  g.strokeStyle = '#20242a'; g.lineWidth = 4;
+  g.beginPath(); g.arc(64, 64, 52, 0, 7); g.stroke();
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2;
+    g.lineWidth = i % 3 === 0 ? 5 : 2.4;
+    g.beginPath();
+    g.moveTo(64 + Math.cos(a) * 42, 64 + Math.sin(a) * 42);
+    g.lineTo(64 + Math.cos(a) * 49, 64 + Math.sin(a) * 49);
+    g.stroke();
+  }
+  g.lineWidth = 6; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(64, 64); g.lineTo(64 + 26, 64 + 18); g.stroke(); // hour ~4:35
+  g.lineWidth = 4;
+  g.beginPath(); g.moveTo(64, 64); g.lineTo(64 + 8, 64 - 38); g.stroke();
+  g.fillStyle = '#20242a';
+  g.beginPath(); g.arc(64, 64, 5, 0, 7); g.fill();
+  return toTex(cv);
+}
+
 // --- grass blades alpha texture for instanced tufts ---
 export function grassBladeTex() {
   const [cv, g] = canvas(128, 128);

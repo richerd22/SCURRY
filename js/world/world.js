@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
-import { groundDetailTex, cityFacade, cloudTex } from './textures.js';
+import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex } from './textures.js';
 
 // ---------- terrain height ----------
 function gauss(x, z, cx, cz, r) {
@@ -385,8 +385,6 @@ function buildPerimeter(scene) {
   const spots = [];
   for (let x = -200; x <= 200; x += 34) { spots.push([x + 8, -128, 26, 30 + Math.random() * 55]); spots.push([x, 130, 26, 24 + Math.random() * 40]); }
   for (let z = -100; z <= 100; z += 36) { spots.push([222, z, 24, 26 + Math.random() * 46]); spots.push([-228, z + 10, 24, 20 + Math.random() * 34]); }
-  // landmark towers: a slab, a prism, a setback tower - skyline silhouettes
-  spots.push([-168, -142, 30, 92], [64, -146, 24, 78], [196, 142, 28, 84], [-96, 146, 22, 66]);
   let ci = 0;
   for (const [x, z, w, h] of spots) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), S.cityMats[ci++ % S.cityMats.length]);
@@ -397,5 +395,65 @@ function buildPerimeter(scene) {
       new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 }));
     cap.position.set(x, h - 0.4, z);
     scene.add(cap);
+  }
+  buildSkylineTowers(scene);
+}
+
+// landmark towers with actual silhouettes: a glass slab, a setback stack,
+// a spired shaft, and a clock tower - Boston's greatest hits, abstracted
+function buildSkylineTowers(scene) {
+  const stoneMat = S.cityMats[2];
+  const darkMat = S.cityMats[1];
+  const roofMat = new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 });
+  function towerBox(w, h, d, mat, x, yBase, z, ry = 0) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    b.position.set(x, yBase + h / 2, z);
+    b.rotation.y = ry;
+    scene.add(b);
+    return b;
+  }
+  // the glass slab (Hancock): thin, tall, rotated to present a knife edge
+  {
+    const gf = glassFacade(909);
+    const glassMat = new THREE.MeshStandardMaterial({
+      map: gf.map, emissiveMap: gf.emissiveMap, emissive: 0xffc37a, emissiveIntensity: 0.12,
+      roughness: 0.32, metalness: 0.15, envMapIntensity: 1.5,
+    });
+    S.cityMats.push(glassMat);
+    towerBox(30, 66, 11, glassMat, -96, -1, 146, 0.45);
+  }
+  // the setback stack: three shrinking tiers
+  towerBox(30, 38, 30, stoneMat, -168, -1, -142);
+  towerBox(24, 30, 24, stoneMat, -168, 37, -142);
+  towerBox(17, 24, 17, darkMat, -168, 67, -142);
+  towerBox(18.5, 1.4, 18.5, roofMat, -168, 91, -142);
+  // the spired shaft (Prudential): crown band + antenna + beacon
+  towerBox(24, 62, 24, darkMat, 64, -1, -146);
+  towerBox(26, 4, 26, stoneMat, 64, 61, -146);
+  towerBox(15, 9, 15, darkMat, 64, 65, -146);
+  {
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.5, 13, 6), roofMat);
+    ant.position.set(64, 74 + 6.5, -146);
+    scene.add(ant);
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6),
+      new THREE.MeshStandardMaterial({ color: 0x881111, emissive: 0xff2a1a, emissiveIntensity: 0.9 }));
+    beacon.position.set(64, 87.5, -146);
+    scene.add(beacon);
+  }
+  // the clock tower (Custom House): slim shaft, clock band, pyramid cap
+  {
+    towerBox(28, 38, 28, stoneMat, 196, -1, 142);
+    towerBox(16, 30, 16, stoneMat, 196, 37, 142);
+    const clockMat = new THREE.MeshStandardMaterial({ map: clockTex(), roughness: 0.8 });
+    towerBox(17.5, 6, 17.5, clockMat, 196, 67, 142);
+    const pyr = new THREE.Mesh(new THREE.ConeGeometry(12.4, 10, 4),
+      new THREE.MeshStandardMaterial({ color: 0x3a4149, roughness: 0.6, metalness: 0.3 }));
+    pyr.position.set(196, 73 + 5, 142);
+    pyr.rotation.y = Math.PI / 4;
+    scene.add(pyr);
+    const fin = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 6),
+      new THREE.MeshStandardMaterial({ color: 0xd8a921, roughness: 0.3, metalness: 0.85 }));
+    fin.position.set(196, 84.2, 142);
+    scene.add(fin);
   }
 }
