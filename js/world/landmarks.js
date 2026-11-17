@@ -190,28 +190,159 @@ function buildBandstand(scene) {
 }
 
 // --- Brewer Fountain near Park St ---
+// Rebuilt v0.6.12: was three stacked cylinders on the basin. The real
+// Brewer is a two-tier bronze fountain with four seated figures around
+// the pedestal (Neptune, Amphitrite, Acis, Galatea) rising out of the
+// basin. Lathe-turned pedestal + bowls, composed-shape figures -
+// stylized, but the silhouette is the fountain's own.
+const bronzeDS = bronze.clone(); bronzeDS.side = THREE.DoubleSide;
+const fountainWaterMat = new THREE.MeshStandardMaterial({ color: 0x3d7086, roughness: 0.15, metalness: 0.3 });
+function fountainFigure() {
+  const f = new THREE.Group();
+  box(0.62, 0.75, 0.62, granite, 0, 0.72, 0, f);            // plinth out of the basin water
+  box(0.5, 0.24, 0.5, bronze, 0, 1.2, -0.04, f);           // seat
+  const hips = new THREE.Mesh(new THREE.SphereGeometry(0.21, 9, 7), bronze);
+  hips.scale.set(1.1, 0.7, 1); hips.position.set(0, 1.4, 0); hips.castShadow = true; f.add(hips);
+  const torso = cyl(0.13, 0.19, 0.55, bronze, 0, 1.76, -0.03, f, 8);
+  torso.rotation.x = 0.08;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 9, 7), bronze);
+  head.position.set(0, 2.16, -0.01); head.castShadow = true; f.add(head);
+  const lap = box(0.36, 0.13, 0.52, bronze, 0, 1.36, 0.3, f);  // thighs, sloping down-forward
+  lap.rotation.x = 0.5;
+  box(0.34, 0.4, 0.12, bronze, 0, 1.02, 0.52, f);          // shins to the basin
+  const arm = cyl(0.05, 0.06, 0.52, bronze, 0.27, 1.58, 0.08, f, 6);
+  arm.rotation.z = 0.35; arm.rotation.x = -0.4;
+  return f;
+}
 function buildBrewerFountain(scene) {
   const g = new THREE.Group();
   const x = -25, z = -58, gy = groundHeight(x, z);
   cyl(4.6, 5, 0.8, granite, 0, 0.4, 0, g, 20);
-  const basinWater = new THREE.Mesh(new THREE.CircleGeometry(4.2, 20),
-    new THREE.MeshStandardMaterial({ color: 0x3d7086, roughness: 0.15, metalness: 0.3 }));
+  const basinWater = new THREE.Mesh(new THREE.CircleGeometry(4.2, 20), fountainWaterMat);
   basinWater.rotation.x = -Math.PI / 2; basinWater.position.y = 0.75; g.add(basinWater);
-  cyl(0.5, 0.8, 2.6, bronze, 0, 2, 0, g, 10);
-  cyl(1.6, 1.2, 0.5, bronze, 0, 3.1, 0, g, 12);
-  cyl(0.2, 0.3, 1.2, bronze, 0, 3.9, 0, g, 8);
+  // lathe-turned central pedestal
+  {
+    const prof = [[0.62, 0.8], [0.55, 1.0], [0.42, 1.3], [0.38, 1.9], [0.46, 2.15], [0.5, 2.3]]
+      .map(([r, y]) => new THREE.Vector2(r, y));
+    const ped = new THREE.Mesh(new THREE.LatheGeometry(prof, 14), bronzeDS);
+    ped.castShadow = true; ped.receiveShadow = true; g.add(ped);
+  }
+  // four seated figures at the diagonals, facing out over the basin
+  for (let i = 0; i < 4; i++) {
+    const a = Math.PI / 4 + i * Math.PI / 2;
+    const f = fountainFigure();
+    f.position.set(Math.sin(a) * 1.5, 0, Math.cos(a) * 1.5);
+    f.rotation.y = a;
+    g.add(f);
+  }
+  // lower bowl + its water, column, upper bowl + its water
+  {
+    const bowl = [[0.3, 2.3], [1.2, 2.42], [2.05, 2.62], [2.3, 2.78], [2.34, 2.86]]
+      .map(([r, y]) => new THREE.Vector2(r, y));
+    const b = new THREE.Mesh(new THREE.LatheGeometry(bowl, 18), bronzeDS);
+    b.castShadow = true; b.receiveShadow = true; g.add(b);
+    const w = new THREE.Mesh(new THREE.CircleGeometry(2.02, 18), fountainWaterMat);
+    w.rotation.x = -Math.PI / 2; w.position.y = 2.68; g.add(w);
+    const bowl2 = [[0.18, 3.55], [0.7, 3.64], [1.05, 3.78], [1.14, 3.86]]
+      .map(([r, y]) => new THREE.Vector2(r, y));
+    const b2 = new THREE.Mesh(new THREE.LatheGeometry(bowl2, 16), bronzeDS);
+    b2.castShadow = true; g.add(b2);
+    const w2 = new THREE.Mesh(new THREE.CircleGeometry(0.92, 16), fountainWaterMat);
+    w2.rotation.x = -Math.PI / 2; w2.position.y = 3.8; g.add(w2);
+  }
+  cyl(0.16, 0.21, 1.05, bronze, 0, 3.1, 0, g, 10);
+  // finial: one standing figure, same composed-shape honesty as the four below
+  cyl(0.09, 0.15, 0.52, bronze, 0, 4.12, 0, g, 8);
+  const fh = new THREE.Mesh(new THREE.SphereGeometry(0.115, 9, 7), bronze);
+  fh.position.set(0, 4.48, 0); fh.castShadow = true; g.add(fh);
   g.position.set(x, gy, z);
   scene.add(g);
   S.solids.push({ x, z, r: 5.1 });
 }
 
 // --- Park Street station headhouse ---
+// Rebuilt v0.6.12: was a green metal box with a PARK ST sign. Now a
+// glass-and-iron headhouse: stone base, iron corner posts + mullions,
+// glazed walls, an arched glazed gable front and back under a shallow
+// arched glass roof, and the T roundel mounted on the glass where it
+// reads from across the street. The glass joins S.cityMats so the
+// daycycle warms it after dark, like a lit station should.
+const headhouseGlass = new THREE.MeshStandardMaterial({
+  color: 0xbcd4d8, transparent: true, opacity: 0.38, roughness: 0.12, metalness: 0.1,
+  envMapIntensity: 1.6, emissive: 0xffc98a, emissiveIntensity: 0, side: THREE.DoubleSide,
+});
+const greenMetalDS = greenMetal.clone(); greenMetalDS.side = THREE.DoubleSide;
+function roundelTex() {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#101012'; c.beginPath(); c.arc(128, 128, 126, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#f4f1e8'; c.beginPath(); c.arc(128, 128, 102, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#101012'; c.font = 'bold 168px Arial, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('T', 128, 138);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 function buildParkStStation(scene) {
   const g = new THREE.Group();
   const x = -33, z = -80, gy = groundHeight(x, z);
-  box(7, 3.4, 5, greenMetal, 0, 1.7, 0, g);
-  const roofM = box(8, 0.3, 6, darkWood, 0, 3.6, 0, g);
-  roofM.rotation.z = 0.06;
+  if (S.cityMats) S.cityMats.push(headhouseGlass);
+  box(7.2, 0.5, 5.2, granite, 0, 0.25, 0, g);                       // stone base
+  box(3.0, 2.4, 3.4, new THREE.MeshStandardMaterial({ color: 0x1a1c1e, roughness: 1 }), 0.8, 1.45, 0, g); // stair mass inside
+  // glazed walls + iron mullions
+  for (const sz of [-2.3, 2.3]) {
+    box(6.6, 2.2, 0.06, headhouseGlass, 0, 1.85, sz, g, false);
+    for (const mx of [-2.2, 0, 2.2]) box(0.07, 2.2, 0.09, greenMetal, mx, 1.85, sz * 1.01, g, false);
+    box(6.6, 0.09, 0.09, greenMetal, 0, 1.85, sz * 1.01, g, false);
+    box(7.0, 0.22, 0.22, greenMetal, 0, 3.4, sz, g);
+  }
+  for (const sx of [-3.3, 3.3]) {
+    box(0.06, 2.2, 4.2, headhouseGlass, sx, 1.85, 0, g, false);
+    box(0.22, 0.22, 4.8, greenMetal, sx, 3.4, 0, g);
+  }
+  for (const px of [-3.3, 3.3]) for (const pz of [-2.3, 2.3])
+    box(0.18, 2.9, 0.18, greenMetal, px, 2.0, pz, g);
+  // arched gable panels (glass in an iron border) front + back
+  const archShape = new THREE.Shape();
+  archShape.moveTo(-3.3, 0); archShape.lineTo(-3.3, 0.3);
+  archShape.absellipse(0, 0.3, 3.3, 0.75, Math.PI, 0, true);
+  archShape.lineTo(3.3, 0); archShape.lineTo(-3.3, 0);
+  const archHole = new THREE.Path();
+  archHole.moveTo(-3.02, 0.07); archHole.lineTo(-3.02, 0.32);
+  archHole.absellipse(0, 0.32, 3.02, 0.64, Math.PI, 0, true);
+  archHole.lineTo(3.02, 0.07); archHole.lineTo(-3.02, 0.07);
+  const archFrameShape = new THREE.Shape(archShape.getPoints(24));
+  archFrameShape.holes.push(archHole);
+  const archGeo = new THREE.ShapeGeometry(archShape, 20);
+  const archFrameGeo = new THREE.ShapeGeometry(archFrameShape, 20);
+  for (const sz of [-2.32, 2.32]) {
+    const glass = new THREE.Mesh(archGeo, headhouseGlass);
+    glass.position.set(0, 3.44, sz); g.add(glass);
+    const frame = new THREE.Mesh(archFrameGeo, greenMetalDS);
+    frame.position.set(0, 3.44, sz * 1.01); g.add(frame);
+    for (const [mx, mh] of [[-2.2, 0.62], [0, 0.78], [2.2, 0.62]])
+      box(0.07, mh, 0.08, greenMetal, mx, 3.44 + mh / 2, sz, g, false);
+  }
+  // shallow arched glass roof + iron ribs (arc radius 6.6, half-angle 0.558)
+  const roof = new THREE.Mesh(
+    new THREE.CylinderGeometry(6.6, 6.6, 5.0, 16, 1, true, Math.PI - 0.558, 1.116), headhouseGlass);
+  roof.rotation.x = Math.PI / 2; roof.position.set(0, -2.1, 0);
+  g.add(roof);
+  for (const rz of [-2.4, 0, 2.4]) {
+    const rib = new THREE.Mesh(new THREE.TorusGeometry(6.6, 0.05, 6, 24, 1.116), greenMetal);
+    rib.rotation.z = Math.PI / 2 - 0.558;
+    rib.position.set(0, -2.1, rz);
+    g.add(rib);
+  }
+  // the roundel, both street faces
+  const rTex = roundelTex();
+  for (const sz of [1, -1]) {
+    const r = new THREE.Mesh(new THREE.CircleGeometry(0.62, 24),
+      new THREE.MeshStandardMaterial({ map: rTex, roughness: 0.5 }));
+    r.position.set(0, 3.82, sz * 2.44);
+    if (sz < 0) r.rotation.y = Math.PI;
+    g.add(r);
+  }
   // sign
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
   const c = cv.getContext('2d');
@@ -219,9 +350,9 @@ function buildParkStStation(scene) {
   c.fillStyle = '#f2ead2'; c.font = 'bold 34px monospace'; c.textAlign = 'center';
   c.fillText('PARK ST', 128, 44);
   const signTex = new THREE.CanvasTexture(cv); signTex.colorSpace = THREE.SRGBColorSpace;
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 1.15), new THREE.MeshBasicMaterial({ map: signTex }));
-  sign.position.set(0, 2.6, 2.56); g.add(sign);
-  const sign2 = sign.clone(); sign2.rotation.y = Math.PI; sign2.position.z = -2.56; g.add(sign2);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.85), new THREE.MeshBasicMaterial({ map: signTex }));
+  sign.position.set(0, 2.95, 2.44); g.add(sign);
+  const sign2 = sign.clone(); sign2.rotation.y = Math.PI; sign2.position.z = -2.44; g.add(sign2);
   // dark stair hole beside it
   box(3.4, 0.25, 4.4, new THREE.MeshBasicMaterial({ color: 0x060606 }), 5.6, 0.13, 0, g, false);
   g.position.set(x, gy, z);

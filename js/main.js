@@ -197,6 +197,11 @@ if (Q.has('shot')) {
     case 'swanboats': // south shore of the lagoon, close on the west boat's drift loop
       pose(-141, -25, -154, -11);
       break;
+    case 'parkst': // Brewer Fountain in front, Park St headhouse behind it
+      pose(-10, -42, -29, -69);
+      break;
+    case 'fountain': pose(-16.5, -49.5, -25, -58, 0.24); break; // Brewer Fountain close, figures + tiers
+    case 'headhouse': pose(-23.5, -67, -33, -80); break; // Park St headhouse front three-quarter
     case 'bandstand': pose(127, 29, 140, 42); break;
     case 'monument': pose(47, -32, 60, -45); break;
     case 'bench': pose(48.6, -18.6, 52, -22); break;

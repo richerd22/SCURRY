@@ -38,6 +38,20 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.12
+
+- **Brewer Fountain is the Brewer Fountain.** Three stacked
+  cylinders became a two-tier bronze fountain: a lathe-turned
+  pedestal, a wide lower bowl and a smaller upper one, a standing
+  figure on top - and the four seated figures of the original
+  (Neptune, Amphitrite, Acis and Galatea, if anyone's asking)
+  rising out of the basin at the diagonals.
+- **Park Street got its headhouse back.** The green metal box is
+  gone. In its place: glass walls in an iron frame, an arched
+  glazed gable, a shallow arched glass roof, and the T roundel
+  mounted on the glass where you can actually read it from across
+  Tremont. After dark the glass warms up like a lit station.
+
 ## What's in v0.6.11
 
 - **The swan boats are swan boats.** They were a slab, three bench

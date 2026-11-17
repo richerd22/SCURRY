@@ -281,6 +281,21 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   solidBox unchanged. New `washington` shot pose (front three-
   quarter from (-125, 83.5)). Before/after shots verified, zero
   console errors.
+- v0.6.12 (Nov 17 2026): Brewer Fountain + Park St headhouse
+  rebuilt (landmarks.js). Fountain: lathe pedestal + two lathe
+  bowls (bronzeDS = DoubleSide bronze clone) with water discs,
+  four composed seated figures (fountainFigure: plinth/seat/hips/
+  torso/head/lap/shins/arm) at the diagonals r1.5 facing out,
+  standing finial figure; basin + S.solids r5.1 unchanged.
+  Headhouse: stone base, stair-mass block inside, glazed walls
+  (headhouseGlass - transparent, emissive warm, pushed into
+  S.cityMats so daycycle lights it at night), iron mullions +
+  corner posts, arched gable = ShapeGeometry glass + holed
+  ShapeGeometry iron frame (greenMetalDS), arched glass roof
+  (cylinder segment r6.6, half-angle 0.558) + 3 torus ribs, canvas
+  T roundel (roundelTex) on both street faces, smaller PARK ST
+  sign kept; solidBox + stair hole unchanged. New shot poses:
+  parkst, fountain, headhouse. Walktest 102/102, zero errors.
 - v0.6.11 (Nov 17 2026): swan boats rebuilt (landmarks.js
   buildSwanBoats). Extruded plan-view hull (raked bow, rail cap,
   plank deck), 5 slatted bench rows, arched canvas canopy (open
