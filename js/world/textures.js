@@ -336,6 +336,56 @@ export function clockTex() {
   return toTex(cv);
 }
 
+// --- Beacon St brownstone: 8 m wide x 13 m tall unit, 3 bays x 4 floors ---
+// Parlor floor is the tall one at the bottom (raised over a basement strip);
+// flat fronts wear this texture, bow fronts wear plain stone + glass boxes.
+export function brownstoneFacade(seed, base) {
+  const W = 256, H = 512;
+  const [cv, g] = canvas(W, H);
+  const [ev, e] = canvas(W, H);
+  const R = rng(seed);
+  g.fillStyle = base; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 2400; i++) { // stone grain + weathering streaks
+    g.fillStyle = 'rgba(0,0,0,' + R() * 0.13 + ')';
+    g.fillRect(R() * W, R() * H, 3.4, 3.4);
+    if (R() < 0.3) { g.fillStyle = 'rgba(255,235,205,' + R() * 0.06 + ')'; g.fillRect(R() * W, R() * H, 2.4, 9 + R() * 22); }
+  }
+  // ashlar course lines
+  g.fillStyle = 'rgba(30,18,10,0.28)';
+  for (let y = 24; y < H; y += 26) g.fillRect(0, y, W, 1.6);
+  // floor band courses (stone stringers, kept close to the base tone -
+  // bright bands made the whole row read cream instead of brownstone)
+  g.fillStyle = 'rgba(226,210,182,0.5)';
+  for (const y of [118, 228, 338]) g.fillRect(0, y, W, 5);
+  g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 123, W, 2.4);
+  // basement strip at the very bottom (darker, small square windows)
+  g.fillStyle = 'rgba(20,12,8,0.4)'; g.fillRect(0, 486, W, 26);
+  e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
+  const cols = [26, 102, 178], winW = 52;
+  const rows = [[30, 76], [140, 76], [250, 76], [360, 108]]; // [y, h], parlor last
+  for (const [wy, wh] of rows) {
+    for (const x of cols) {
+      // lintel + sill in trim stone (thin - brownstone trim is a frame,
+      // not a panel; a fat near-white frame washed the row out)
+      g.fillStyle = '#cbbc9e'; g.fillRect(x - 4, wy - 8, winW + 8, 7);
+      g.fillRect(x - 3, wy + wh + 1, winW + 6, 5);
+      g.fillStyle = '#d8cfb8'; g.fillRect(x - 1.5, wy - 1.5, winW + 3, wh + 3);
+      g.fillStyle = '#222a34'; g.fillRect(x, wy, winW, wh);
+      g.fillStyle = 'rgba(178,206,230,0.4)'; g.fillRect(x + 4, wy + 5, 15, wh * 0.42);
+      g.fillStyle = '#efe9da'; g.fillRect(x + winW / 2 - 1.6, wy, 3.2, wh); // mullion
+      g.fillRect(x, wy + wh * 0.46, winW, 3); // sash bar
+      if (R() < 0.38) {
+        e.fillStyle = R() < 0.82 ? 'rgba(255,196,110,1)' : 'rgba(190,214,255,1)';
+        e.fillRect(x + 2, wy + 2, winW - 4, wh - 4);
+      }
+    }
+  }
+  const map = toTex(cv), emissiveMap = toTex(ev, false);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  emissiveMap.wrapS = emissiveMap.wrapT = THREE.RepeatWrapping;
+  return { map, emissiveMap };
+}
+
 // --- grass blades alpha texture for instanced tufts ---
 export function grassBladeTex() {
   const [cv, g] = canvas(128, 128);
