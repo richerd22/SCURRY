@@ -236,6 +236,8 @@ if (Q.has('shot')) {
     case 'fenway': debugEnterFenway('plate'); break;        // behind home plate, the whole yard
     case 'fenwaymonster': debugEnterFenway('monster'); break; // centre field, facing the wall
     case 'fenwaywall': debugEnterFenway('wall'); break;       // at the Monster's feet, looking up
+    case 'fenwaytop': debugEnterFenway('top'); break;         // ON the Monster, looking back at the yard
+    case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
     case 'geese': // on the deck, in warn range of the flock but outside charge range
       pose(-132, 12, -132, 0); P.pos.y = 1.15; P.grounded = true;
       break;

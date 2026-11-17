@@ -477,6 +477,54 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   golden hour), fenwaywall (Monster face at its feet, scoreboard
   ads readable), fenwaymonster (centre field), the market door;
   walktest 102/102, heroes 55, zero console errors.
+- v0.6.23 (Nov 17 2026): FENWAY AT NIGHT + THE MONSTER IS
+  CLIMBABLE + streetwall glass (fenway.js, streetwalls.js,
+  burrows.js, daycycle.js). Night: daycycle now publishes
+  S.lampFactor; fenway's buildNightRig finds the GLB's
+  Fenway_Lights materials (7 meshes) and burns them with
+  emissiveMap = the lamp-bank texture (cells glow, housing
+  stays dark - a bank, not a slab), plus a shared additive
+  glow sprite per lamp head, 3 PointLights (two front towers
+  + one behind home plate, intensity lamp*1100, decay 2) and
+  3 additive radial light-pool planes on the field. Fenway
+  sky: its own 380-star Points sharing S.starMat + 7 cloud
+  sprites sharing S.cloudMat, drifted locally in updateFenway
+  (NOT in S.clouds - the daycycle wrap would teleport them
+  12 km). Monster climb: fenGround() layers a STRIP zone (the
+  wall face read as a scramble: smoothstep ramp 0 -> 7.3 over
+  the 4 m in front of the face plane, face z=-53.3) and a TOP
+  zone (the ledge, y lerping 7.3 -> 8.9 toward the seat backs
+  at z=-57.6) over the height grid; the clamp now accepts all
+  three zones and settles toward the nearest zone centroid,
+  so the back edge holds the ledge instead of ejecting. The
+  rest of the bowl is still scenery and still clamped out.
+  One-time toast on first reaching the top. Verified by
+  harness/fenclimb3.js: 7/7 route steps (field, ramp foot,
+  mid-face, lip, ledge, back, past-the-edge) settle at the
+  designed heights; a keyboard-driven walk test is NOT the
+  proof (SwiftShader runs ~0.1x game time - the step test is).
+  Life: burrows.js exports spawnCapAt (surface-realm caps);
+  Fenway gets 4 (right-field corner, Monster base, deep
+  centre, and a trophy cap ON the Monster top) + spilled
+  pretzels/peanuts via food.js spawnFood. Streetwall glass:
+  the painted panes on Beacon/Tremont/Charles are now covered
+  by real recessed panes inside the lintel relief (thin
+  instanced boxes, glossy dark + a deterministic ~20% warm
+  lit variant registered in S.cityMats so they glow at night;
+  pane offsets reuse the relief loops, NO new R() calls -
+  seeded layouts byte-stable). Cost: +6 draw calls, +9.2k
+  tris. New shot poses: fenwaytop, charlesclose. Verified:
+  fenway golden + night (plate view), fenwaytop day (paws on
+  the ledge, trophy cap auto-collected) + night (the money
+  shot: lit yard from the top), fenwaywall night, beaconclose
+  day + night, tremontclose, charlesclose (the owed pose),
+  spawn regression; walktest 102/102, heroes 55, zero console
+  errors. Gaps that remain: only the Monster route climbs -
+  the rest of the bowl is scenery; Fenway's streets are still
+  the grey apron; glass panes sit over the painted texture
+  (texture-first behind them), and Beacon's curved bay
+  turrets keep their painted windows (flat panes cannot
+  follow the curve).
 - Roadmap (owner's direction): City Hall as the next
   teleport-reached expansion map (Fenway shipped in v0.6.22;
   Sketchfab models are WANTED in the ledger - account-gated,

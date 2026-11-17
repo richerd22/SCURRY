@@ -557,6 +557,11 @@ function makeCap(x, z, y, burrow, idx) {
   caps.push({ x, z, y, mesh, active: true, timer: 0, burrow, phase: idx * 1.93 });
 }
 
+// other realms (Fenway) seed their own caps through the same machinery:
+// surface-realm flags, so they spin, restock and collect exactly like the
+// park's twelve - the realm check is distance's job out there.
+export function spawnCapAt(x, z, y, idx) { makeCap(x, z, y, false, idx); }
+
 function collectCap(c) {
   c.active = false;
   c.mesh.visible = false;

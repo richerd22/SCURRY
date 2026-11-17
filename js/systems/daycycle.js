@@ -173,6 +173,7 @@ export function updateDaycycle(dt) {
     S.scene.fog.far = lerpKeyNum(a, b, t, 10);
   }
   const lamp = lerpKeyNum(a, b, t, 8);
+  S.lampFactor = lamp; // shared so far-flung places (Fenway) can burn their own lamps
   // water grade: a faint emissive sheen keyed to the horizon colour, warmed
   // toward lamp-orange as the lamps come up. The PMREM reflection does the
   // sky; this guarantees the pond/lagoon never reads as a black mirror at

@@ -9,7 +9,9 @@
 // server-generated GLB after the SKP proved unconvertible in-sandbox.
 // It lives far off-map at FEN (6000, 0, 6000), same trick as the Hollow
 // and the Burrows. The squirrel is kept on the playing field by a
-// polygon clamp; the stands are scenery you look at, not floors.
+// polygon clamp; the stands are scenery you look at, not floors - with
+// one exception (v0.6.23): the Monster is climbable, scramble up the
+// face and walk the top. The towers also burn at night now.
 //
 // Model calibration (from the survey, Nov 17): the SKP was built in
 // yards - home -> mound measures 20.0 model units against the real
@@ -29,7 +31,8 @@ import { S } from '../state.js';
 import { loadModel } from './models.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
-import { TUN } from './burrows.js';
+import { TUN, spawnCapAt } from './burrows.js';
+import { spawnFood } from './food.js';
 
 // ---------------------------------------------------------------- layout
 export const FEN = new THREE.Vector3(6000, 0, 6000);
@@ -50,6 +53,18 @@ const FIELD = [
   [88, -36], [104, -8], [100, 20], [76, 26], [30, 33], [-25, 34],
 ];
 const FIELD_C = { x: 22, z: -10 }; // rough centroid, for clamp nudges
+
+// The Monster (v0.6.23): the wall in left field is climbable now. Surveyed
+// from the GLB (Nov 17): the facade mesh runs x -30.9..5.5, face plane
+// z -53.3, top y 7.3; behind it the seats rise to 8.9 at z -58. A squirrel
+// scrambles the face (STRIP ramp, field side) and walks the top ledge
+// (TOP). No new physics - the Fenway ground function just answers these
+// two zones before the field grid. The field polygon overlaps both, so
+// zone priority is TOP > STRIP > FIELD.
+const MONSTER = { x0: -30.9, x1: 5.5, faceZ: -53.3, topY: 7.3, backY: 8.9, backZ: -57.6 };
+const STRIP = [[-30.9, -49.3], [5.5, -49.3], [5.5, -53.3], [-30.9, -53.3]];
+const TOP = [[-30.9, -53.3], [5.5, -53.3], [5.5, -57.6], [-30.9, -57.6]];
+const TOP_C = { x: -12.7, z: -55.45 };
 
 // height grid over the field bbox (local coords), sampled off the GLB
 const GRID = { minX: -62, maxX: 106, minZ: -57, maxZ: 36, nx: 42, nz: 24, h: null };
@@ -102,6 +117,32 @@ function gridGround(lx, lz) {
   const i00 = iz * G.nx + ix;
   const a = G.h[i00], b = G.h[i00 + 1], c = G.h[i00 + G.nx], d = G.h[i00 + G.nx + 1];
   return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz;
+}
+
+// The Fenway ground: Monster ledge, then the climb ramp, then the field
+// grid. The ramp is a smoothstep from field level at its outer edge to
+// the wall top at the face - a squirrel scramble, steep but honest.
+function fenGround(lx, lz) {
+  if (insidePoly(lx, lz, TOP)) {
+    return MONSTER.topY + (MONSTER.backY - MONSTER.topY) * ((MONSTER.faceZ - lz) / (MONSTER.faceZ - MONSTER.backZ));
+  }
+  if (insidePoly(lx, lz, STRIP)) {
+    const t = (STRIP[0][1] - lz) / (STRIP[0][1] - MONSTER.faceZ);
+    const s = t * t * (3 - 2 * t);
+    return MONSTER.topY * s;
+  }
+  return gridGround(lx, lz);
+}
+
+// nearest point on any of the three walkable zones, for the clamp
+function nearestFenPoint(lx, lz) {
+  let bd = 1e18, bx = lx, bz = lz, bc = FIELD_C;
+  for (const [poly, c] of [[FIELD, FIELD_C], [STRIP, { x: -12.7, z: -51.3 }], [TOP, TOP_C]]) {
+    const [px, pz] = nearestOnPoly(lx, lz, poly);
+    const d = (px - lx) * (px - lx) + (pz - lz) * (pz - lz);
+    if (d < bd) { bd = d; bx = px; bz = pz; bc = c; }
+  }
+  return [bx, bz, bc];
 }
 
 // ------------------------------------------------------------ field paint
@@ -175,6 +216,134 @@ function fieldTexture() {
   return tex;
 }
 
+// ------------------------------------------------------------------ night
+// Fenway at night (v0.6.23): the Warehouse model ships a dedicated
+// Fenway_Lights material on all seven tower heads - it takes an emissive
+// and burns when the shared day cycle raises the lamps (S.lampFactor).
+// On top of that: a halo sprite per tower head, three real PointLights
+// (distance-capped, they never reach the Common), and additive light
+// pools on the grass so the field itself glows at squirrel height.
+let lightsMats = [];
+let towerGlowMat = null;
+const towerLights = [];
+const poolMats = [];
+
+function radialGlowTex() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const c = cv.getContext('2d');
+  const g = c.createRadialGradient(128, 128, 8, 128, 128, 128);
+  g.addColorStop(0, 'rgba(255,255,255,0.9)');
+  g.addColorStop(0.4, 'rgba(255,255,255,0.38)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(cv);
+  return tex;
+}
+
+function buildNightRig(scene, park) {
+  const glowTex = radialGlowTex();
+  const lampHeads = [];
+  const matSet = new Set();
+  park.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    if (o.material.name === 'Fenway_Lights') {
+      matSet.add(o.material);
+      const b = new THREE.Box3().setFromObject(o);
+      lampHeads.push(b.getCenter(new THREE.Vector3()));
+    }
+  });
+  lightsMats = [...matSet];
+  for (const m of lightsMats) {
+    m.emissive = new THREE.Color(0xfff0c8);
+    m.emissiveIntensity = 0;
+    // the emissive follows the lamp-bank texture, so the individual
+    // lamp cells burn and the housing stays dark - a bank, not a slab
+    if (m.map) m.emissiveMap = m.map;
+  }
+  towerGlowMat = new THREE.SpriteMaterial({
+    map: glowTex, color: 0xffdf9e, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+  });
+  for (const c of lampHeads) {
+    const sp = new THREE.Sprite(towerGlowMat);
+    sp.position.copy(c);
+    sp.scale.set(20, 8.5, 1);
+    scene.add(sp);
+  }
+  // three real lights: the two front towers + one behind home plate,
+  // so the infield (where a squirrel enters) is lit from both ends
+  for (const [lx, ly, lz, dist] of [[-25, 31, -55, 190], [19, 31, -54, 190], [0, 32, 58, 230]]) {
+    const L = new THREE.PointLight(0xffe2b0, 0, dist, 2);
+    L.position.set(FEN.x + lx, ly, FEN.z + lz);
+    scene.add(L);
+    towerLights.push(L);
+  }
+  // light pools on the grass: soft additive ellipses, the cheap part
+  // that actually sells "lit field" at 25 cm
+  for (const [lx, lz, w, d] of [[10, -8, 110, 85], [-28, 2, 75, 60], [56, 6, 75, 60]]) {
+    const m = new THREE.MeshBasicMaterial({
+      map: glowTex, color: 0xffd9a0, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m);
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(FEN.x + lx, 0.1, FEN.z + lz);
+    pool.renderOrder = 2;
+    scene.add(pool);
+    poolMats.push(m);
+  }
+}
+
+function updateFenwayNight() {
+  const lamp = S.lampFactor || 0;
+  for (const m of lightsMats) m.emissiveIntensity = lamp * 2.2;
+  if (towerGlowMat) towerGlowMat.opacity = lamp * 0.45;
+  for (const L of towerLights) L.intensity = lamp * 1100;
+  for (const m of poolMats) m.opacity = lamp * 0.34;
+}
+
+// ------------------------------------------------------------- Fenway sky
+// The dome was already shared with the Common; the stars and clouds were
+// not - they lived over the park only. Fenway gets its own small set:
+// stars on the shared S.starMat (daycycle fades it for both skies at
+// once), clouds on the shared S.cloudMat, drifted locally here because
+// daycycle's wrap logic would teleport them back to the Common.
+const fenClouds = [];
+let fenSkyBuilt = false;
+function buildFenwaySky(scene) {
+  if (fenSkyBuilt || !S.starMat || !S.cloudMat) return;
+  fenSkyBuilt = true;
+  const starPos = [];
+  let seed = 9182;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  for (let i = 0; i < 380; i++) {
+    const a = rnd() * Math.PI * 2, e = 0.08 + rnd() * 1.35, r = 850;
+    starPos.push(Math.cos(a) * Math.cos(e) * r, Math.sin(e) * r, Math.sin(a) * Math.cos(e) * r);
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+  const stars = new THREE.Points(starGeo, S.starMat);
+  stars.position.copy(FEN);
+  scene.add(stars);
+  for (let i = 0; i < 7; i++) {
+    const sp = new THREE.Sprite(S.cloudMat);
+    const a = rnd() * Math.PI * 2, r = 240 + rnd() * 380;
+    sp.position.set(FEN.x + Math.cos(a) * r, 95 + rnd() * 85, FEN.z + Math.sin(a) * r);
+    const sc = 150 + rnd() * 190;
+    sp.scale.set(sc, sc * 0.36, 1);
+    scene.add(sp);
+    fenClouds.push({ sp, speed: 0.7 + rnd() * 0.9 });
+  }
+}
+
+function updateFenwaySky(dt) {
+  if (!fenSkyBuilt) buildFenwaySky(S.scene);
+  for (const c of fenClouds) {
+    c.sp.position.x += c.speed * dt;
+    if (c.sp.position.x > FEN.x + 430) c.sp.position.x = FEN.x - 430;
+  }
+}
+
 // ------------------------------------------------------------------ build
 let discovered = false;
 
@@ -235,6 +404,18 @@ export function buildFenway(scene) {
     scene.add(park);
     sampleHeights(park);
     buildOverlay(scene, park);
+    buildNightRig(scene, park);
+    // a little life (v0.6.23): the crowd drops things and squirrels find
+    // things. Caps ride the burrows machinery (surface realm; out here
+    // distance is the realm check), food rides food.js - one cap is the
+    // Monster-top trophy, the rest are field litter near the walls.
+    spawnCapAt(FEN.x + 96, FEN.z + 10, gridGround(96, 10) + 0.04, 20);
+    spawnCapAt(FEN.x - 52, FEN.z + 24, gridGround(-52, 24) + 0.04, 21);
+    spawnCapAt(FEN.x + 60, FEN.z - 40, gridGround(60, -40) + 0.04, 22);
+    spawnCapAt(FEN.x - 12, FEN.z - 55.5, fenGround(-12, -55.5) + 0.04, 23);
+    spawnFood('pretzel', FEN.x + 88, FEN.z + 16, { y: 0.05 });
+    spawnFood('pretzel', FEN.x - 20, FEN.z - 38, { y: 0.05 });
+    spawnFood('peanut', FEN.x + 40, FEN.z + 20, { y: 0.05 });
   });
 
   // the burrow-side door: a dark mouth on the market's east wall.
@@ -348,8 +529,11 @@ export function initFenway() {
 }
 
 // ---------------------------------------------------------------- update
+let monsterToast = false;
 export function updateFenway(dt) {
   const P = S.player;
+  updateFenwaySky(dt);
+  updateFenwayNight();
   if (!P.inFenway) return;
   const lx = P.pos.x - FEN.x, lz = P.pos.z - FEN.z;
   if (Math.abs(lx) > 500 || Math.abs(lz) > 500) {
@@ -359,19 +543,25 @@ export function updateFenway(dt) {
     toast('the grounds crew deposits you behind home plate. no questions.', 3);
     return;
   }
-  if (!insidePoly(lx, lz, FIELD)) {
-    const [bx, bz] = nearestOnPoly(lx, lz, FIELD);
+  if (!insidePoly(lx, lz, FIELD) && !insidePoly(lx, lz, STRIP) && !insidePoly(lx, lz, TOP)) {
+    const [bx, bz, bc] = nearestFenPoint(lx, lz);
     // settle a whisker inside the line, not on it
-    P.pos.x = FEN.x + bx + (FIELD_C.x - bx) * 0.01;
-    P.pos.z = FEN.z + bz + (FIELD_C.z - bz) * 0.01;
+    const dx = bc.x - bx, dz = bc.z - bz, dl = Math.hypot(dx, dz) || 1;
+    P.pos.x = FEN.x + bx + dx / dl * 0.3;
+    P.pos.z = FEN.z + bz + dz / dl * 0.3;
   }
   // the model's field is the ground here (groundHeight() is the
-  // Common's, and it says 0) - stand on the sampled surface instead
-  const gy = gridGround(P.pos.x - FEN.x, P.pos.z - FEN.z);
+  // Common's, and it says 0) - stand on the sampled surface instead,
+  // or on the Monster, if that is where the squirrel has got to
+  const gy = fenGround(P.pos.x - FEN.x, P.pos.z - FEN.z);
   if (P.pos.y < gy) {
     P.pos.y = gy;
     if (P.vel && P.vel.y < 0) P.vel.y = 0;
     P.grounded = true;
+  }
+  if (!monsterToast && insidePoly(P.pos.x - FEN.x, P.pos.z - FEN.z, TOP)) {
+    monsterToast = true;
+    toast('the Monster, climbed. obviously. the whole yard is a postcard from up here.', 4.5);
   }
 }
 
@@ -388,6 +578,10 @@ export function debugEnterFenway(which) {
   } else if (which === 'wall') {
     P.pos.set(FEN.x + 2, 0.5, FEN.z - 38);
     P.yaw = 0; P.pitch = 0.42; // at the Monster's feet, looking up
+  } else if (which === 'top') {
+    P.pos.set(FEN.x - 12, fenGround(-12, -55.5) + 0.1, FEN.z - 55.5);
+    P.yaw = Math.atan2(-(HOME_L.x - -12), -(HOME_L.z - -55.5));
+    P.pitch = -0.04; // ON the Monster, the whole yard laid out below
   } else { // 'plate'
     P.pos.set(FEN.x + HOLE_L.x + 2.6, 0.4, FEN.z + HOLE_L.z - 1.2);
     P.yaw = -1.33; P.pitch = 0.02;

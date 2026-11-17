@@ -38,6 +38,20 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.23
+
+- **Fenway after dark, and a squirrel on the Monster.** The
+  light towers actually light now: the lamp banks burn with
+  the day cycle, pools of light sit on the grass, and the
+  Fenway sky got its own stars and clouds. The Green Monster
+  is climbable - scramble straight up the face from the
+  warning track and stand on top of the wall, where a bottle
+  cap trophy is waiting. A few caps and spilled pretzels are
+  scattered around the yard for the scamper home. Back in the
+  park, the Beacon / Tremont / Charles windows are real glass
+  now - recessed panes inside the stone frames, a few of them
+  lit warm after dark.
+
 ## What's in v0.6.22
 
 - **Fenway Park.** The burrows run further than the Common. On the

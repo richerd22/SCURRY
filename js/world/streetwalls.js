@@ -64,6 +64,11 @@ export function buildBeaconRow(scene, groundHeight) {
   const bodies = [[], [], [], []], bows = [], bowWinDark = [], bowWinLit = [];
   const cornices = [], caps = [], stoops = [], doors = [], rails = [];
   const lintels = [], sills = [];
+  // recessed glass (v0.6.23): real panes set into the flat fronts, sitting
+  // a hand's width behind the lintel/sill faces so the stone frames them.
+  // The painted window border stays visible around each pane.
+  const flatDark = [], flatLit = [];
+  let paneSeq = 0;
   function row(x0, x1, frontZ) {
     for (let x = x0; x + 8 <= x1 + 0.01; x += 8) {
       const cx = x + 4, h = 12.4 + R() * 1.8, v = (R() * 4) | 0;
@@ -112,6 +117,10 @@ export function buildBeaconRow(scene, groundHeight) {
           lintels.push({ p: [cx + off, topY + 0.13, frontZ + 0.05], s: [1.9, 0.24, 0.14] });
           if (!(wy === 360 && off === 2.375)) {
             sills.push({ p: [cx + off, botY - 0.08, frontZ + 0.05], s: [1.85, 0.15, 0.2] });
+            // deterministic lit/dark split (~1 in 5 lit), no rng - the
+            // seeded row layout above must not shift
+            const lit = (paneSeq++ * 37) % 10 < 2;
+            (lit ? flatLit : flatDark).push({ p: [cx + off, midY, frontZ + 0.015], s: [1.42, (topY - botY) - 0.05, 0.03] });
           }
         }
       }
@@ -132,6 +141,8 @@ export function buildBeaconRow(scene, groundHeight) {
   scene.add(instanced(boxGeo(), ironMat, rails));
   if (lintels.length) scene.add(instanced(boxGeo(), stoneMat, lintels));
   if (sills.length) scene.add(instanced(boxGeo(), stoneMat, sills));
+  if (flatDark.length) scene.add(instanced(boxGeo(), glassDark, flatDark));
+  if (flatLit.length) scene.add(instanced(boxGeo(), glassLit, flatLit));
 }
 
 // ---------- Ring blocks: the city mass behind everything ----------
@@ -242,6 +253,12 @@ export function buildTremontRow(scene, groundHeight) {
   if (S.cityMats) S.cityMats.push(bulbMat);
   const awnMat = new THREE.MeshStandardMaterial({ roughness: 0.9 });
   const awnCols = [0x2e4a34, 0x6e2430, 0x24344e, 0x1c1c1e, 0x74552a];
+  // recessed office glass (v0.6.23), same trick as the Beacon panes
+  const glassDarkT = new THREE.MeshStandardMaterial({ color: 0x232b36, roughness: 0.16, metalness: 0.35 });
+  const glassLitT = new THREE.MeshStandardMaterial({
+    color: 0x2a2118, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.3,
+  });
+  if (S.cityMats) S.cityMats.push(glassLitT);
 
   // the street itself: asphalt slabs + a raised sidewalk on the park curb
   const street = [], walks = [];
@@ -294,6 +311,8 @@ export function buildTremontRow(scene, groundHeight) {
   // the streetwall row: 11 m units, storefront below, offices above
   const bodies = [[], [], []], cornices = [], caps = [], awnings = [];
   const trelLintels = [], trelSills = [];
+  const tpanesDark = [], tpanesLit = [];
+  let tpaneSeq = 0;
   for (let z = -99; z + 11 <= 99.5; z += 11) {
     const cz = z + 5.5, v = (R() * 3) | 0, h = 15 + R() * 9;
     const base = groundHeight(CX, cz) - 0.6, tone = 0.82 + R() * 0.3;
@@ -316,6 +335,8 @@ export function buildTremontRow(scene, groundHeight) {
       for (const off of [-4.04, -1.42, 1.20, 3.82]) {
         trelLintels.push({ p: [FRONT - 0.05, topY + 0.13, cz + off], s: [0.14, 0.24, 1.95] });
         trelSills.push({ p: [FRONT - 0.05, botY - 0.08, cz + off], s: [0.2, 0.15, 1.9] });
+        const lit = (tpaneSeq++ * 37) % 10 < 2;
+        (lit ? tpanesLit : tpanesDark).push({ p: [FRONT - 0.015, (topY + botY) / 2, cz + off], s: [0.03, (topY - botY) - 0.05, 1.32] });
       }
     }
   }
@@ -325,6 +346,8 @@ export function buildTremontRow(scene, groundHeight) {
   scene.add(instanced(boxGeo(), awnMat, awnings));
   if (trelLintels.length) scene.add(instanced(boxGeo(), stoneMat, trelLintels));
   if (trelSills.length) scene.add(instanced(boxGeo(), stoneMat, trelSills));
+  if (tpanesDark.length) scene.add(instanced(boxGeo(), glassDarkT, tpanesDark));
+  if (tpanesLit.length) scene.add(instanced(boxGeo(), glassLitT, tpanesLit));
 }
 
 // ---------- Charles Street: shopfronts + streetscape between the parks ----------
@@ -341,6 +364,12 @@ export function buildCharlesStreet(scene, groundHeight) {
     color: 0x443b28, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.4,
   });
   if (S.cityMats) S.cityMats.push(bulbMat);
+  // recessed upper glass (v0.6.23), same trick as the Beacon panes
+  const glassDarkC = new THREE.MeshStandardMaterial({ color: 0x232b36, roughness: 0.16, metalness: 0.35 });
+  const glassLitC = new THREE.MeshStandardMaterial({
+    color: 0x2a2118, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.3,
+  });
+  if (S.cityMats) S.cityMats.push(glassLitC);
 
   // sidewalks: segmented slabs hugging the terrain on both curbs
   const walks = [];
@@ -412,6 +441,8 @@ export function buildCharlesStreet(scene, groundHeight) {
   const trimMat = new THREE.MeshStandardMaterial({ color: 0xcfc4ae, roughness: 0.9 });
   const shopBodies = [[], [], []], awnings = [], parapets = [];
   const crelLintels = [], crelSills = [];
+  const cpanesDark = [], cpanesLit = [];
+  let cpaneSeq = 0;
   const FRONT = -63.8, DEPTH = 7.5, H = 7.8;
   for (const [z0, z1] of [[-58, -26], [-8, 22]]) {
     S.solidBoxes.push({ minX: FRONT - DEPTH, maxX: FRONT, minZ: z0, maxZ: z1 });
@@ -434,6 +465,8 @@ export function buildCharlesStreet(scene, groundHeight) {
       for (const off of [2.25, 0.80, -0.65, -2.11]) {
         crelLintels.push({ p: [FRONT + 0.05, topY + 0.13, cz + off], s: [0.14, 0.22, 1.2] });
         crelSills.push({ p: [FRONT + 0.05, botY - 0.08, cz + off], s: [0.2, 0.14, 1.15] });
+        const lit = (cpaneSeq++ * 37) % 10 < 2;
+        (lit ? cpanesLit : cpanesDark).push({ p: [FRONT + 0.015, (topY + botY) / 2, cz + off], s: [0.03, (topY - botY) - 0.05, 0.82] });
       }
     }
   }
@@ -442,4 +475,6 @@ export function buildCharlesStreet(scene, groundHeight) {
   scene.add(instanced(boxGeo(), parapetMat, parapets));
   if (crelLintels.length) scene.add(instanced(boxGeo(), trimMat, crelLintels));
   if (crelSills.length) scene.add(instanced(boxGeo(), trimMat, crelSills));
+  if (cpanesDark.length) scene.add(instanced(boxGeo(), glassDarkC, cpanesDark));
+  if (cpanesLit.length) scene.add(instanced(boxGeo(), glassLitC, cpanesLit));
 }
