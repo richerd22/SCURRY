@@ -38,6 +38,19 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.9
+
+- **The trees grew up.** The park's procedural elms wore perfect
+  green spheres - lollipops at any height. Their crowns are now
+  displaced, lobed geometry in four variants (no two trees share a
+  profile), with the low interior lobes in darker greens so a canopy
+  reads as a lit shell over a shadowed core. And the detailed
+  sourced trees now stand at 39 spots instead of 17 - the whole
+  Mall, more of the Garden, the Frog Pond grove, the pathside elms
+  you actually walk under, and the spawn lawn. A side effect the
+  squirrels approve of: the park renders in fewer draw calls than
+  before, because one good tree replaces eleven pieces of a fake one.
+
 ## What's in v0.6.8
 
 - **Hawk Dua is occasional now.** She used to be a metronome - stand

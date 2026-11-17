@@ -254,6 +254,23 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   stationary), ambients airborne 90% of sampled time with fly +
   perch states and low passes seen, abort cd 34.6, bite cd 174.4,
   night parks all three hawks, zero console errors.
+- v0.6.9 (Nov 17 2026): trees frontier. (1) Procedural canopies are
+  no longer spheres: `canopyGeos` in trees.js are 4 SphereGeometry
+  variants displaced by a position-only sine field (seam-safe), each
+  blob picks a variant + random rotation via `canopyBlob()`, and
+  low/interior blobs wear new `leafDarkMats` for a lit-shell /
+  shadowed-core read. CRITICAL: canopyBlob runs on its own `vrnd()`
+  stream - the shared rnd() stream deals tree positions/heights/
+  canopy radii, and the first cut of this change shifted that stream
+  and silently cost a canopy bridge (51 -> 50). With vrnd the seeded
+  park is byte-identical: walktest 51 bridges / 554.4 m / 102/102.
+  (2) Hero coverage 17 -> 39 trees: swapHeroTrees now takes deduped
+  sets in priority order (Mall cap 16, Garden 10, Frog Pond grove 6,
+  hand-placed groves 6, pathside <7.5 m from a path 10, spawn lawn
+  4; the Hollow swap is separate). A hero clone is 2 primitives
+  replacing a ~11-mesh procedural tree, so spawn-view draw calls
+  FELL 712 -> 664 (lowq) while tris rose 112k -> 161k. Remaining
+  procedural trees are the far scatter fill.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

@@ -18,6 +18,46 @@ const trunkMat2 = new THREE.MeshStandardMaterial({ map: bark, color: 0xcfc0ae, r
 const leaf = leafTex();
 const leafMats = [0x517d33, 0x5f8a38, 0x6f9a42, 0x7fa34a].map(c =>
   new THREE.MeshStandardMaterial({ map: leaf, color: c, roughness: 1 }));
+// darker interior greens: blobs seated low/inside a canopy wear these,
+// so a crown reads as a lit shell over a shadowed core instead of one
+// flat ball of the same green
+const leafDarkMats = [0x38591f, 0x406325].map(c =>
+  new THREE.MeshStandardMaterial({ map: leaf, color: c, roughness: 1 }));
+
+// Canopy geometry variants (v0.6.9): a plain sphere reads as a lollipop
+// at human height. These four share the sphere's topology but displace
+// every vertex radially by a position-only sine field - position-only
+// means the UV seam vertices move together, so no cracks - which breaks
+// the silhouette into lobes. Each blob picks a variant AND a random
+// rotation, so no two crowns share a profile.
+function makeCanopyGeo(variant) {
+  const geo = new THREE.SphereGeometry(1, 12, 9);
+  const pos = geo.attributes.position;
+  const s = variant * 7.31 + 1.7;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const n = Math.sin(x * 3.4 + s) * 0.45
+      + Math.sin(y * 5.1 + s * 1.7) * 0.30
+      + Math.sin(z * 4.3 + s * 2.3) * 0.40
+      + Math.sin((x + z) * 7.7 + s * 0.6) * 0.18;
+    const d = 1 + n * 0.15;
+    pos.setXYZ(i, x * d, y * d * 0.92, z * d);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+const canopyGeos = [0, 1, 2, 3].map(makeCanopyGeo);
+// Visual picks (variant, rotation) run on their OWN rng stream: the
+// shared rnd() stream also deals out tree positions, heights and
+// canopy radii, and the canopy-bridge network is computed from those
+// numbers - a visual choice must never move a tree.
+let vseed = 424243;
+function vrnd() { vseed = (vseed * 16807) % 2147483647; return (vseed - 1) / 2147483646; }
+function canopyBlob(mat) {
+  const m = new THREE.Mesh(canopyGeos[(vrnd() * canopyGeos.length) | 0], mat);
+  m.rotation.set((vrnd() - 0.5) * 0.4, vrnd() * Math.PI * 2, (vrnd() - 0.5) * 0.4);
+  return m;
+}
 
 export function buildTrees(scene) {
   const spots = [];
@@ -51,7 +91,6 @@ export function buildTrees(scene) {
 
   const trunkGeo = new THREE.CylinderGeometry(0.32, 0.55, 1, 7);
   const branchGeo = new THREE.CylinderGeometry(0.09, 0.16, 1, 5);
-  const leafGeo = new THREE.SphereGeometry(1, 10, 8);
 
   for (const [x, z] of spots) {
     const gy = groundHeight(x, z);
@@ -74,20 +113,26 @@ export function buildTrees(scene) {
       b.translateY(bl / 2);
       tree.add(b);
     }
-    // canopy: 4-6 flattened blobs; the lowest blob's underside is the walkable platform
+    // canopy: 4-6 displaced lobes; the lowest lobe's underside is the
+    // walkable platform. Low/interior lobes wear the dark greens, the
+    // high shell wears the lit ones - depth without extra meshes.
     const canopyR = 2.6 + rnd() * 1.3;
     const canopyY = gy + h + 0.6;
     const blobs = 4 + (rnd() * 3 | 0);
     for (let i = 0; i < blobs; i++) {
-      const leafMesh = new THREE.Mesh(leafGeo, leafMats[(rnd() * leafMats.length) | 0]);
+      const yOff = (rnd() - 0.5) * 1.2;
+      const mat = yOff < -0.15
+        ? leafDarkMats[(rnd() * leafDarkMats.length) | 0]
+        : leafMats[(rnd() * leafMats.length) | 0];
+      const leafMesh = canopyBlob(mat);
       const r = canopyR * (0.62 + rnd() * 0.45);
       leafMesh.scale.set(r, r * 0.55, r);
-      leafMesh.position.set((rnd() - 0.5) * 2.6, h + 0.6 + (rnd() - 0.5) * 1.2, (rnd() - 0.5) * 2.6);
+      leafMesh.position.set((rnd() - 0.5) * 2.6, h + 0.6 + yOff, (rnd() - 0.5) * 2.6);
       leafMesh.castShadow = true;
       tree.add(leafMesh);
     }
-    // one high crown blob for a fuller silhouette
-    const crown = new THREE.Mesh(leafGeo, leafMats[(rnd() * leafMats.length) | 0]);
+    // one high crown lobe for a fuller silhouette
+    const crown = canopyBlob(leafMats[(rnd() * leafMats.length) | 0]);
     const cr = canopyR * 0.66;
     crown.scale.set(cr, cr * 0.6, cr);
     crown.position.set(0, h + 1.7, 0);
@@ -141,17 +186,17 @@ function buildMallWaypoint(scene) {
     b.translateY(bl / 2);
     tree.add(b);
   }
-  const leafGeo = new THREE.SphereGeometry(1, 10, 8);
   const blobs = [[0, 0, 1], [1.9, 0.7, 0.72], [-1.8, 0.5, 0.78], [0.6, -1.7, 0.7], [-0.9, 1.6, 0.66]];
   blobs.forEach(([bx, bz, bs], i) => {
-    const leafMesh = new THREE.Mesh(leafGeo, leafMats[i % leafMats.length]);
+    const leafMesh = new THREE.Mesh(canopyGeos[i % canopyGeos.length], leafMats[i % leafMats.length]);
+    leafMesh.rotation.y = i * 1.13;
     const r = canopyR * bs;
     leafMesh.scale.set(r, r * 0.55, r);
     leafMesh.position.set(bx, h + 0.6 + (i % 2) * 0.5, bz);
     leafMesh.castShadow = true;
     tree.add(leafMesh);
   });
-  const crown = new THREE.Mesh(leafGeo, leafMats[2]);
+  const crown = new THREE.Mesh(canopyGeos[2], leafMats[2]);
   const cr = canopyR * 0.66;
   crown.scale.set(cr, cr * 0.6, cr);
   crown.position.set(0, h + 1.7, 0);
@@ -234,10 +279,10 @@ function buildHollowTree(scene) {
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.25, h, 10), trunkMat2);
   trunk.position.y = h / 2; trunk.castShadow = true;
   tree.add(trunk);
-  const leafGeo = new THREE.SphereGeometry(1, 10, 8);
   const leaves = [];
   for (let i = 0; i < 5; i++) {
-    const leaf = new THREE.Mesh(leafGeo, leafMats[i % leafMats.length]);
+    const leaf = new THREE.Mesh(canopyGeos[i % canopyGeos.length], leafMats[i % leafMats.length]);
+    leaf.rotation.y = i * 0.9;
     const r = 3.4 + (i % 3);
     leaf.scale.set(r, r * 0.55, r);
     leaf.position.set((i - 2) * 1.6, h + 0.8 + (i % 2) * 0.9, ((i * 7) % 3 - 1) * 1.8);
@@ -349,23 +394,69 @@ function swapHeroTrees(scene) {
     });
   }
 
-  // The Mall: elms flanking the central promenade (z = -18) become heroes.
-  const mall = elmVisuals
+  // Hero coverage (v0.6.9): a hero clone is 2 primitives replacing a
+  // ~11-mesh procedural tree, so widening coverage IMPROVES the look
+  // and cuts draw calls at once. Picks are deduped through `used` -
+  // every elm becomes a hero at most once. Priority order: the Mall,
+  // the Garden, the Frog Pond grove, the hand-placed grove clusters,
+  // and the spawn lawn (the first trees a new player ever sees).
+  const used = new Set();
+  const take = (list, cap) => {
+    const out = [];
+    for (const e of list) {
+      if (out.length >= cap) break;
+      if (used.has(e.rec)) continue;
+      used.add(e.rec);
+      out.push(e);
+    }
+    return out;
+  };
+
+  // The Mall: elms flanking the central promenade (z = -18).
+  const mallAll = elmVisuals
     .filter(({ rec }) => rec.x >= -30 && rec.x <= 196 && Math.abs(rec.z + 18) <= 13)
-    .sort((a, b) => (Math.abs(a.rec.z + 18) - Math.abs(b.rec.z + 18)) || (a.rec.x - b.rec.x))
-    .slice(0, 10);
+    .sort((a, b) => (Math.abs(a.rec.z + 18) - Math.abs(b.rec.z + 18)) || (a.rec.x - b.rec.x));
+  const mall = take(mallAll, 16);
   const mallModels = ['Tree2.gltf', 'Tree3.gltf', 'Tree4.gltf'];
 
   // Public Garden specimens: a spread of Garden elms across the west half.
   const gardenAll = elmVisuals
     .filter(({ rec }) => rec.x < -60)
     .sort((a, b) => a.rec.x - b.rec.x);
-  const garden = [];
+  const gardenPick = [];
   if (gardenAll.length) {
-    const stride = Math.max(1, Math.floor(gardenAll.length / 6));
-    for (let i = 0; i < gardenAll.length && garden.length < 6; i += stride) garden.push(gardenAll[i]);
+    const stride = Math.max(1, Math.floor(gardenAll.length / 10));
+    for (let i = 0; i < gardenAll.length; i += stride) gardenPick.push(gardenAll[i]);
   }
+  const garden = take(gardenPick, 10);
   const gardenModels = ['Tree3.gltf', 'Tree5.gltf', 'Tree4.gltf', 'Tree2.gltf'];
+
+  // Frog Pond grove: the elms ringing the pond + the Hollow tree's grove.
+  const pondAll = elmVisuals
+    .filter(({ rec }) => Math.hypot(rec.x - 95, rec.z - 12) < 38 || Math.hypot(rec.x - 80, rec.z + 8) < 18)
+    .sort((a, b) => Math.hypot(a.rec.x - 95, a.rec.z - 12) - Math.hypot(b.rec.x - 95, b.rec.z - 12));
+  const pond = take(pondAll, 6);
+
+  // The hand-placed grove clusters (NW Common, SW lawn, NE Common).
+  const groveAll = elmVisuals
+    .filter(({ rec }) => [[30, -60], [20, 60], [170, -60], [176, 70]]
+      .some(([cx, cz]) => Math.hypot(rec.x - cx, rec.z - cz) < 16))
+    .sort((a, b) => a.rec.x - b.rec.x);
+  const groves = take(groveAll, 6);
+
+  // Pathside elms: the trees a walking squirrel actually passes under -
+  // placement guarantees they stand >= 3.4 m off a path, the near ones
+  // are the most-read canopies in the park at ground level.
+  const pathAll = elmVisuals
+    .filter(({ rec }) => distToPaths(rec.x, rec.z) < 7.5)
+    .sort((a, b) => distToPaths(a.rec.x, a.rec.z) - distToPaths(b.rec.x, b.rec.z));
+  const pathside = take(pathAll, 10);
+
+  // Spawn lawn: whatever stands near the player's first view (24, 30).
+  const spawnAll = elmVisuals
+    .filter(({ rec }) => Math.hypot(rec.x - 24, rec.z - 30) < 32)
+    .sort((a, b) => Math.hypot(a.rec.x - 24, a.rec.z - 30) - Math.hypot(b.rec.x - 24, b.rec.z - 30));
+  const spawn = take(spawnAll, 4);
 
   const place = ({ group, rec }, file) => {
     let use = file;
@@ -379,6 +470,11 @@ function swapHeroTrees(scene) {
       group.visible = false;
     });
   };
+  const groveModels = ['Tree2.gltf', 'Tree4.gltf', 'Tree3.gltf'];
   mall.forEach((e, i) => place(e, mallModels[i % mallModels.length]));
   garden.forEach((e, i) => place(e, gardenModels[i % gardenModels.length]));
+  pond.forEach((e, i) => place(e, groveModels[i % groveModels.length]));
+  groves.forEach((e, i) => place(e, groveModels[(i + 1) % groveModels.length]));
+  pathside.forEach((e, i) => place(e, mallModels[(i + 1) % mallModels.length]));
+  spawn.forEach((e, i) => place(e, groveModels[(i + 2) % groveModels.length]));
 }
