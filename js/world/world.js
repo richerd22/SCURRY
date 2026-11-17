@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex } from './textures.js';
-import { buildBeaconRow } from './streetwalls.js';
+import { buildBeaconRow, buildCharlesStreet } from './streetwalls.js';
 
 // ---------- terrain height ----------
 function gauss(x, z, cx, cz, r) {
@@ -269,6 +269,7 @@ export function buildWorld(scene) {
 
   buildPerimeter(scene);
   buildBeaconRow(scene, groundHeight);
+  buildCharlesStreet(scene, groundHeight);
 }
 
 // ---------- wet path ribbons ----------

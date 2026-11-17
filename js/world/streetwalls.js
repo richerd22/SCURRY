@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { brownstoneFacade } from './textures.js';
+import { brownstoneFacade, storefrontFacade } from './textures.js';
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -108,4 +108,107 @@ export function buildBeaconRow(scene, groundHeight) {
   scene.add(instanced(boxGeo(), graniteMat, stoops));
   scene.add(instanced(boxGeo(), doorMat, doors));
   scene.add(instanced(boxGeo(), ironMat, rails));
+}
+
+// ---------- Charles Street: shopfronts + streetscape between the parks ----------
+// The asphalt band alone read as a gap. Now it has sidewalks, crosswalks,
+// street lamps, parked cars, and a low shopfront row (Beacon Hill's Charles
+// St shops are the reference) facing it from behind the Garden fence, with
+// gaps left at the three path crossings (z -70, -18, 30).
+export function buildCharlesStreet(scene, groundHeight) {
+  const R = rng(20261118);
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x9b968b, roughness: 0.95 });
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xd8d5cc, roughness: 0.8 });
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0x22252a, roughness: 0.55, metalness: 0.6 });
+  const bulbMat = new THREE.MeshStandardMaterial({
+    color: 0x443b28, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.4,
+  });
+  if (S.cityMats) S.cityMats.push(bulbMat);
+
+  // sidewalks: segmented slabs hugging the terrain on both curbs
+  const walks = [];
+  for (let z = -96; z < 96; z += 16) {
+    for (const cx of [-59.9, -40.1]) {
+      walks.push({ p: [cx, groundHeight(cx, z + 8) + 0.06, z + 8], s: [2.7, 0.14, 16.4] });
+    }
+  }
+  scene.add(instanced(boxGeo(), concrete, walks));
+
+  // crosswalk zebras at the three path crossings
+  const stripes = [];
+  for (const cz of [-70, -18, 30]) {
+    for (let i = 0; i < 6; i++) stripes.push({ p: [-56.5 + i * 2.6, 0.055, cz], s: [1.7, 0.03, 3.6] });
+  }
+  scene.add(instanced(boxGeo(), stripeMat, stripes));
+
+  // street lamps: plain posts + emissive bulbs (no PointLights - the park
+  // lamps carry the light budget; these join the city-glow system instead)
+  const posts = [], bulbs = [];
+  for (let i = 0; i < 8; i++) {
+    const z = -91 + i * 26, x = i % 2 ? -40.3 : -59.7;
+    const gy = groundHeight(x, z);
+    posts.push({ p: [x, gy + 2.3, z], s: [1, 4.6, 1] });
+    bulbs.push({ p: [x, gy + 4.72, z], s: [1, 1, 1] });
+  }
+  scene.add(instanced(new THREE.CylinderGeometry(0.07, 0.1, 1, 6), ironMat, posts));
+  scene.add(instanced(new THREE.SphereGeometry(0.17, 8, 6), bulbMat, bulbs));
+
+  // parked cars: body + cabin + wheels, three instanced meshes total.
+  // Curbs kept clear within 6 m of the crossings so path traffic reads.
+  const paints = [0x8a8d90, 0x2a2d33, 0x5a1f1f, 0x1f3350, 0xd8d5cc, 0x3a4a3a, 0x74552a];
+  const carBodies = [], carCabins = [], carWheels = [];
+  const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.24, 10);
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.9 });
+  const cabinMat = new THREE.MeshStandardMaterial({ color: 0x1d242e, roughness: 0.3, metalness: 0.2 });
+  const paintMat = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0.35 });
+  function car(x, z, hz) {
+    const gy = groundHeight(x, z);
+    carBodies.push({ p: [x, gy + 0.62, z], s: [1.72, 0.58, 4.35], c: paints[(R() * paints.length) | 0] });
+    carCabins.push({ p: [x, gy + 1.12, z - hz * 0.28], s: [1.54, 0.46, 2.15] });
+    for (const sx of [-0.8, 0.8]) for (const sz of [-1.38, 1.38]) {
+      carWheels.push({ p: [x + sx, gy + 0.34, z + sz], s: [1, 1, 1], rz: Math.PI / 2 });
+    }
+    S.solidBoxes.push({ minX: x - 0.95, maxX: x + 0.95, minZ: z - 2.25, maxZ: z + 2.25 });
+  }
+  for (const z of [-88, -52, -38, 2, 48, 64, 84]) car(-56.1, z, 1);
+  for (const z of [-80, -46, -6, 12, 56, 76]) car(-43.9, z, -1);
+  scene.add(instanced(boxGeo(), paintMat, carBodies));
+  scene.add(instanced(boxGeo(), cabinMat, carCabins));
+  scene.add(instanced(wheelGeo, wheelMat, carWheels));
+
+  // shopfront row: two segments on the west side, fronts facing the street
+  const shopDefs = [
+    ['#6e4636', '#274435'], ['#5d4a3a', '#5e2430'], ['#71564a', '#24344e'],
+  ];
+  const shopMats = shopDefs.map(([b, band], i) => {
+    const f = storefrontFacade(611 + i * 7, b, band);
+    const m = new THREE.MeshStandardMaterial({
+      map: f.map, emissiveMap: f.emissiveMap, emissive: 0xffc37a,
+      emissiveIntensity: 0.12, roughness: 0.92,
+    });
+    if (S.cityMats) S.cityMats.push(m);
+    return m;
+  });
+  const awnMat = new THREE.MeshStandardMaterial({ roughness: 0.9 });
+  const awnCols = [0x2e4a34, 0x6e2430, 0x24344e, 0x1c1c1e, 0x74552a];
+  const parapetMat = new THREE.MeshStandardMaterial({ color: 0x59524a, roughness: 1 });
+  const shopBodies = [[], [], []], awnings = [], parapets = [];
+  const FRONT = -63.8, DEPTH = 7.5, H = 7.8;
+  for (const [z0, z1] of [[-58, -26], [-8, 22]]) {
+    S.solidBoxes.push({ minX: FRONT - DEPTH, maxX: FRONT, minZ: z0, maxZ: z1 });
+    const segBase = groundHeight(FRONT - DEPTH / 2, (z0 + z1) / 2) - 0.4;
+    parapets.push({ p: [FRONT - DEPTH / 2, segBase + H + 0.18, (z0 + z1) / 2], s: [DEPTH + 0.3, 0.34, z1 - z0 + 0.3] });
+    for (let z = z0; z + 6.2 <= z1 + 0.01; z += 6.2) {
+      const cz = z + 3.1, v = (R() * 3) | 0;
+      const base = groundHeight(FRONT - DEPTH / 2, cz) - 0.4;
+      shopBodies[v].push({ p: [FRONT - DEPTH / 2, base + H / 2, cz], s: [DEPTH, H, 6.2] });
+      awnings.push({
+        p: [FRONT + 0.95, base + 3.08, cz], s: [2.2, 0.09, 5.5], rz: -0.38,
+        c: awnCols[(R() * awnCols.length) | 0],
+      });
+    }
+  }
+  shopBodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), shopMats[i], items)); });
+  scene.add(instanced(boxGeo(), awnMat, awnings));
+  scene.add(instanced(boxGeo(), parapetMat, parapets));
 }

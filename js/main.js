@@ -206,6 +206,8 @@ if (Q.has('shot')) {
     case 'beacon': pose(40, -38, 40, -112); break; // the Mall looking north at the Beacon St row
     case 'beaconwest': pose(-120, -40, -140, -108); break; // Garden north edge, Beacon row west segment
     case 'beaconclose': pose(36, -93, 43, -111); break; // one Beacon unit at stoop distance
+    case 'charles': pose(-44, 52, -64, -4); break; // Charles St: shopfronts, awnings, parked cars
+    case 'charlesnorth': pose(-50, -34, -52, -78); break; // up Charles St toward the Beacon end
     case 'bandstand': pose(127, 29, 140, 42); break;
     case 'monument': pose(47, -32, 60, -45); break;
     case 'bench': pose(48.6, -18.6, 52, -22); break;

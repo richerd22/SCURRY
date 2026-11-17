@@ -386,6 +386,59 @@ export function brownstoneFacade(seed, base) {
   return { map, emissiveMap };
 }
 
+// --- Charles St storefront: 6.2 m wide x 7.8 m tall shop unit ---
+// One brick floor over a sign band over a glass shopfront. The shopfront
+// emissive is near-always lit: shops glow onto the street at dusk.
+export function storefrontFacade(seed, base, band) {
+  const W = 256, H = 320;
+  const [cv, g] = canvas(W, H);
+  const [ev, e] = canvas(W, H);
+  const R = rng(seed);
+  g.fillStyle = base; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 1500; i++) {
+    g.fillStyle = 'rgba(0,0,0,' + R() * 0.13 + ')';
+    g.fillRect(R() * W, R() * H, 3, 3);
+  }
+  g.fillStyle = 'rgba(30,16,10,0.3)';
+  for (let y = 14; y < 128; y += 15) g.fillRect(0, y, W, 1.3); // brick courses, upper floor
+  e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
+  // upper windows: 4 double-hung with trim
+  for (let i = 0; i < 4; i++) {
+    const x = 14 + i * 60, wy = 26, ww = 42, wh = 82;
+    g.fillStyle = '#ddd3bf'; g.fillRect(x - 3, wy - 6, ww + 6, 6);
+    g.fillStyle = '#e8e2d2'; g.fillRect(x - 2, wy - 2, ww + 4, wh + 4);
+    g.fillStyle = '#232b36'; g.fillRect(x, wy, ww, wh);
+    g.fillStyle = 'rgba(178,206,230,0.38)'; g.fillRect(x + 3, wy + 4, 12, 34);
+    g.fillStyle = '#e8e2d2'; g.fillRect(x + ww / 2 - 1.5, wy, 3, wh); g.fillRect(x, wy + wh * 0.48, ww, 3);
+    if (R() < 0.32) { e.fillStyle = 'rgba(255,196,110,1)'; e.fillRect(x + 2, wy + 2, ww - 4, wh - 4); }
+  }
+  g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(0, 120, W, 3);
+  // sign band: deep colour + pale blocks suggesting lettering (no words)
+  g.fillStyle = band; g.fillRect(0, 126, W, 38);
+  g.fillStyle = 'rgba(240,230,205,0.9)';
+  let lx = 18 + R() * 10;
+  while (lx < W - 26) { const lw = 7 + R() * 13; g.fillRect(lx, 138, lw, 13); lx += lw + 6 + R() * 7; }
+  g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, 164, W, 3);
+  // shopfront: three glass panes + a door, dark iron framing
+  g.fillStyle = '#191c20'; g.fillRect(6, 170, W - 12, 128);
+  for (let i = 0; i < 3; i++) {
+    const x = 12 + i * 56;
+    g.fillStyle = '#2c3844'; g.fillRect(x, 176, 48, 104);
+    g.fillStyle = 'rgba(190,216,235,0.3)'; g.fillRect(x + 4, 182, 14, 44);
+    if (R() < 0.88) { e.fillStyle = R() < 0.85 ? 'rgba(255,198,118,1)' : 'rgba(205,225,255,1)'; e.fillRect(x + 2, 178, 44, 100); }
+  }
+  const dx = 186;
+  g.fillStyle = '#23262b'; g.fillRect(dx, 176, 52, 122);
+  g.fillStyle = '#33404c'; g.fillRect(dx + 7, 184, 38, 62);
+  if (R() < 0.8) { e.fillStyle = 'rgba(255,198,118,0.9)'; e.fillRect(dx + 9, 186, 34, 58); }
+  g.fillStyle = '#c8b490'; g.fillRect(dx + 42, 240, 5, 5); // knob
+  g.fillStyle = '#101216'; g.fillRect(0, 298, W, 22); // bulkhead
+  const map = toTex(cv), emissiveMap = toTex(ev, false);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  emissiveMap.wrapS = emissiveMap.wrapT = THREE.RepeatWrapping;
+  return { map, emissiveMap };
+}
+
 // --- grass blades alpha texture for instanced tufts ---
 export function grassBladeTex() {
   const [cv, g] = canvas(128, 128);
