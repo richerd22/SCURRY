@@ -38,6 +38,17 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.22
+
+- **Fenway Park.** The burrows run further than the Common. On the
+  rat market's east wall there's a door marked WESTBOUND - take the
+  long west run and you pop out of a hole behind home plate into an
+  empty Fenway: the Green Monster, the light towers, the whole yard,
+  kept flat and green. The field is yours to scamper; the stands are
+  scenery. Dive back through the hole when you're done. The park is
+  the Garner / King / Thrall model (see credits) - the game's first
+  expansion map, reached the way the tunnels always promised.
+
 ## What's in v0.6.13
 
 - **Mrs. Mallard got her line in order.** The Ducklings were
@@ -246,6 +257,9 @@ poly.pizza):
 
 - Dogs + Shiba Inu, Man (all humans) - **Quaternius**
 - Post Lantern (lamp posts) - **Kay Lousberg (KayKit)**
+- Fenway Park - **Bruce Garner, Nathan King, and Mason Thrall**
+  (3D Warehouse; used under the 3D Warehouse Terms of Use, not CC0 -
+  this line is the exception to the "all CC0" note above)
 
 Everything else is procedural: canvas textures, code-built landmarks, and
 synthesized WebAudio. No AI-generated imagery anywhere, ever.
@@ -261,7 +275,8 @@ js/world/           world.js (terrain/paths/water/sky) - trees.js -
 js/systems/         player.js - humans.js - food.js - dogs.js - ranger.js -
                     hollow.js - burrows.js (tunnels + rat market) -
                     geese.js - crows.js - hawk.js - canopy.js - save.js -
-                    daycycle.js - audio.js - models.js (GLB loading)
+                    daycycle.js - audio.js - models.js (GLB loading) -
+                    fenway.js (Fenway Park, via the burrows' long run)
 js/ui/              hud.js - touch.js (mobile controls)
 assets/models/      sourced GLBs in use (originals + ledger in the library)
 docs/               PLAYER-FAQ.md - AGENT-GUIDE.md

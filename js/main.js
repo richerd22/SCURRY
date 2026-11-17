@@ -16,6 +16,7 @@ import { buildRanger, updateRanger, biteRanger } from './systems/ranger.js';
 import { buildHawk, updateHawk, biteHawk } from './systems/hawk.js';
 import { buildHollow, initHollowInteractables, updateHollow } from './systems/hollow.js';
 import { buildBurrows, initBurrows, updateBurrows, debugEnterBurrow } from './systems/burrows.js';
+import { buildFenway, initFenway, updateFenway, debugEnterFenway } from './systems/fenway.js';
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
@@ -60,9 +61,11 @@ buildHollow(scene);
 buildGeese(scene);
 buildCrows(scene);
 buildBurrows(scene);
+buildFenway(scene);
 initFood();
 initHollowInteractables();
 initBurrows();
+initFenway();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
@@ -230,6 +233,9 @@ if (Q.has('shot')) {
     }
     case 'burrow': debugEnterBurrow('entry'); break;   // inside an entry chamber, torch-lit
     case 'market': debugEnterBurrow('market'); break;  // the rat exchange, deep end
+    case 'fenway': debugEnterFenway('plate'); break;        // behind home plate, the whole yard
+    case 'fenwaymonster': debugEnterFenway('monster'); break; // centre field, facing the wall
+    case 'fenwaywall': debugEnterFenway('wall'); break;       // at the Monster's feet, looking up
     case 'geese': // on the deck, in warn range of the flock but outside charge range
       pose(-132, 12, -132, 0); P.pos.y = 1.15; P.grounded = true;
       break;
@@ -288,7 +294,7 @@ function perfLadder(dt) {
   }
 }
 function warnings() {
-  if (S.player.inHollow || S.player.inBurrow) return '';
+  if (S.player.inHollow || S.player.inBurrow || S.player.inFenway) return '';
   if (S.ranger && S.ranger.state === 'chase') return '! THE RANGER IS AFTER YOU - CLIMB SOMETHING !';
   if (S.gooseWarn > 0) return '! THE GEESE ARE OBJECTING - WAIT, BRIBE THEM, OR GO AROUND !';
   if (S.hawkFlash > 0) return '! HAWK DUA HAS YOU MARKED - GET UNDER COVER !';
@@ -311,6 +317,7 @@ function loop() {
     if (!S.debugShot) { updateDogs(dt); updateRanger(dt); updateHawk(dt); } // frozen in shot mode so poses hold
     updateHollow(dt);
     updateBurrows(dt);
+    updateFenway(dt);
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateCanopy(dt);

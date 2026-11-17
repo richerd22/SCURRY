@@ -433,10 +433,54 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   haul. Unlock = a human SketchUp export (SKP -> DAE/OBJ), after
   which the same pipeline applies. The whole-city USDZ is both
   unreadable here (no pxr) and too coarse at Fenway. Full verdict:
-  assets-library/bpda/fenway-spike/README.md.
-- Roadmap (owner's direction): Fenway + City Hall as teleport-reached
-  expansion maps (Sketchfab models are WANTED in the ledger -
-  account-gated, need a human grab).
+  assets-library/bpda/fenway-spike/README.md. (Superseded the same
+  day by v0.6.22 below: the Warehouse served its own GLB conversion
+  of the detailed model - no human export needed after all.)
+- v0.6.22 (Nov 17 2026): FENWAY PARK IS IN THE GAME
+  (js/systems/fenway.js, new). The detailed route landed: Richard's
+  Fenway SKP is the Garner / King / Thrall 3D Warehouse model, and
+  the Warehouse entity page embeds a server-generated GLB (SimLab
+  exporter) served publicly - fetched directly, no SketchUp, no
+  account. Banked at assets-library/models/fenway-park-warehouse/
+  FenwayPark.glb with attribution (3D Warehouse Terms of Use - free
+  use with attribution, NOT a CC license; do not redistribute the
+  raw file outside the game); game copy play/assets/models/
+  fenway.glb (649 KB, 58 meshes / ~4.7k tris / 28 photo textures).
+  Integration: FEN anchor (6000, 0, 6000), second sky dome sharing
+  S.skyMat, grey apron. Reachable the way the design wants -
+  burrow-side door on the market room's east wall (dark mouth +
+  WESTBOUND / GREEN AT THE END OF IT signs, built from fenway.js
+  so burrows.js is untouched), "E - take the long west run" ->
+  emergence hole behind home plate (THE LONG RUN sign), "E - dive
+  back to the burrows" returns to the market. Calibration: model
+  units are yards -> uniform scale 0.9144; home at model (-54, 6)
+  lands at Fenway-local (-35, 10). The player is clamped to the
+  field polygon and grounded on a raycast height grid sampled off
+  the loaded model; the field itself is painted as a canvas
+  overlay (mow stripes on the home->centre axis, dirt warning
+  track, skin infield, chalk foul lines) because the model's field
+  is a draped photo. THE HARD LESSON: the model's Google Earth
+  ground sheet is REMOVED at load - it is lumpy by a metre-plus,
+  and at a 0.25 m eye height those lumps walled off the entire
+  park (bisect-verified in-page: the sheet alone filled the sky
+  from behind home plate). The architecture - bowl, Monster,
+  towers, facades, scoreboard - is all real geometry and stays;
+  the field is flat, like a ballfield. Honest gaps: the stands
+  are scenery (field-clamped, no climbing the bowl); the tower
+  lamp banks are unlit texture - no night lighting at Fenway yet;
+  no caps, food or NPCs out there yet; no clouds/stars in the
+  Fenway sky (the dome shares the park shader, the star/cloud
+  layers still live over the Common); the streets around the
+  park are the plain grey apron now (the photo slab went out
+  with the sheet); the centre-field bleacher deck overhangs the
+  deep-centre track - duck. Verified: shots fenway (midday +
+  golden hour), fenwaywall (Monster face at its feet, scoreboard
+  ads readable), fenwaymonster (centre field), the market door;
+  walktest 102/102, heroes 55, zero console errors.
+- Roadmap (owner's direction): City Hall as the next
+  teleport-reached expansion map (Fenway shipped in v0.6.22;
+  Sketchfab models are WANTED in the ledger - account-gated,
+  need a human grab).
 - **Multiplayer is roadmap-only - no netcode yet.** Design note: a
   WebSocket relay on a Cloudflare Worker + Durable Object fits the
   existing stack; sync transforms + anim state at 10-15 Hz with
