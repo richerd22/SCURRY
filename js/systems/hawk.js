@@ -420,7 +420,7 @@ export function updateHawk(dt) {
         hawk.timer = SCREECH_TIME;
         hawk.screechTarget.copy(P.pos);
         if (sfx.screech) sfx.screech();
-        S.spottedFlash = Math.max(S.spottedFlash || 0, 1.6);
+        S.hawkFlash = Math.max(S.hawkFlash || 0, 1.6);
         if (!hawk.warned) { hawk.warned = true; toast(FIRST_DIVE_TOAST, 3.2); }
       }
       break;
@@ -446,7 +446,7 @@ export function updateHawk(dt) {
       hawk.screechTarget.copy(P.pos);
       const pulse = 2.1 + Math.sin(hawk.sessionTime * 18) * 0.45;
       placeDisc(P.pos.x, P.pos.z, pulse, 0.34 + Math.sin(hawk.sessionTime * 18) * 0.08);
-      S.spottedFlash = Math.max(S.spottedFlash || 0, 0.4);
+      S.hawkFlash = Math.max(S.hawkFlash || 0, 0.4);
       if (hawk.timer <= 0) {
         // the dive point is FIXED from here on
         hawk.diveTarget.copy(P.pos);

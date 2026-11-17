@@ -270,7 +270,7 @@ function buildHollowTree(scene) {
 
 // ---------------------------------------------------------------------------
 // HERO TREES - Quaternius "Trees" set (CC0 1.0), split from the 5-tree blob
-// in the asset library into Tree1..Tree5.glb (see assets-library ledger).
+// in the asset library into Tree1..Tree5.gltf (see assets-library ledger).
 //
 // VISUAL SWAP ONLY, same pattern as dogs/humans/lamp posts: the procedural
 // elms above are built first and register everything gameplay reads -
@@ -287,11 +287,11 @@ function buildHollowTree(scene) {
 // fitHeight centres the canopy bbox; the axis offsets below shift the clone
 // back so the TRUNK (what the squirrel climbs) sits on the registered x/z.
 const HERO_TREES = {
-  'Tree1.glb': { h: 6.867, cx: -0.105, cz: -0.126, ax: -0.01, az: 0.03, trunkR: 0.17 },
-  'Tree2.glb': { h: 6.555, cx: -0.095, cz: 0.051, ax: 0.01, az: -0.03, trunkR: 0.17 },
-  'Tree3.glb': { h: 5.281, cx: 0.631, cz: 0.060, ax: 0.01, az: -0.03, trunkR: 0.17 },
-  'Tree4.glb': { h: 5.096, cx: -0.237, cz: -0.098, ax: -0.02, az: 0.00, trunkR: 0.18 },
-  'Tree5.glb': { h: 2.980, cx: -0.005, cz: 0.010, ax: 0.01, az: 0.00, trunkR: 0.12 },
+  'Tree1.gltf': { h: 6.867, cx: -0.105, cz: -0.126, ax: -0.01, az: 0.03, trunkR: 0.17 },
+  'Tree2.gltf': { h: 6.555, cx: -0.095, cz: 0.051, ax: 0.01, az: -0.03, trunkR: 0.17 },
+  'Tree3.gltf': { h: 5.281, cx: 0.631, cz: 0.060, ax: 0.01, az: -0.03, trunkR: 0.17 },
+  'Tree4.gltf': { h: 5.096, cx: -0.237, cz: -0.098, ax: -0.02, az: 0.00, trunkR: 0.18 },
+  'Tree5.gltf': { h: 2.980, cx: -0.005, cz: 0.010, ax: 0.01, az: 0.00, trunkR: 0.12 },
 };
 const elmVisuals = [];   // {group, rec} for every procedural elm, in build order
 let hollowVisual = null; // {trunk, leaves, hole, rim, rec}
@@ -333,7 +333,7 @@ function swapHeroTrees(scene) {
   if (hollowVisual) {
     const hv = hollowVisual;
     const targetH = elmTargetH(hv.rec);
-    heroInstance('Tree1.glb', targetH).then((hero) => {
+    heroInstance('Tree1.gltf', targetH).then((hero) => {
       if (!hero) return;
       hero.group.position.set(hv.rec.x, hv.rec.gy, hv.rec.z);
       scene.add(hero.group);
@@ -354,7 +354,7 @@ function swapHeroTrees(scene) {
     .filter(({ rec }) => rec.x >= -30 && rec.x <= 196 && Math.abs(rec.z + 18) <= 13)
     .sort((a, b) => (Math.abs(a.rec.z + 18) - Math.abs(b.rec.z + 18)) || (a.rec.x - b.rec.x))
     .slice(0, 10);
-  const mallModels = ['Tree2.glb', 'Tree3.glb', 'Tree4.glb'];
+  const mallModels = ['Tree2.gltf', 'Tree3.gltf', 'Tree4.gltf'];
 
   // Public Garden specimens: a spread of Garden elms across the west half.
   const gardenAll = elmVisuals
@@ -365,12 +365,12 @@ function swapHeroTrees(scene) {
     const stride = Math.max(1, Math.floor(gardenAll.length / 6));
     for (let i = 0; i < gardenAll.length && garden.length < 6; i += stride) garden.push(gardenAll[i]);
   }
-  const gardenModels = ['Tree3.glb', 'Tree5.glb', 'Tree4.glb', 'Tree2.glb'];
+  const gardenModels = ['Tree3.gltf', 'Tree5.gltf', 'Tree4.gltf', 'Tree2.gltf'];
 
   const place = ({ group, rec }, file) => {
     let use = file;
     // Tree5 is a small squat tree; never blow it up to full elm height.
-    if (use === 'Tree5.glb' && elmTargetH(rec) > 9.5) use = 'Tree3.glb';
+    if (use === 'Tree5.gltf' && elmTargetH(rec) > 9.5) use = 'Tree3.gltf';
     heroInstance(use, elmTargetH(rec)).then((hero) => {
       if (!hero) return;
       hero.group.position.set(rec.x, rec.gy, rec.z);

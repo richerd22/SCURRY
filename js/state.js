@@ -45,7 +45,8 @@ export const S = {
   carried: null,       // food type string or null
   timeHours: 17.6,     // starts at golden hour
   rangerAlert: 0,      // seconds the ranger stays mad
-  spottedFlash: 0,     // HUD warning timer
+  spottedFlash: 0,     // HUD warning timer (dogs)
+  hawkFlash: 0,        // HUD warning timer (Hawk Dua - her own line, not the dog's)
   paused: false,
   started: false,
   muted: false,

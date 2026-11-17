@@ -147,11 +147,9 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   closed). fadeCatch in main.js now takes optional {pos, message,
   grounded} - ranger behaviour unchanged.
 - Known warts: foreground grass tufts read as dark silhouettes at
-  golden hour (floored in v0.6.1, still wants a real-GPU eyeball);
-  split tree GLBs are
-  ~2.3 MB each (shared textures duplicated per file); during a hawk
-  screech the HUD warning reuses the dog-scent line (shared
-  spottedFlash).
+  golden hour (floored in v0.6.1, still wants a real-GPU eyeball).
+  (Split-tree texture duplication and the hawk/dog shared HUD line
+  were fixed in v0.6.7 - see the round notes below.)
 - v0.5 (Nov 16 2026): burrow tunnels + rat black market
   (`systems/burrows.js` - 6 entrances, hub-and-ring rect network at
   (3000,0,3000), 2 storage chambers, caps collectible + the Exchange:
@@ -208,6 +206,34 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   legs (13.9 m / gap 6.4 and 14.0 m / gap 6.9): network is 51 bridges /
   554.4 m, walktest 102/102, zero console errors. The old "western
   Mall row has no canopy bridge" wart is CLOSED.
+- v0.6.3-0.6.7 (Nov 16-17 2026): the landmark fidelity round.
+  Bridge rebuilt as a true suspension bridge (CatmullRom catenary
+  cable tubes, suspender rods, X-braced towers, instanced balusters,
+  abutments; deck platformBoxes + goose deck height UNCHANGED).
+  State House: extruded triangular pediment, lathe bell-profile
+  dome, drumTex windowed drum, columned lantern + pinecone finial,
+  arcadeTex ground-floor arcade, cornice balustrade. Monument:
+  LatheGeometry column with entasis + fluteTex, capital, reliefTex
+  bronze panels, 4 corner figures (with their own small solids),
+  flag staff on the summit figure. Bandstand: shallow sphere-cap
+  dome (apex kept at the old 9.1 platform line - S.platforms and
+  respawnPoint untouched), entablature ring, 28-seg round deck.
+  Skyline: buildSkylineTowers in world.js (glass slab via
+  glassFacade + envMapIntensity, setback stack, spired shaft +
+  beacon, clock tower via clockTex + pyramid cap); glass mat joins
+  S.cityMats so daycycle drives its dusk glow. New shot poses:
+  bridge, bandstand, monument. Hawk wart FIXED: S.hawkFlash is her
+  own timer now (hawk.js writes it, main.js warnings() gives her
+  her own line, loop decays it); dogs keep S.spottedFlash. Tree
+  wart FIXED: Tree1-5 ship as .gltf + .bin with the 3 shared
+  textures externalized once into assets/models/tex/ (md5-verified
+  identical across the old GLBs; geometry byte-preserved; original
+  GLBs remain canonical in the asset library). Tree payload
+  11.5 MB -> ~3.4 MB. Walktest 102/102, all shot poses zero-error.
+  STILL placeholder-grade, plainly: procedural elm canopies at
+  human height, the Washington statue + swan boats (abstract
+  low-poly), ducklings (stylized), generic ring-block facades
+  between the four skyline towers, Park St headhouse (box + sign).
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

@@ -1,0 +1,286 @@
+{
+ "asset": {
+  "generator": "FBX2glTF v0.9.7 + SCURRY split (per-tree)",
+  "version": "2.0"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    0
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "name": "NormalTree_1",
+   "mesh": 0,
+   "rotation": [
+    -0.707106828689575,
+    0,
+    0,
+    0.707106709480286
+   ],
+   "scale": [
+    100,
+    100,
+    100
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ "meshes": [
+  {
+   "name": "NormalTree_1",
+   "primitives": [
+    {
+     "attributes": {
+      "NORMAL": 0,
+      "POSITION": 1,
+      "TEXCOORD_0": 2
+     },
+     "material": 0,
+     "indices": 3,
+     "mode": 4
+    },
+    {
+     "attributes": {
+      "NORMAL": 4,
+      "POSITION": 5,
+      "TEXCOORD_0": 6
+     },
+     "material": 1,
+     "indices": 7,
+     "mode": 4
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "name": "NormalTree_Bark",
+   "alphaMode": "OPAQUE",
+   "extras": {
+    "fromFBX": {
+     "shadingModel": "Phong",
+     "isTruePBR": false
+    }
+   },
+   "normalTexture": {
+    "index": 0,
+    "texCoord": 0
+   },
+   "pbrMetallicRoughness": {
+    "baseColorTexture": {
+     "index": 1,
+     "texCoord": 0
+    },
+    "baseColorFactor": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "metallicFactor": 0.400000005960464,
+    "roughnessFactor": 0.301511347293854
+   }
+  },
+  {
+   "name": "NormalTree_Leaves",
+   "alphaMode": "BLEND",
+   "extras": {
+    "fromFBX": {
+     "shadingModel": "Phong",
+     "isTruePBR": false
+    }
+   },
+   "pbrMetallicRoughness": {
+    "baseColorTexture": {
+     "index": 2,
+     "texCoord": 0
+    },
+    "baseColorFactor": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "metallicFactor": 0.400000005960464,
+    "roughnessFactor": 0.301511347293854
+   }
+  }
+ ],
+ "textures": [
+  {
+   "name": "normalmap_texture",
+   "sampler": 0,
+   "source": 0
+  },
+  {
+   "name": "base_color_texture",
+   "sampler": 0,
+   "source": 1
+  },
+  {
+   "name": "base_color_texture",
+   "sampler": 0,
+   "source": 2
+  }
+ ],
+ "images": [
+  {
+   "name": "NormalTree_Bark_Normal.png",
+   "uri": "tex/tree-tex-6e06166c.png"
+  },
+  {
+   "name": "NormalTree_Bark.png",
+   "uri": "tex/tree-tex-bb2b27d5.png"
+  },
+  {
+   "name": "NormalTree_Leaves.png",
+   "uri": "tex/tree-tex-d371222b.png"
+  }
+ ],
+ "samplers": [
+  {}
+ ],
+ "accessors": [
+  {
+   "componentType": 5126,
+   "type": "VEC3",
+   "count": 2921,
+   "bufferView": 2,
+   "byteOffset": 0
+  },
+  {
+   "componentType": 5126,
+   "type": "VEC3",
+   "count": 2921,
+   "bufferView": 1,
+   "byteOffset": 0,
+   "min": [
+    -0.016520120203495,
+    -0.00619010953232646,
+    -0.0000986902450677007
+   ],
+   "max": [
+    0.0144042391330004,
+    0.00676365848630667,
+    0.0618576034903526
+   ]
+  },
+  {
+   "componentType": 5126,
+   "type": "VEC2",
+   "count": 2921,
+   "bufferView": 3,
+   "byteOffset": 0
+  },
+  {
+   "componentType": 5123,
+   "type": "SCALAR",
+   "count": 14376,
+   "bufferView": 0,
+   "byteOffset": 0
+  },
+  {
+   "componentType": 5126,
+   "type": "VEC3",
+   "count": 7456,
+   "bufferView": 6,
+   "byteOffset": 0
+  },
+  {
+   "componentType": 5126,
+   "type": "VEC3",
+   "count": 7456,
+   "bufferView": 5,
+   "byteOffset": 0,
+   "min": [
+    -0.0213086791336536,
+    -0.0124562354758382,
+    0.029108477756381
+   ],
+   "max": [
+    0.0192025601863861,
+    0.0149835897609591,
+    0.0685675218701363
+   ]
+  },
+  {
+   "componentType": 5126,
+   "type": "VEC2",
+   "count": 7456,
+   "bufferView": 7,
+   "byteOffset": 0
+  },
+  {
+   "componentType": 5123,
+   "type": "SCALAR",
+   "count": 11184,
+   "bufferView": 4,
+   "byteOffset": 0
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteOffset": 0,
+   "byteLength": 28752,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 28752,
+   "byteLength": 35052,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 63804,
+   "byteLength": 35052,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 98856,
+   "byteLength": 23368,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 122224,
+   "byteLength": 22368,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 144592,
+   "byteLength": 89472,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 234064,
+   "byteLength": 89472,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 323536,
+   "byteLength": 59648,
+   "target": 34962
+  }
+ ],
+ "buffers": [
+  {
+   "uri": "Tree1.bin",
+   "byteLength": 383184
+  }
+ ]
+}

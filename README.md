@@ -38,6 +38,26 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.7
+
+- **The landmarks grew bones.** The lagoon bridge is a real
+  suspension bridge now - sagging catenary cables, suspender rods,
+  X-braced towers, baluster railings, stone abutments (the geese
+  still hold the deck; some things are sacred). The State House got
+  its pediment, a bell-profile dome, a windowed drum and a proper
+  lantern with the gilded pinecone. The Soldiers and Sailors
+  Monument has a fluted, tapered column, bronze relief panels and
+  its four corner figures. The bandstand wears a shallow dome
+  instead of a witch hat. And the skyline learned four silhouettes:
+  a glass slab, a setback stack, a spired shaft with a beacon, and
+  a clock tower.
+- **Hawk Dua has her own warning line.** She used to borrow the
+  dog's "HAS YOUR SCENT" alert, which was slander in both
+  directions. Hers now reads HAWK DUA HAS YOU MARKED.
+- **The hero trees lost 8 MB.** All five tree models embedded
+  identical copies of the same three textures; they now share one
+  external set. Same trees, lighter park.
+
 ## What's in v0.6.2
 
 - **The western Mall is on the network now.** The two elms flanking

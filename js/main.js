@@ -269,6 +269,7 @@ function warnings() {
   if (S.player.inHollow || S.player.inBurrow) return '';
   if (S.ranger && S.ranger.state === 'chase') return '! THE RANGER IS AFTER YOU - CLIMB SOMETHING !';
   if (S.gooseWarn > 0) return '! THE GEESE ARE OBJECTING - WAIT, BRIBE THEM, OR GO AROUND !';
+  if (S.hawkFlash > 0) return '! HAWK DUA HAS YOU MARKED - GET UNDER COVER !';
   if (S.spottedFlash > 0) return '! A DOG HAS YOUR SCENT !';
   if (nearestDogDist() < 7 && S.player.grounded && !S.player.climbing) return 'a dog is eyeing you...';
   return '';
@@ -280,6 +281,7 @@ function loop() {
   perfLadder(dt);
   if (S.started && !S.paused) {
     if (S.spottedFlash > 0) S.spottedFlash -= dt;
+    if (S.hawkFlash > 0) S.hawkFlash -= dt;
     updateDaycycle(dt);
     updatePlayer(dt, camera);
     updateHumans(dt);
