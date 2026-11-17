@@ -218,7 +218,7 @@ function collideWalls(pos) {
       else if (m === dzl) pos.z = b.minZ - RADIUS; else pos.z = b.maxZ + RADIUS;
     }
   }
-  if (!S.player.inHollow && !S.player.inBurrow && !S.player.inFenway && !S.player.inGarden && !S.player.inCityHall) {
+  if (!S.player.inHollow && !S.player.inBurrow && !S.player.inFenway && !S.player.inGarden && !S.player.inCityHall && !S.player.inEsplanade) {
     pos.x = Math.max(-208, Math.min(208, pos.x));
     pos.z = Math.max(-118, Math.min(118, pos.z));
   }

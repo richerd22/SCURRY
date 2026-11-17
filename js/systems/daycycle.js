@@ -247,7 +247,12 @@ export function updateDaycycle(dt) {
     const P = S.player;
     const eyeY = P.pos.y + 0.25;
     let under = 0;
-    for (const [e, wy] of WATER_BODIES) {
+    // destination zones (v0.6.30: the Esplanade's Charles River)
+    // register their own water bodies in S.waterBodiesExtra -
+    // same [ellipse, planeY] shape as WATER_BODIES.
+    const bodies = S.waterBodiesExtra && S.waterBodiesExtra.length
+      ? WATER_BODIES.concat(S.waterBodiesExtra) : WATER_BODIES;
+    for (const [e, wy] of bodies) {
       const dx = (P.pos.x - e.x) / e.rx, dz = (P.pos.z - e.z) / e.rz;
       if (dx * dx + dz * dz < 1 && eyeY < wy) { under = 1; break; }
     }

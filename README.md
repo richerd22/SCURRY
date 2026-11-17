@@ -38,6 +38,28 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.30
+
+- **The burrows run north now.** The rat market has a
+  fourth door - north wall, west of the Exchange stall,
+  signed RIVERBOUND / THE ESPLANADE. It lets out in a
+  mulched tree bed on the Charles River Esplanade: the
+  Hatch Shell on its granite pad, the audience oval,
+  the gravel path, elms you can climb, and the river
+  itself, wading-depth at the bank with stepping stones
+  out to a trophy cap. Cambridge is across the water,
+  being a skyline about it.
+- **The river is real water.** It runs on the park's
+  own water system - duck your head under wading out
+  and the world goes the same green murk as the lagoon.
+  A line of buoys marks where it gets deep. It gets
+  deep.
+- The shell model is the City of Boston's own 3D data
+  (BPDA, public domain) - the same open-data family as
+  City Hall and the Fenway neighborhood shells. It is
+  a massing model: the silhouette is the building, the
+  inside is nobody's business.
+
 ## What's in v0.6.29
 
 - **The burrows run east now.** The rat market has a
@@ -399,6 +421,11 @@ poly.pizza):
   through v0.6.25 and **released with the game in v0.6.26 on the
   project owner's explicit decision** (Nov 17, 2026); it ships at
   `assets/models/garden.glb` and `garden.js` loads it best-effort
+- Boston City Hall + Hatch Memorial Shell + the Fenway
+  neighborhood shells - **BPDA / City of Boston** "Boston 3D"
+  open data (PDDL, public domain): `assets/models/cityhall.glb`,
+  `assets/models/hatchshell.glb`,
+  `assets/models/fenway-neighborhood.glb`
 
 Everything else is procedural: canvas textures, code-built landmarks, and
 synthesized WebAudio. No AI-generated imagery anywhere, ever.
@@ -417,7 +444,10 @@ js/systems/         player.js - humans.js - food.js - dogs.js - ranger.js -
                     daycycle.js - audio.js - models.js (GLB loading) -
                     fenway.js (Fenway Park, via the burrows' long run) -
                     garden.js (TD Garden, via the burrows' north run;
-                    model license-held, loads best-effort)
+                    model license-held, loads best-effort) -
+                    cityhall.js (City Hall Plaza, via the east run) -
+                    esplanade.js (Esplanade + Hatch Shell, via the
+                    river run)
 js/ui/              hud.js - touch.js (mobile controls)
 assets/models/      sourced GLBs in use (originals + ledger in the library)
 docs/               PLAYER-FAQ.md - AGENT-GUIDE.md

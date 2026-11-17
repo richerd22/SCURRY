@@ -899,8 +899,129 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   v0.6-shots/cityhall-{before,after}/ (market south
   wall before/after, emergence, plaza wide, facade
   elevation, return door).
+- v0.6.30 (Nov 17 2026): THE ESPLANADE + HATCH SHELL -
+  THE NORTH DESTINATION (js/systems/esplanade.js, new).
+  The rat market's NORTH wall gets the fourth door:
+  dark mouth + RIVERBOUND / THE ESPLANADE signs at
+  TUN.x+40.2, TUN.z-5.96, on the wall's west stretch
+  (the Exchange stall owns x ~43.3..46.7, the lounge
+  crate sits at 48.6 - both east of the mouth), built
+  from esplanade.js so burrows.js is untouched.
+  "E - take the river run" -> emergence in a mulched
+  tree bed on the Esplanade; the same bed's mouth
+  returns ("E - dive back to the burrows"). Neighbour
+  note: the TD Garden door interactable sits at
+  (TUN.x+39.7, TUN.z+3.8) r 2.3 despite its "west wall"
+  comment - 8.2 m south of this door, radii never
+  overlap, but a debug pose standing between them shows
+  the Garden prompt; the esplanadedoor pose stands at
+  TUN.z-2.4 for that reason.
+  Anchor ESP = (-3000, 0, -6000), due north-west and
+  CLEAR of the phantom: probed before committing
+  (harness/espprobe.js, groundHeight grid +/-320 m at
+  16 m steps, 1681 points - ALL zero at ESP). The
+  (0,0,-6000) due-north anchor is CONTAMINATED (451
+  nonzero, max 8: its east columns catch the same
+  State House terrace term as City Hall's - the term
+  reaches any x > 172 at z < -72, clear out to
+  (6000,-6000), which reads a uniform 8). Rule stands:
+  far anchors keep x < 172 or z > -72; ESP's x -3000
+  is west of the term's reach entirely.
+  The zone is an EMBANKMENT, and the height discipline
+  is the round's load-bearing choice: land at LAND_Y
+  1.05, granite pad top 1.17, riverbed at BED_Y 0,
+  water plane 0.5. The bed MUST be 0 - player.js's
+  surfaceAt() starts from groundHeight(), which answers
+  0 out here, so any floor below 0 is unwalkable (the
+  player falls through it to 0 and the destination's
+  raise-to-ground then fights physics). Ground is
+  analytic (espGround(): pad / lawn / slope smoothstep
+  z -44..-41 / bed); containment is a polygon clamp
+  (x +/-185, z -56..100 - the buoy line is the north
+  edge, so deep water is a wade, never a swim).
+  The river runs on the park's own water: the plane
+  wears S.waterMat, and the zone registers its ellipse
+  in S.waterBodiesExtra, which daycycle's submerge loop
+  now concatenates with WATER_BODIES - duck under
+  wading out and the v0.6.28 murk (fog 1.2/30, tint
+  #0d3742 at 0.3) engages on the Charles exactly as in
+  the lagoon. Honest limit: player.js's inWater()
+  slowdown knows only the lagoon/Frog Pond ellipses,
+  so wading here does not slow the squirrel - the read
+  is visual only. Two stepping stones (platformBoxes)
+  climb out of the shallows: A top 0.48, B top 0.98.
+  The shell is the BANKED BPDA massing GLB
+  (BOS-E8BPX-5IKAI-U40PV, tile BOS_H_4, PDDL;
+  ATTRIBUTION.md row added): 21,166 bytes, 305 tris,
+  game-local metres (x +/-16.9, y 0..20.0, z +/-12.55),
+  seated on the granite pad at (0, 26), re-skinned warm
+  stone. Orientation was MEASURED, not eyeballed
+  (numpy raycast + z-slice profile over the raw GLB):
+  the tall arch face is the model's +z side, the dome
+  terraces down toward -z - so rotation.y = PI puts
+  the face to the river and the dome to Storrow,
+  confirmed in controlled yaw shots
+  (v0.6-shots/esplanade-after/shell-face-from-oval.png).
+  It is a CLOSED massing solid - no hollow conch, no
+  stage, no interior; it ships as scenery with a
+  solidBox footprint, City Hall discipline.
+  Composition, all code: seeded lawn + audience oval,
+  gravel path (z -38..-32.5) with a spur to the stone
+  entry at x 21, riprap slope (150 instanced rocks),
+  instanced granite curb with two gaps, buoy line
+  every 30 m at z -56, 11 composed climbable elms in
+  the park register (registered in S.trees/platforms/
+  solids AFTER buildCanopy ran, so no bridges form and
+  the park walktest is untouched), 6 slatted benches,
+  8 path lamps (2 real PointLights on S.lampFactor),
+  own sky dome + lazy stars/clouds (cityhall pattern).
+  Backdrops, labelled as such: Back Bay streetwall row
+  + Storrow ribbon to the south, Cambridge skyline
+  shells across the river (z -206..-242, two tall
+  towers) - flat backdrop only, Fenway-hood rules.
+  Caps 50-54 ride the GLB-load callback like City
+  Hall's: 50 is the TROPHY, on stepping stone B (the
+  reach beat is the two-stone climb out of the
+  shallows); 51 on the (48,-28) path elm's canopy
+  platform; 52 on the pad; 53 at the west path end;
+  54 by the return hole. Food: pretzel + peanut on the
+  path, popcorn by the oval - with a catch worth
+  remembering: food.js re-pins every ground food to
+  groundHeight()+0.05 each frame, which on a 1.05 m
+  embankment whose heightfield answers 0 would bury
+  the food inside the land box. The zone's items are
+  re-pinned to LAND_Y by an interactable tick
+  (updateFood runs ticks after its re-pin - canopy.js's
+  hook, same trick). Zone life is deliberately still:
+  no dogs, no ranger, no geese, no crows - the systems
+  do not extend out here cheaply, and a quiet river
+  lawn is the fiction. Debug poses: esplanade,
+  esplanadeshell, esplanaderiver, esplanadewade,
+  esplanadecanopy, esplanadedoor. Proof harnesses:
+  harness/esptravel.js (real interactables both ways,
+  9 ground steps incl. both stones + a canopy platform,
+  clamp recovery from deep water and far west, food at
+  embankment height) + harness/espwade.js (the murk
+  probe - esptravel's first tint check searched
+  style.background for a hex string the browser
+  serializes as rgb(13, 55, 66); the fog numbers had
+  already proven the engagement). Verified: esptravel
+  + espwade PASS (25 checks), walktest 102/102 local,
+  node --check all JS, zero console errors everywhere.
+  Perf: spawn view 553 calls / 331,404 tris - calls
+  AND tris identical to the pre-round baseline (the
+  destination is frustum-culled 6.7 km away; S.trees
+  123 -> 134 is registry only). Live-byte verification
+  (version poll, GLB byte count, espwalktestlive.js,
+  esplivetravel.js) is the release gate run against
+  the pushed build. Evidence:
+  v0.6-shots/esplanade-{before,after}/ (market north
+  wall before/after, emergence, shell wide, shell face,
+  river, wade murk, canopy, door) +
+  esplanade-after-live/ after the push.
 - Roadmap (owner's direction): City Hall shipped as the
-  east teleport-reached expansion map in v0.6.29 (Fenway
+  east teleport-reached expansion map in v0.6.29, the
+  Esplanade as the north one in v0.6.30 (Fenway
   shipped in v0.6.22, TD Garden in v0.6.24/26;
   Sketchfab models are WANTED in the ledger - account-gated,
   need a human grab).

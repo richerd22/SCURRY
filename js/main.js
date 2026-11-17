@@ -20,6 +20,7 @@ import { buildFenway, initFenway, updateFenway, debugEnterFenway } from './syste
 import { buildFenwayHood, updateFenwayHood } from './systems/fenwayhood.js';
 import { buildGarden, initGarden, updateGarden, debugEnterGarden } from './systems/garden.js';
 import { buildCityHall, initCityHall, updateCityHall, debugEnterCityHall } from './systems/cityhall.js';
+import { buildEsplanade, initEsplanade, updateEsplanade, debugEnterEsplanade } from './systems/esplanade.js';
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
@@ -68,12 +69,14 @@ buildFenway(scene);
 buildFenwayHood(scene);
 buildGarden(scene);
 buildCityHall(scene);
+buildEsplanade(scene);
 initFood();
 initHollowInteractables();
 initBurrows();
 initFenway();
 initGarden();
 initCityHall();
+initEsplanade();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
@@ -259,6 +262,12 @@ if (Q.has('shot')) {
     case 'cityhallfacade': debugEnterCityHall('facade'); break;  // on the podium terrace at the facade's feet, nose up
     case 'cityhallreturn': debugEnterCityHall('return'); break;  // on the plaza facing the burrow mouth you'd dive back down
     case 'cityhalldoor': debugEnterCityHall('door'); break;      // in the rat market, facing the new EASTBOUND door
+    case 'esplanade': debugEnterEsplanade('emerge'); break;      // out of the tree bed, shell + river ahead
+    case 'esplanadeshell': debugEnterEsplanade('shell'); break;  // on the oval, facing the shell across its pad
+    case 'esplanaderiver': debugEnterEsplanade('river'); break;  // on the path at the stone entry, river + skyline beyond
+    case 'esplanadewade': debugEnterEsplanade('wade'); break;    // in the shallows between the stones, eye under the plane
+    case 'esplanadecanopy': debugEnterEsplanade('canopy'); break; // up the path elm, river below
+    case 'esplanadedoor': debugEnterEsplanade('door'); break;    // in the rat market, facing the new RIVERBOUND door
     case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
     case 'geese': // on the deck, in warn range of the flock but outside charge range
       pose(-132, 12, -132, 0); P.pos.y = 1.15; P.grounded = true;
@@ -345,6 +354,7 @@ function loop() {
     updateFenwayHood(dt);
     updateGarden(dt);
     updateCityHall(dt);
+    updateEsplanade(dt);
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateCanopy(dt);
