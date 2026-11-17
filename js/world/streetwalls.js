@@ -63,6 +63,7 @@ export function buildBeaconRow(scene, groundHeight) {
 
   const bodies = [[], [], [], []], bows = [], bowWinDark = [], bowWinLit = [];
   const cornices = [], caps = [], stoops = [], doors = [], rails = [];
+  const lintels = [], sills = [];
   function row(x0, x1, frontZ) {
     for (let x = x0; x + 8 <= x1 + 0.01; x += 8) {
       const cx = x + 4, h = 12.4 + R() * 1.8, v = (R() * 4) | 0;
@@ -80,8 +81,10 @@ export function buildBeaconRow(scene, groundHeight) {
       rails.push({ p: [cx, base + 1.04, frontZ + 1.62], s: [7.8, 0.06, 0.06] });
       rails.push({ p: [cx, base + 0.58, frontZ + 1.62], s: [7.8, 0.05, 0.05] });
       // bow front on most units: a half-cylinder bay with its own glass
+      let bowOff = null, bowTop = 0;
       if (R() < 0.72) {
         const bx = cx + (R() - 0.5) * 2.2, bh = h - 3.1, by = base + 1.15;
+        bowOff = bx - cx; bowTop = by + bh;
         bows.push({ p: [bx, by + bh / 2, frontZ - 0.25], s: [1, bh, 1], c: new THREE.Color(bases[v]).multiplyScalar(0.92 + R() * 0.16).getHex() });
         for (const fy of [0.3, 0.54, 0.78]) {
           for (const a of [-0.62, 0, 0.62]) {
@@ -90,6 +93,25 @@ export function buildBeaconRow(scene, groundHeight) {
               s: [0.66, 1.55, 0.08], ry: a,
             };
             (R() < 0.35 ? bowWinLit : bowWinDark).push(item);
+          }
+        }
+      }
+      // fence-line relief (v0.6.18): the flat fronts were texture-only, so
+      // at the fence they read flat. Give every painted window a real
+      // stone lintel + sill, placed from the texture's own grid
+      // (brownstoneFacade: cols at px 52/128/204 of 256, rows below).
+      // Windows hidden behind the bow keep the bow's own glass instead;
+      // the parlor sill beside the stoop would clip the door - skipped
+      // (its lintel doubles as the door's). No R() calls here: the
+      // seeded row layout above must not shift.
+      for (const [wy, wh] of [[30, 76], [140, 76], [250, 76], [360, 108]]) {
+        const topY = base + h * (1 - wy / 512), botY = base + h * (1 - (wy + wh) / 512);
+        const midY = (topY + botY) / 2;
+        for (const off of [-2.375, 0, 2.375]) {
+          if (bowOff !== null && Math.abs(off - bowOff) < 1.8 && midY < bowTop - 0.1) continue;
+          lintels.push({ p: [cx + off, topY + 0.13, frontZ + 0.05], s: [1.9, 0.24, 0.14] });
+          if (!(wy === 360 && off === 2.375)) {
+            sills.push({ p: [cx + off, botY - 0.08, frontZ + 0.05], s: [1.85, 0.15, 0.2] });
           }
         }
       }
@@ -108,6 +130,8 @@ export function buildBeaconRow(scene, groundHeight) {
   scene.add(instanced(boxGeo(), graniteMat, stoops));
   scene.add(instanced(boxGeo(), doorMat, doors));
   scene.add(instanced(boxGeo(), ironMat, rails));
+  if (lintels.length) scene.add(instanced(boxGeo(), stoneMat, lintels));
+  if (sills.length) scene.add(instanced(boxGeo(), stoneMat, sills));
 }
 
 // ---------- Ring blocks: the city mass behind everything ----------
