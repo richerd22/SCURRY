@@ -144,15 +144,18 @@ export function stateHouseFacade() {
     g.fillRect(R() * W, R() * H, 5, 3);
   }
   e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
-  // two rows of tall windows with white trim
-  for (const wy of [52, 152]) {
+  // three rows of tall windows with white trim (v0.6.27: was two rows
+  // stretched over the block's 13 m - the Bulfinch front has three
+  // floors, and at Common distance the extra floor line is what makes
+  // the front read as a state house instead of a warehouse)
+  for (const wy of [16, 94, 172]) {
     for (let i = 0; i < 13; i++) {
       const x = 36 + i * 76;
-      g.fillStyle = '#e9e6dd'; g.fillRect(x - 4, wy - 5, 40, 76);
-      g.fillStyle = '#232c38'; g.fillRect(x, wy, 32, 66);
-      g.fillStyle = 'rgba(190,214,235,0.5)'; g.fillRect(x + 3, wy + 4, 12, 26);
-      g.fillStyle = '#e9e6dd'; g.fillRect(x + 14, wy, 3, 66); g.fillRect(x, wy + 31, 32, 3);
-      if (R() < 0.55) { e.fillStyle = 'rgba(255,190,110,0.95)'; e.fillRect(x + 2, wy + 2, 28, 62); }
+      g.fillStyle = '#e9e6dd'; g.fillRect(x - 4, wy - 5, 40, 70);
+      g.fillStyle = '#232c38'; g.fillRect(x, wy, 32, 60);
+      g.fillStyle = 'rgba(190,214,235,0.5)'; g.fillRect(x + 3, wy + 4, 12, 24);
+      g.fillStyle = '#e9e6dd'; g.fillRect(x + 14, wy, 3, 60); g.fillRect(x, wy + 28, 32, 3);
+      if (R() < 0.55) { e.fillStyle = 'rgba(255,190,110,0.95)'; e.fillRect(x + 2, wy + 2, 28, 56); }
     }
   }
   return { map: toTex(cv), emissiveMap: toTex(ev, false) };

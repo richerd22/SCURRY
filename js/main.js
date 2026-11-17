@@ -211,6 +211,8 @@ if (Q.has('shot')) {
     case 'fountain': pose(-16.5, -49.5, -25, -58, 0.24); break; // Brewer Fountain close, figures + tiers
     case 'headhouse': pose(-23.5, -67, -33, -80); break; // Park St headhouse front three-quarter
     case 'ducklings': pose(-73.5, 28.5, -78, 34, 0.1); break; // Mrs. Mallard's line, Garden path
+    case 'promenade': pose(2, -18, 150, -18); break; // ON the Mall apron (v0.6.27), east down the promenade
+    case 'pondedge': pose(74.5, 21.5, 95, 12, -0.1); break; // Frog Pond SW shore (v0.6.27): curb stones + water at eye height
     case 'beacon': pose(40, -38, 40, -112); break; // the Mall looking north at the Beacon St row
     case 'beaconwest': pose(-120, -40, -140, -108); break; // Garden north edge, Beacon row west segment
     case 'beaconclose': pose(36, -93, 43, -111); break; // one Beacon unit at stoop distance

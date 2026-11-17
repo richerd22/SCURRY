@@ -678,6 +678,72 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   with the real model (court, bowl, jumbotron), the live
   GLB URL serving 200 at the banked byte size, walktest
   102/102, zero console errors.
+- v0.6.27 (Nov 17 2026): THE PRIORITY PASS - the home park
+  first, per the owner's explicit direction (the Common +
+  Garden's perfection outranks every destination).
+  (1) HERO TREES TO FULL COVERAGE: swapHeroTrees gained a
+  final everyone-else pass - heroes 55 -> 121 of 123 tree
+  records. Every elmVisuals elm is now a hero GLB at its
+  seeded position/scale; the existing 55 priority picks
+  keep their exact models. The two non-heroes are
+  deliberate: the Mall waypoint elm (hand-tuned crown, its
+  blobs are placed against the bridge admission numbers)
+  and the Charles St snag (bare by design). Spawn view
+  (lowq): draw calls 724 -> 546 (-25%, a hero is 2 meshes
+  vs ~11 procedural), triangles 233,906 -> 329,512 (+41% -
+  real canopy geometry; the perf ladder still guards weak
+  devices, and the owner's real-device check remains the
+  gate for anything further). Garden view 602 calls /
+  283k tris; statehouse view 308 / 192k.
+  (2) LANDMARK DETAIL: monument corner figures rebuilt as
+  composed statues (monumentFigure: robe/hips/torso/head/
+  two arms, facing their corners; same plinths, same
+  solids); the summit figure gained arms + a shoulder
+  drape; Brewer Fountain runs water - translucent fall
+  shells tier to tier with foam rings + a granite basin
+  lip (static shells, env sheen animates them; no finial
+  drip - the finial stands IN the upper bowl); bandstand
+  gained a 64-block dentil course under the entablature;
+  lagoon bridge gained granite end posts with ball caps;
+  State House facade texture now draws THREE window rows
+  (was two stretched over 13 m) and a 4-tread granite
+  front stair (each tread a platformBox - climbable to
+  the arcade face). State House WINGS were assessed and
+  NOT built: the block's east end already reaches x=214
+  and the Tremont row stands at 215.8 - there is no map
+  room; noted here so nobody re-litigates it.
+  (3) GROUND FIDELITY: every wet path ribbon got a wider,
+  darker packed-earth shoulder under it (+0.022 vs +0.04);
+  the Mall got a true promenade - a 9.4 m apron ribbon
+  over its standard ribbon with a 10.8 m shoulder (heights
+  stack 0 / 0.03 / 0.04 / 0.058, no shared planes); plaza
+  discs got shoulder rings; lagoon + Frog Pond ringed
+  with low granite curb blocks (265 instances, one
+  InstancedMesh, per-block groundHeight seating, ~0.14 m
+  proud, visual only); grass tufts 5200 -> 6800 (tufts
+  are the last rnd() consumers in trees.js, so the new
+  1600 append - no existing tuft moved). New shot poses:
+  promenade (on the Mall looking east), pondedge (Frog
+  Pond SW shore). Bench/lamp consistency was audited, not
+  changed: all 22 benches are the Quaternius swap, all
+  park lamps the Post Lantern swap - already uniform.
+  Verified: node --check all JS, herocount (123 trees,
+  121 heroes, 51 bridges, 554.4 m canopy), walktest
+  102/102, 11 after-shots vs 6 before-shots (spawn,
+  garden, statehouse, fountain, monument, bridge,
+  promenade, pondedge, canopy, down), zero console errors
+  everywhere. STILL ABSTRACT / KNOWN GAPS after this
+  round: the fountain falls are static translucent shells
+  (no animated water shader); wading puts the camera
+  under the single-sided water plane, so the lagoon bed
+  reads dry from inside (pre-existing; a water-volume
+  pass is its own round); bronze in shadowless lowq reads
+  near-black (production env light carries it); the black
+  spiky tuft silhouettes at distance in lowq shots are a
+  pre-existing SwiftShader artifact, present identically
+  in v0.6.26 before-shots; State House wings impossible
+  (above); swan boats + Park St headhouse remain the
+  composed-procedural versions from v0.6.10.
 - Roadmap (owner's direction): City Hall as the next
   teleport-reached expansion map (Fenway shipped in v0.6.22;
   Sketchfab models are WANTED in the ledger - account-gated,

@@ -38,6 +38,37 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.27
+
+- **The priority pass: the home park, finished first.** Per
+  Richard's call (Nov 17 2026) the Common + Garden's
+  perfection outranks every destination - so:
+- **Every elm is a hero now.** Hero GLB coverage went from
+  55 of 123 trees to 121: every scatter elm on the Common
+  and in the Garden wears a sourced canopy. The two
+  holdouts are deliberate (a hand-tuned Mall waypoint elm
+  and a bare snag). Draw calls at spawn FELL by a quarter
+  (724 -> 546) - a hero is 2 meshes where a procedural elm
+  was ~11 - for +96k triangles of real canopy.
+- **Landmarks at squirrel height.** The Brewer Fountain
+  RUNS: water spills tier to tier into foam rings, and the
+  basin grew a stone lip. The Monument's four corner
+  figures are composed statues now (robes, arms, the lot),
+  and its summit figure has arms - one on the flag staff.
+  The bandstand wears a dentil course. The lagoon bridge
+  lands on granite posts with ball caps.
+- **The State House front.** Three floors of windows (was
+  two stretched tall), and a granite front stair you can
+  actually climb to the arcade. (Its long side wings
+  honestly don't fit this map - the Tremont row stands
+  where the east wing would go.)
+- **The ground layer.** Every path grew a packed-earth
+  shoulder; the Mall is a true wide promenade now; the
+  lagoon and Frog Pond wear low granite curb stones all
+  the way around; the grass tufts went 5,200 -> 6,800.
+  Two new camera poses for checking it all: `promenade`
+  and `pondedge`.
+
 ## What's in v0.6.26
 
 - **The other Garden is IN.** The TD Garden model held

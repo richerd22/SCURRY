@@ -76,6 +76,17 @@ function buildStateHouse(scene) {
     }
   }
   box(56, 1.9, 0.25, arcadeMat, 0, 1.0, 9.56, g, false);      // ground-floor arcade on the plinth face
+  // front steps (v0.6.27): a granite stair from the front lawn up to
+  // the portico floor (the base-trim top, y=2). Every tread is a real
+  // platformBox, so a squirrel can climb them and stand at the arcade
+  // face. (The real front's long east/west wings do NOT fit this map -
+  // the block's east end already reaches x=214 with the Tremont row
+  // standing at 215.8 - so the composition stays centre-only.)
+  for (let i = 0; i < 4; i++) {
+    const top = 1.6 - i * 0.4, zf = 9.5 + i * 0.9;
+    box(15, top, 0.9, granite, 0, top / 2, zf + 0.45, g);
+    S.platformBoxes.push({ minX: x - 7.5, maxX: x + 7.5, minZ: z + zf, maxZ: z + zf + 0.9, y: gy + top });
+  }
   box(58, 1.6, 18, white, 0, 13.6, 0, g);                     // cornice
   for (const px of [-27.6, 27.6]) box(0.9, 11, 0.3, white, px, 7.2, 8.08, g, false); // corner pilasters
   // balustrade along the front cornice
@@ -125,6 +136,24 @@ function buildStateHouse(scene) {
 // --- Soldiers and Sailors Monument on the central hill ---
 const columnMat = new THREE.MeshStandardMaterial({ map: fluteTex(), roughness: 0.9 });
 const reliefMat = new THREE.MeshStandardMaterial({ map: reliefTex(), roughness: 0.55, metalness: 0.55 });
+// one composed corner figure for the monument's bottom tier: a flared
+// draped robe, hips, torso, head, and two arms in a classical pose -
+// the same composed-shape honesty as the Brewer Fountain figures
+function monumentFigure() {
+  const f = new THREE.Group();
+  cyl(0.14, 0.30, 0.72, bronze, 0, 0.36, 0, f, 9);            // robe
+  const hips = new THREE.Mesh(new THREE.SphereGeometry(0.19, 9, 7), bronze);
+  hips.scale.set(1.05, 0.75, 1); hips.position.y = 0.74; hips.castShadow = true; f.add(hips);
+  const torso = cyl(0.115, 0.165, 0.5, bronze, 0, 1.06, 0, f, 8);
+  torso.rotation.x = 0.05;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 9, 7), bronze);
+  head.position.set(0, 1.47, 0.01); head.castShadow = true; f.add(head);
+  const armA = cyl(0.045, 0.055, 0.52, bronze, 0.24, 1.02, 0.06, f, 6); // bent across the body
+  armA.rotation.z = 0.5; armA.rotation.x = -0.5;
+  const armB = cyl(0.045, 0.055, 0.5, bronze, -0.23, 0.98, 0, f, 6);    // hanging
+  armB.rotation.z = -0.25;
+  return f;
+}
 function buildMonument(scene) {
   const g = new THREE.Group();
   const x = 60, z = -45, gy = groundHeight(x, z);
@@ -135,12 +164,15 @@ function buildMonument(scene) {
   for (const [px, pz, ry] of [[0, 3.03, 0], [0, -3.03, 0], [3.03, 0, 1], [-3.03, 0, 1]]) {
     box(ry ? 0.1 : 3.4, 1.5, ry ? 3.4 : 0.1, reliefMat, px, 3.5, pz, g, false);
   }
-  // four corner figures on the bottom tier (War, Peace, and friends)
+  // four corner figures on the bottom tier (War, Peace, and friends).
+  // v0.6.27: composed figures - draped robe, torso, arms - replacing
+  // the old cylinder-and-ball placeholders. Each faces its corner.
   for (const [fx, fz] of [[-4.9, -4.9], [4.9, -4.9], [-4.9, 4.9], [4.9, 4.9]]) {
     box(0.55, 0.5, 0.55, granite, fx, 1.45, fz, g);
-    cyl(0.16, 0.23, 1.05, bronze, fx, 2.23, fz, g, 7);
-    const fh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 7), bronze);
-    fh.position.set(fx, 2.95, fz); fh.castShadow = true; g.add(fh);
+    const fig = monumentFigure();
+    fig.position.set(fx, 1.7, fz);
+    fig.rotation.y = Math.atan2(fx, fz);
+    g.add(fig);
     S.solids.push({ x: x + fx, z: z + fz, r: 0.45 });
   }
   // the column: lathe-turned with entasis + fluting, capital on top
@@ -158,6 +190,15 @@ function buildMonument(scene) {
   cyl(0.32, 0.42, 1.9, bronze, 0, 23.4, 0, g, 8);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), bronze);
   head.position.set(0, 24.6, 0); head.castShadow = true; g.add(head);
+  // arms (v0.6.27): the right reaches up to the staff, the left hangs
+  // with a drape over the shoulder - silhouette only at this height,
+  // but the old figure was armless and read as a chess pawn
+  const armR = cyl(0.055, 0.065, 0.85, bronze, 0.33, 23.95, 0.05, g, 6);
+  armR.rotation.z = -0.95;
+  const armL = cyl(0.055, 0.065, 0.8, bronze, -0.45, 23.85, 0, g, 6);
+  armL.rotation.z = 0.18;
+  const drape = box(0.3, 0.7, 0.1, bronze, -0.16, 23.85, 0.3, g, false);
+  drape.rotation.x = 0.15;
   cyl(0.035, 0.035, 2.4, bronze, 0.62, 24.1, 0, g, 5);
   box(0.07, 1.05, 0.72, bronze, 0.62, 24.75, 0.38, g, false);
   g.position.set(x, gy, z);
@@ -183,6 +224,21 @@ function buildBandstand(scene) {
     box(0.46, 0.3, 0.46, white, cx, 1.25, cz, g, false);  // bases
   }
   cyl(6.75, 6.75, 0.5, white, 0, 5.95, 0, g, 24); // entablature ring
+  { // dentil course under the entablature (v0.6.27): a ring of small
+    // blocks - the detail that makes a bandstand read as a bandstand
+    // from across the lawn instead of a mushroom
+    const n = 64;
+    const dentils = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 0.24, 0.14), white, n);
+    const d = new THREE.Object3D();
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      d.position.set(Math.cos(a) * 6.62, 5.52, Math.sin(a) * 6.62);
+      d.rotation.set(0, -a, 0);
+      d.updateMatrix();
+      dentils.setMatrixAt(i, d.matrix);
+    }
+    g.add(dentils);
+  }
   { // the roof: a shallow dome, not a cone - apex kept at the old 9.1 line
     const roofMat = new THREE.MeshStandardMaterial({
       color: 0xc9c9bd, roughness: 0.55, metalness: 0.25, side: THREE.DoubleSide,
@@ -266,6 +322,33 @@ function buildBrewerFountain(scene) {
     b2.castShadow = true; g.add(b2);
     const w2 = new THREE.Mesh(new THREE.CircleGeometry(0.92, 16), fountainWaterMat);
     w2.rotation.x = -Math.PI / 2; w2.position.y = 3.8; g.add(w2);
+  }
+  // falling water (v0.6.27): translucent shells where each tier spills
+  // into the bowl below, foam rings where the falls land, and a stone
+  // lip on the basin rim. Static - the env sheen does the sparkling.
+  // (No finial drip: the finial figure stands IN the upper bowl, so
+  // there is no honest fall line above the top tier.)
+  {
+    const streamMat = new THREE.MeshStandardMaterial({
+      color: 0xa8ccd8, transparent: true, opacity: 0.38, roughness: 0.08,
+      metalness: 0, envMapIntensity: 2.0, side: THREE.DoubleSide, depthWrite: false,
+    });
+    const foamMat = new THREE.MeshStandardMaterial({
+      color: 0xe8f2f2, transparent: true, opacity: 0.4, roughness: 0.6, depthWrite: false,
+    });
+    const fall = (r, yTop, yBot) => {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.03, yTop - yBot, 20, 1, true), streamMat);
+      m.position.y = (yTop + yBot) / 2;
+      g.add(m);
+      const foam = new THREE.Mesh(new THREE.RingGeometry(r * 0.82, r * 1.22, 20), foamMat);
+      foam.rotation.x = -Math.PI / 2;
+      foam.position.y = yBot + 0.02;
+      g.add(foam);
+    };
+    fall(1.16, 3.78, 2.70);   // upper bowl spills into the lower bowl
+    fall(2.36, 2.78, 0.78);   // lower bowl spills into the basin
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(4.6, 0.1, 8, 28), granite);
+    lip.rotation.x = Math.PI / 2; lip.position.y = 0.82; lip.castShadow = true; g.add(lip);
   }
   cyl(0.16, 0.21, 1.05, bronze, 0, 3.1, 0, g, 10);
   // finial: one standing figure, same composed-shape honesty as the four below
@@ -461,6 +544,13 @@ function buildBridge(scene) {
   for (const sx of [-2.68, 2.68]) box(0.14, 0.36, 36.2, white, sx, 0.9, 0, g);
   // stone abutments grounding both ends
   for (const az of [-18.6, 18.6]) box(6.4, 1.5, 2.6, granite, 0, 0.35, az, g);
+  // granite end posts with ball caps (v0.6.27): the real bridge lands
+  // on ornamented pylons, not bare abutment corners
+  for (const az of [-18.2, 18.2]) for (const sx of [-2.85, 2.85]) {
+    box(0.42, 1.5, 0.42, granite, sx, 1.35, az, g);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), granite);
+    cap.position.set(sx, 2.25, az); cap.castShadow = true; g.add(cap);
+  }
   // railings: top + mid rails on a run of slim balusters
   const balusters = new THREE.InstancedMesh(new THREE.BoxGeometry(0.045, 0.85, 0.045), white, 66);
   {

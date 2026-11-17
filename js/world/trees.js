@@ -246,7 +246,9 @@ function buildUnderstory(scene) {
     emissiveMap: bladeTex, emissive: 0x000000,
   });
   S.tuftMat = tuftMat;
-  const COUNT = 5200;
+  const COUNT = 6800; // 5200 -> 6800 (v0.6.27): tufts are the last rnd()
+  // consumers in this module, so the extra 1600 append after the old
+  // field - every existing tuft keeps its spot, the lawn just thickens.
   const tufts = new THREE.InstancedMesh(tuftGeo, tuftMat, COUNT);
   const tufts2 = new THREE.InstancedMesh(tuftGeo2, tuftMat, COUNT);
   const col = new THREE.Color();
@@ -478,4 +480,25 @@ function swapHeroTrees(scene) {
   groves.forEach((e, i) => place(e, groveModels[(i + 1) % groveModels.length]));
   pathside.forEach((e, i) => place(e, mallModels[(i + 1) % mallModels.length]));
   spawn.forEach((e, i) => place(e, groveModels[(i + 2) % groveModels.length]));
+
+  // Everyone else (v0.6.27 - the priority pass): the far scatter fill
+  // was the last place procedural lollipops still read at human
+  // height, so coverage is now TOTAL - every elm in elmVisuals gets a
+  // hero. The priority picks above keep their exact models; the rest
+  // rotate by build order (stable across loads), with Tree1 (8.5k
+  // tris, the big GLB) kept rare out in the fill. A hero clone is 2
+  // primitives replacing a ~11-mesh procedural tree, so this trades
+  // draw calls for triangles; the measured spawn-view cost is in the
+  // AGENT-GUIDE round notes. The Charles St snag is not in
+  // elmVisuals (canopy.js builds it bare, on purpose) and the Mall
+  // waypoint keeps its hand-tuned procedural crown - its blobs are
+  // placed to the centimetre against the bridge admission numbers.
+  const restModels = ['Tree2.gltf', 'Tree3.gltf', 'Tree4.gltf', 'Tree3.gltf',
+    'Tree2.gltf', 'Tree4.gltf', 'Tree1.gltf', 'Tree3.gltf'];
+  let ri = 0;
+  for (const e of elmVisuals) {
+    if (used.has(e.rec)) continue;
+    used.add(e.rec);
+    place(e, restModels[ri++ % restModels.length]);
+  }
 }

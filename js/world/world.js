@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
-import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex } from './textures.js';
+import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
 
 // ---------- terrain height ----------
@@ -219,6 +219,8 @@ export function buildWorld(scene) {
     scene.add(rim);
   }
 
+  buildPondCurbs(scene);
+
   // sky dome (gradient shader + sun disc, colors driven by daycycle)
   const skyMat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
@@ -283,6 +285,14 @@ const wetPathMat = new THREE.MeshStandardMaterial({
   color: 0xc9b28a, roughness: 0.16, metalness: 0.06, envMapIntensity: 1.5,
   polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
 });
+// path shoulder (v0.6.27): a slightly wider, darker packed-earth ribbon
+// under every wet ribbon, seated lower. At squirrel height the wet
+// ribbons used to end in a floating 4 cm lip against the lawn; now the
+// path has an edge - gravel, then shoulder, then grass.
+const pathBorderMat = new THREE.MeshStandardMaterial({
+  color: 0x9a8256, roughness: 1,
+  polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+});
 export function terrainDisc(cx, cz, r, mat, yOff = 0.045) {
   const geo = new THREE.CircleGeometry(r, 36);
   geo.rotateX(-Math.PI / 2);
@@ -297,45 +307,101 @@ export function terrainDisc(cx, cz, r, mat, yOff = 0.045) {
   return m;
 }
 function buildWetPaths(scene) {
-  const verts = [], norms = [], idx = [];
-  let vi = 0;
-  const W2 = 1.8; // half width (paths are painted 3.4m wide)
-  function ribbon(line) {
-    // resample the polyline every ~2m so the ribbon hugs the terrain
-    const pts = [];
-    for (let i = 0; i < line.length - 1; i++) {
-      const [ax, az] = line[i], [bx, bz] = line[i + 1];
-      const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 2));
-      for (let j = (i === 0 ? 0 : 1); j <= n; j++) pts.push([ax + (bx - ax) * j / n, az + (bz - az) * j / n]);
-    }
-    const start = vi;
-    for (let i = 0; i < pts.length; i++) {
-      const [x, z] = pts[i];
-      const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)];
-      let dx = nx - px, dz = nz - pz;
-      const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
-      const ox = -dz * W2, oz = dx * W2;
-      verts.push(x + ox, groundHeight(x + ox, z + oz) + 0.04, z + oz, x - ox, groundHeight(x - ox, z - oz) + 0.04, z - oz);
-      norms.push(0, 1, 0, 0, 1, 0);
-      vi += 2;
-      if (i > 0) {
-        const a = start + (i - 1) * 2;
-        idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+  // one ribbon geometry over a set of polylines at a given half width
+  // and seating height; resampled every ~2 m so it hugs the terrain
+  function ribbonGeo(lines, W2, yOff) {
+    const verts = [], norms = [], idx = [];
+    let vi = 0;
+    function ribbon(line) {
+      const pts = [];
+      for (let i = 0; i < line.length - 1; i++) {
+        const [ax, az] = line[i], [bx, bz] = line[i + 1];
+        const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 2));
+        for (let j = (i === 0 ? 0 : 1); j <= n; j++) pts.push([ax + (bx - ax) * j / n, az + (bz - az) * j / n]);
+      }
+      const start = vi;
+      for (let i = 0; i < pts.length; i++) {
+        const [x, z] = pts[i];
+        const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)];
+        let dx = nx - px, dz = nz - pz;
+        const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
+        const ox = -dz * W2, oz = dx * W2;
+        verts.push(x + ox, groundHeight(x + ox, z + oz) + yOff, z + oz, x - ox, groundHeight(x - ox, z - oz) + yOff, z - oz);
+        norms.push(0, 1, 0, 0, 1, 0);
+        vi += 2;
+        if (i > 0) {
+          const a = start + (i - 1) * 2;
+          idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        }
       }
     }
+    for (const line of lines) ribbon(line);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(norms, 3));
+    geo.setIndex(idx);
+    return geo;
   }
-  for (const line of PATHS) ribbon(line);
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-  geo.setAttribute('normal', new THREE.Float32BufferAttribute(norms, 3));
-  geo.setIndex(idx);
-  const mesh = new THREE.Mesh(geo, wetPathMat);
+  const mesh = new THREE.Mesh(ribbonGeo(PATHS, 1.8, 0.04), wetPathMat);
   mesh.receiveShadow = true;
   scene.add(mesh);
+  // shoulders under every path (v0.6.27)
+  const border = new THREE.Mesh(ribbonGeo(PATHS, 2.15, 0.022), pathBorderMat);
+  border.receiveShadow = true;
+  scene.add(border);
+  // The Mall (v0.6.27): the Common's central promenade is a broad
+  // gravel walk in reality, not a 3.6 m ribbon - it gets its own wide
+  // apron over the standard ribbon, with its own shoulder peeking out.
+  // Heights stack ground 0 < shoulder 0.03 < ribbon 0.04 < apron 0.058
+  // so no two surfaces ever share a plane.
+  const mallLine = [PATHS[1]];
+  const mallBorder = new THREE.Mesh(ribbonGeo(mallLine, 5.4, 0.03), pathBorderMat);
+  mallBorder.receiveShadow = true;
+  scene.add(mallBorder);
+  const mallApron = new THREE.Mesh(ribbonGeo(mallLine, 4.7, 0.058), wetPathMat);
+  mallApron.receiveShadow = true;
+  scene.add(mallApron);
   // plazas
   scene.add(terrainDisc(140, 42, 13, wetPathMat));
   scene.add(terrainDisc(-25, -58, 10, wetPathMat));
   scene.add(terrainDisc(60, -45, 12.5, wetPathMat));
+  // plaza shoulders (v0.6.27): a darker ring peeking past each disc
+  scene.add(terrainDisc(140, 42, 13.6, pathBorderMat, 0.028));
+  scene.add(terrainDisc(-25, -58, 10.6, pathBorderMat, 0.028));
+  scene.add(terrainDisc(60, -45, 13.1, pathBorderMat, 0.028));
+}
+
+// ---------- pond edging (v0.6.27) ----------
+// Low granite blocks ringing the lagoon + Frog Pond at the water's
+// edge: the painted sand bed used to just fade into the lawn, and at
+// 25 cm eye height the shore had no line at all. One InstancedMesh,
+// each block seated on its own sampled ground height, kept low
+// (~0.14 m proud) so wading squirrels step over the seam instead of
+// clipping a wall. Visual only - no solids, same as the rim torus.
+function buildPondCurbs(scene) {
+  const curbMat = new THREE.MeshStandardMaterial({ map: graniteTex(), color: 0xbdb6a6, roughness: 0.95 });
+  const blockGeo = new THREE.BoxGeometry(1.3, 0.24, 0.34);
+  const spots = [];
+  for (const e of [MAP.lagoon, MAP.frogPond]) {
+    const n = Math.floor(Math.PI * (e.rx + e.rz) / 1.32);
+    for (let i = 0; i < n; i++) {
+      const t = (i / n) * Math.PI * 2;
+      const x = e.x + Math.cos(t) * e.rx, z = e.z + Math.sin(t) * e.rz;
+      const tx = -e.rx * Math.sin(t), tz = e.rz * Math.cos(t); // ellipse tangent
+      spots.push([x, z, Math.atan2(-tz, tx)]);
+    }
+  }
+  const mesh = new THREE.InstancedMesh(blockGeo, curbMat, spots.length);
+  const d = new THREE.Object3D();
+  spots.forEach(([x, z, ry], i) => {
+    d.position.set(x, groundHeight(x, z) + 0.03, z);
+    d.rotation.set(0, ry, 0);
+    d.updateMatrix();
+    mesh.setMatrixAt(i, d.matrix);
+  });
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
 }
 
 // park perimeter: low iron fence + gates, city backdrop blocks beyond
