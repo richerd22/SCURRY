@@ -744,6 +744,84 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   in v0.6.26 before-shots; State House wings impossible
   (above); swan boats + Park St headhouse remain the
   composed-procedural versions from v0.6.10.
+- v0.6.28 (Nov 17 2026): THE HOLDOUTS + WATER PASS.
+  (1) SWAN BOATS (landmarks.js buildSwanBoats): the swan's
+  wings are carried RAISED and arched now (the mute-swan
+  display pose the real figure copies - swept up off the
+  back, not folded flat), the canopy grew its scalloped
+  valance (one canvas-alpha texture, both long edges), and
+  the fleet gained a third boat MOORED at a new dock on
+  the lagoon's south shore west of the bridge (plank deck
+  on posts, bollards, SWAN BOATS board; a drift with zero
+  radii + a fixed yaw - daycycle honours d.yaw instead of
+  deriving heading from velocity, and the bob/roll still
+  apply). The dock deck is a platformBox (y 0.45) -
+  standable; surfaceAt's step tolerance keeps waders from
+  snapping up through it. Hull/dock clearances checked
+  against both drift loops and the bridge deck box.
+  (2) PARK ST HEADHOUSE (buildParkStStation): the dark
+  stair-mass inside the glass is now a real stairwell -
+  landing, 4 granite treads, sloped iron handrails, and a
+  warm ceiling light bar that joins S.cityMats (burns
+  after dark). The open stair beside it was a flat black
+  slab; now granite cheek curbs, 4 treads descending into
+  the pit, and an iron railing on the open sides.
+  (3) WATER: Brewer Fountain falls are ANIMATED - one
+  canvas streak texture (fountainFlowTex, seeded LCG) on
+  the existing fall shells, scrolled by daycycle
+  (offset.y = (now*0.85)%1; on the fall cylinders uv.y
+  runs 0 at the bottom to 1 at the rim, so a growing
+  offset walks every streak DOWN). One material, offset
+  only, zero geometry churn; foam rings stay static.
+  Proven by harness/flowtest.js (offset reads 2.2 s
+  apart + a differing screenshot pair). WADING FIXED:
+  waterMat is DoubleSide (world.js), so the surface has
+  an underside, and daycycle eases a submerge factor
+  (eye under the lagoon/Frog Pond plane, ellipse test
+  against MAP) that pulls the fog in to 1.2/30 tealed
+  0x14424e and fades a flat tint div (z 2, under the
+  HUD) to 0.3 - applied AFTER the keyframe fog lerp so
+  it wins submerged and vanishes dry. The `wade` shot
+  pose (in the lagoon at bed level, under the bridge)
+  went from dry-bed-and-blue-sky to full murk.
+  (4) GOLDEN HOUR: the 17.6 / 18.7 keys' amb lifted
+  1.12 -> 1.24 / 1.02 -> 1.10 (the v0.3 philosophy -
+  ground readable at squirrel height); before/after
+  spawn + garden shots at 17.5 show a modest mid-ground
+  lift, nothing blown. Long shadows remain unverifiable
+  headlessly (lowq is shadowless, no PMREM) - the
+  production golden grade still wants the owner's
+  real-GPU eyeball, same caveat as v0.6.1.
+  Perf (lowq spawn): 546 -> ~565-570 calls (run variance
+  +-6; the increase is the headhouse stairwell + railing
+  in the spawn frustum), 329.5k -> ~331k tris. The
+  v0.6.27 win stands (724 before the priority pass).
+  Verified: node --check all JS, walktest 102/102
+  (re-run after the dock platformBox landed), herocount
+  121 heroes / 51 bridges / 554.4 m, flowtest, 10
+  after-shots vs 8 before-shots (swanboats, swanclose
+  [new pose: ON the dock], headhouse, fountain x2,
+  wade, spawn, down, spawn + garden at golden hour),
+  zero console errors everywhere.
+  STILL ABSTRACT / KNOWN GAPS - the honest final census
+  of the home map: NOTHING on the Common + Garden is
+  placeholder-grade anymore. What remains stylized,
+  plainly: the swan boats + headhouse are composed-
+  procedural (no licensed GLB exists for either - they
+  are built, not sourced); the ducklings are stylized
+  bronze (they are statues of book characters - that IS
+  the reference); 2 of 123 trees stay procedural on
+  purpose (the hand-tuned Mall waypoint elm, the bare
+  Charles St snag); ring-block + skyline facades are
+  texture-on-box (right at park distance, flat at the
+  fence); bronze reads near-black in shadowless lowq
+  (production env light carries it); the fountain's
+  foam rings are static (only the falls move); the
+  submerged read is murk + underside, not refraction
+  or caustics; State House wings still don't fit the
+  map (v0.6.27). Everything else is the owner's
+  real-device pass: mobile perf at 121 hero trees,
+  the golden-hour grade on a real GPU.
 - Roadmap (owner's direction): City Hall as the next
   teleport-reached expansion map (Fenway shipped in v0.6.22;
   Sketchfab models are WANTED in the ledger - account-gated,

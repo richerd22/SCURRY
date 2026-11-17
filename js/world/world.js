@@ -197,7 +197,11 @@ export function buildWorld(scene) {
   // a hotter env response so the sky actually lands on the surface; the
   // emissive sheen is driven per-phase by daycycle (see S.waterMat there),
   // which is what keeps it from going black at dusk/night.
-  const waterMat = new THREE.MeshStandardMaterial({ color: 0x2a5a68, transparent: true, opacity: 0.93, roughness: 0.13, metalness: 0.05, envMapIntensity: 2.3, emissive: 0x1a2440, emissiveIntensity: 0.22 });
+  // DoubleSide (v0.6.28): wading puts the eye UNDER this plane, and a
+  // front-only surface vanishes from below - the bed read as dry land.
+  // The underside now renders, and daycycle lays murk fog + a tint over
+  // submerged frames so the volume reads as water from inside too.
+  const waterMat = new THREE.MeshStandardMaterial({ color: 0x2a5a68, transparent: true, opacity: 0.93, roughness: 0.13, metalness: 0.05, envMapIntensity: 2.3, emissive: 0x1a2440, emissiveIntensity: 0.22, side: THREE.DoubleSide });
   S.waterMat = waterMat;
   for (const [e, y] of [[MAP.lagoon, 0.02], [MAP.frogPond, 0.06]]) {
     const w = new THREE.Mesh(new THREE.CircleGeometry(1, 40), waterMat);

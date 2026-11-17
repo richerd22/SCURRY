@@ -270,6 +270,31 @@ function buildBandstand(scene) {
 // stylized, but the silhouette is the fountain's own.
 const bronzeDS = bronze.clone(); bronzeDS.side = THREE.DoubleSide;
 const fountainWaterMat = new THREE.MeshStandardMaterial({ color: 0x3d7086, roughness: 0.15, metalness: 0.3 });
+// Falling-water texture (v0.6.28): vertical streaks on a pale sheet.
+// One texture, one material for both falls; daycycle scrolls its offset
+// and the sheet reads as moving water. Seeded LCG - same streaks every
+// boot, no layout randomness.
+function fountainFlowTex() {
+  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 256;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#9fc4d2'; c.fillRect(0, 0, 128, 256);
+  let seed = 1234567;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 52; i++) {
+    const x = rnd() * 128, bright = rnd() > 0.4;
+    c.strokeStyle = bright ? 'rgba(242,251,253,0.9)' : 'rgba(84,124,146,0.55)';
+    c.lineWidth = 0.8 + rnd() * 2.2;
+    c.beginPath();
+    let px = x; c.moveTo(px, -8);
+    for (let y = 0; y <= 264; y += 36) { px += (rnd() - 0.5) * 5; c.lineTo(px, y); }
+    c.stroke();
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(2, 1);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 function fountainFigure() {
   const f = new THREE.Group();
   box(0.62, 0.75, 0.62, granite, 0, 0.72, 0, f);            // plinth out of the basin water
@@ -323,14 +348,18 @@ function buildBrewerFountain(scene) {
     const w2 = new THREE.Mesh(new THREE.CircleGeometry(0.92, 16), fountainWaterMat);
     w2.rotation.x = -Math.PI / 2; w2.position.y = 3.8; g.add(w2);
   }
-  // falling water (v0.6.27): translucent shells where each tier spills
-  // into the bowl below, foam rings where the falls land, and a stone
-  // lip on the basin rim. Static - the env sheen does the sparkling.
-  // (No finial drip: the finial figure stands IN the upper bowl, so
-  // there is no honest fall line above the top tier.)
+  // falling water: translucent shells where each tier spills into the
+  // bowl below, foam rings where the falls land, and a stone lip on the
+  // basin rim. v0.6.28: the shells wear the scrolling flow texture
+  // (S.fountainFlowTex, driven by daycycle) - animated water, still one
+  // material and zero per-frame geometry work. (No finial drip: the
+  // finial figure stands IN the upper bowl, so there is no honest fall
+  // line above the top tier.)
   {
+    const flowTex = fountainFlowTex();
+    S.fountainFlowTex = flowTex;
     const streamMat = new THREE.MeshStandardMaterial({
-      color: 0xa8ccd8, transparent: true, opacity: 0.38, roughness: 0.08,
+      map: flowTex, transparent: true, opacity: 0.5, roughness: 0.08,
       metalness: 0, envMapIntensity: 2.0, side: THREE.DoubleSide, depthWrite: false,
     });
     const foamMat = new THREE.MeshStandardMaterial({
@@ -388,7 +417,31 @@ function buildParkStStation(scene) {
   const x = -33, z = -80, gy = groundHeight(x, z);
   if (S.cityMats) S.cityMats.push(headhouseGlass);
   box(7.2, 0.5, 5.2, granite, 0, 0.25, 0, g);                       // stone base
-  box(3.0, 2.4, 3.4, new THREE.MeshStandardMaterial({ color: 0x1a1c1e, roughness: 1 }), 0.8, 1.45, 0, g); // stair mass inside
+  // the stairwell inside the glass (v0.6.28): was a plain dark mass -
+  // now a landing + a short flight descending into a dark pit, an iron
+  // handrail over the treads, and a warm ceiling light bar (joins
+  // S.cityMats, so it burns after dark like a lit station). Through
+  // the glass it reads as a station, not a box.
+  box(4.9, 0.1, 3.2, new THREE.MeshBasicMaterial({ color: 0x060606 }), 0, 0.56, 0, g, false); // pit floor
+  box(1.5, 1.05, 2.4, granite, -1.68, 1.02, 0, g);                    // landing at the back wall
+  for (let i = 0; i < 4; i++) {
+    const topY = 1.36 - i * 0.2;
+    box(0.5, topY - 0.5, 2.4, granite, -0.68 + i * 0.5, 0.5 + (topY - 0.5) / 2, 0, g);
+  }
+  {
+    for (const rz of [-1.14, 1.14]) {
+      const rail = box(2.62, 0.06, 0.06, greenMetal, 0.65, 1.76, rz, g, false);
+      rail.rotation.z = -0.309;
+    }
+    for (const [bx, by] of [[-0.3, 1.7], [0.65, 1.38], [1.6, 1.06]])
+      for (const bz of [-1.14, 1.14])
+        box(0.05, 0.75, 0.05, greenMetal, bx, by, bz, g, false);
+  }
+  const lightBar = new THREE.MeshStandardMaterial({
+    color: 0x554a38, emissive: 0xffc98a, emissiveIntensity: 0, roughness: 0.6,
+  });
+  if (S.cityMats) S.cityMats.push(lightBar);
+  box(3.4, 0.07, 0.32, lightBar, 0, 3.28, 0, g, false);
   // glazed walls + iron mullions
   for (const sz of [-2.3, 2.3]) {
     box(6.6, 2.2, 0.06, headhouseGlass, 0, 1.85, sz, g, false);
@@ -453,8 +506,20 @@ function buildParkStStation(scene) {
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.85), new THREE.MeshBasicMaterial({ map: signTex }));
   sign.position.set(0, 2.95, 2.44); g.add(sign);
   const sign2 = sign.clone(); sign2.rotation.y = Math.PI; sign2.position.z = -2.44; g.add(sign2);
-  // dark stair hole beside it
+  // the open stair beside it (v0.6.28): was a flat black slab. Now a
+  // real entrance: granite cheek curbs, four treads descending into
+  // the dark, and an iron railing around the open sides (the south
+  // end stays open - that's where the steps start).
   box(3.4, 0.25, 4.4, new THREE.MeshBasicMaterial({ color: 0x060606 }), 5.6, 0.13, 0, g, false);
+  for (let i = 0; i < 4; i++)
+    box(2.4, 0.2, 0.48, granite, 5.6, 0.5 - i * 0.17, 1.68 - i * 0.48, g);
+  for (const cx of [3.9, 7.3]) box(0.25, 0.3, 4.4, granite, cx, 0.15, 0, g);
+  for (const cx of [3.9, 7.3]) {
+    for (let i = 0; i < 5; i++) cyl(0.03, 0.03, 0.85, greenMetal, cx, 0.72, -2.2 + i * 1.1, g, 6);
+    box(0.05, 0.05, 4.5, greenMetal, cx, 1.16, 0, g, false);
+    box(0.04, 0.04, 4.5, greenMetal, cx, 0.78, 0, g, false);
+  }
+  box(3.45, 0.05, 0.05, greenMetal, 5.6, 1.16, -2.2, g, false);
   g.position.set(x, gy, z);
   scene.add(g);
   solidBox(x, z, 3.6, 2.6);
@@ -644,9 +709,26 @@ function buildBridge(scene) {
 const swanBlack = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.55 });
 const swanBeak = new THREE.MeshStandardMaterial({ color: 0xe07b28, roughness: 0.55 });
 const benchWood = new THREE.MeshStandardMaterial({ color: 0x8a6a42, roughness: 0.85 });
+// scalloped canopy valance (v0.6.28): the real boats' canopy edge is a
+// scalloped skirt, and at lagoon distance that broken edge is half of
+// what makes a white box read as a swan boat. Canvas alpha, one texture.
+function valanceTex() {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 48;
+  const c = cv.getContext('2d');
+  c.clearRect(0, 0, 256, 48);
+  c.fillStyle = '#f4f0e4';
+  c.fillRect(0, 0, 256, 26);
+  for (let x = 16; x <= 256; x += 32) { c.beginPath(); c.arc(x, 26, 16, 0, Math.PI); c.fill(); }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping; t.repeat.set(3, 1);
+  return t;
+}
 function buildSwanBoats(scene) {
   const boatMat = new THREE.MeshStandardMaterial({ color: 0xf0ebdd, roughness: 0.6 });
   const canvasMat = new THREE.MeshStandardMaterial({ color: 0xf4f0e4, roughness: 0.9, side: THREE.DoubleSide });
+  const valanceMat = new THREE.MeshStandardMaterial({
+    map: valanceTex(), transparent: true, alphaTest: 0.45, roughness: 0.9, side: THREE.DoubleSide,
+  });
   const deckMat = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.9 });
 
   // plan-view hull outline (shape y = -world z: bow at shape +y)
@@ -670,10 +752,14 @@ function buildSwanBoats(scene) {
     const breast = new THREE.Mesh(new THREE.SphereGeometry(0.34, 11, 9), white);
     breast.scale.set(0.9, 1.05, 0.9); breast.position.set(0, 0.62, -0.55); breast.castShadow = true; s.add(breast);
     for (const sx of [-1, 1]) {
+      // wings carried RAISED and arched (v0.6.28): the boats' swan
+      // copies the mute swan's display pose - swept up off the back,
+      // not folded flat. That raised shell is the silhouette you can
+      // read from across the Garden.
       const wing = new THREE.Mesh(new THREE.SphereGeometry(0.5, 11, 9), white);
-      wing.scale.set(0.32, 0.55, 1.25);
-      wing.position.set(sx * 0.52, 0.66, 0.12);
-      wing.rotation.z = -sx * 0.15; wing.rotation.x = -0.1;
+      wing.scale.set(0.3, 0.78, 1.2);
+      wing.position.set(sx * 0.5, 0.82, 0.16);
+      wing.rotation.z = -sx * 0.3; wing.rotation.x = -0.52;
       wing.castShadow = true; s.add(wing);
     }
     const tail = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 8), white);
@@ -724,6 +810,13 @@ function buildSwanBoats(scene) {
     roof.rotation.x = Math.PI / 2; roof.position.set(0, 0.98, -0.15);
     roof.castShadow = true; g.add(roof);
     for (const sx of [-1.36, 1.36]) box(0.07, 0.07, 5.6, white, sx, 2.3, -0.15, g, false);
+    // scalloped valance hanging from both canopy edge rails
+    for (const sx of [-1.38, 1.38]) {
+      const v = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 0.36), valanceMat);
+      v.rotation.y = Math.PI / 2;
+      v.position.set(sx, 2.14, -0.15);
+      g.add(v);
+    }
     // stern deck the swan rides on
     box(3.3, 0.14, 1.7, benchWood, 0, 0.8, 3.85, g);
     swan(g);
@@ -731,7 +824,7 @@ function buildSwanBoats(scene) {
     g.userData.drift = drift;
     const p0 = driftPoint(drift, 0);
     g.position.set(p0.x, 0.05, p0.z);
-    g.rotation.y = p0.yaw;
+    g.rotation.y = (drift.yaw !== undefined) ? drift.yaw : p0.yaw;
     scene.add(g);
     (S.boats = S.boats || []).push(g);
     return g;
@@ -746,6 +839,40 @@ function buildSwanBoats(scene) {
   // (x -134.7..-129.3) and inside the lagoon ellipse with hull to spare
   boat({ cx: MAP.lagoon.x - 22, cz: -12, rx: 8, rz: 4.5, w: (Math.PI * 2) / 170, ph: 0.6 });
   boat({ cx: MAP.lagoon.x + 22, cz: 13, rx: 7, rz: 4, w: -(Math.PI * 2) / 190, ph: 3.4 });
+  // third boat MOORED at the dock (v0.6.28): the fleet at rest on the
+  // south shore west of the bridge - canopy up, waiting on passengers.
+  // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);
+  // the bob + roll still apply, so she rides the water at her lines.
+  // Hull spans x -147.8..-138.2 / z 17.2..20.8: inside the ellipse,
+  // clear of the west loop (z <= -2.7 at its nearest) and the bridge.
+  boat({ cx: -143, cz: 19, rx: 0, rz: 0, w: 0, ph: 0, yaw: -Math.PI / 2 });
+  // the dock: plank deck on posts from the south shore out to her side
+  {
+    const g = new THREE.Group();
+    const deckM = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.9 });
+    box(9.5, 0.18, 3.6, deckM, 0, 0.36, 0, g);
+    for (const px of [-4.4, -1.5, 1.5, 4.4]) for (const pz of [-1.5, 1.5])
+      cyl(0.09, 0.09, 1.15, darkWood, px, -0.12, pz, g, 6);
+    for (const px of [-3.6, 3.6]) cyl(0.11, 0.13, 0.34, darkWood, px, 0.6, -1.45, g, 8); // mooring bollards
+    // dock sign, park-board green like the station sign
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#17301f'; c.fillRect(0, 0, 256, 64);
+    c.fillStyle = '#f2ead2'; c.font = 'bold 30px monospace'; c.textAlign = 'center';
+    c.fillText('SWAN BOATS', 128, 42);
+    const sTex = new THREE.CanvasTexture(cv); sTex.colorSpace = THREE.SRGBColorSpace;
+    for (const px of [-0.95, 0.95]) box(0.07, 1.6, 0.07, darkWood, px, 0.8, 0, g, false);
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.58),
+      new THREE.MeshBasicMaterial({ map: sTex }));
+    board.position.set(0, 1.62, 0.02); g.add(board);
+    const board2 = board.clone(); board2.rotation.y = Math.PI; board2.position.z = -0.02; g.add(board2);
+    g.position.set(-140.5, 0, 22.9);
+    scene.add(g);
+    // the deck is standable (shore squirrels board here): one
+    // platformBox at deck-top height. surfaceAt's step tolerance
+    // keeps waders below from snapping up through it.
+    S.platformBoxes.push({ minX: -145.25, maxX: -135.75, minZ: 21.1, maxZ: 24.7, y: 0.45 });
+  }
 }
 
 // --- Make Way for Ducklings, Garden path near the Charles St gate ---

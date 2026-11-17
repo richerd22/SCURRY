@@ -38,6 +38,31 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.28
+
+- **The holdouts + the water pass.** The home park's
+  last details, finished:
+- **The swan boats got their dock.** A third boat sits
+  moored at a new dock on the lagoon's south shore -
+  canopy up, scalloped skirt on the canvas, her swan's
+  wings raised the way the real one's are. The dock is
+  standable. Go stand on it. The other two still run
+  their loops.
+- **The Brewer Fountain flows.** The falls are animated
+  water now, tier to tier. One texture, scrolled - the
+  bronze didn't move, the water does.
+- **Wading reads as wading.** Duck under the lagoon or
+  the Frog Pond and the world goes properly murky -
+  surface overhead, bed below, visibility about as
+  good as a squirrel deserves. Before this it looked
+  like a dry beach under a missing ceiling.
+- **Park Street has stairs.** Inside the headhouse
+  glass: a landing, treads, a handrail, and a light
+  that burns after dark. Beside it, the open entrance
+  stair got its granite cheeks and iron railing.
+- **Golden hour, warmed a notch** on the ground for
+  the 17:00-18:30 stretch.
+
 ## What's in v0.6.27
 
 - **The priority pass: the home park, finished first.** Per

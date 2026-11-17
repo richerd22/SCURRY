@@ -5,7 +5,7 @@
 // city windows, the State House windows, clouds, and water shimmer.
 
 import * as THREE from 'three';
-import { S } from '../state.js';
+import { S, MAP } from '../state.js';
 
 const DAY_LENGTH = 780; // seconds per full day (13 min) - a long golden evening
 
@@ -14,13 +14,15 @@ const KEYS = [
   // grade pass (v0.3): amb is lifted at dawn/golden/dusk/night so the ground
   // stays readable at squirrel height; midday sun is trimmed a touch so the
   // exposure lift elsewhere does not blow the highlights out.
+  // v0.6.28: golden keys' amb lifted a step further (1.12->1.24, 1.02->1.10) -
+  // the sky read amber but the lawn stayed murk in the 17:00-18:30 checks.
   [0.0,  0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.3, 1,    26, 230],
   [5.0,  0x8fa8d8, 0.25, 0x0a1428, 0x1c2440, 0x2a2438, 0x161c30, 0.3, 1,    26, 230],
   [6.5,  0xffb37a, 0.9,  0x3a5a8c, 0xe8906a, 0xf7cf9a, 0x8a7a72, 0.62, 0.25,  55, 380],
   [9.0,  0xfff2d8, 1.55, 0x3a6ea8, 0x9fc4e8, 0xd8ecf7, 0xaec6d8, 0.75, 0,   95, 560],
   [16.0, 0xffeec9, 1.48, 0x3a6ea8, 0xa8c8e8, 0xe4eef2, 0xb2c4d2, 0.78, 0,   90, 540],
-  [17.6, 0xffc98a, 1.5,  0x38649e, 0xf2b879, 0xf7d9a8, 0xc2a88e, 1.12, 0,   70, 440],
-  [18.7, 0xff9a56, 1.3,  0x2c4a78, 0xe87f52, 0xf2b879, 0xa88472, 1.02, 0.55, 48, 320],
+  [17.6, 0xffc98a, 1.5,  0x38649e, 0xf2b879, 0xf7d9a8, 0xc2a88e, 1.24, 0,   70, 440],
+  [18.7, 0xff9a56, 1.3,  0x2c4a78, 0xe87f52, 0xf2b879, 0xa88472, 1.10, 0.55, 48, 320],
   [19.6, 0x7a86c8, 0.5,  0x141f42, 0x4a4470, 0x8a5a68, 0x4a4054, 0.68, 1,   32, 250],
   [21.0, 0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.3, 1,   26, 230],
   [24.0, 0x8fa8d8, 0.25, 0x0a1428, 0x1a2440, 0x232030, 0x141a2c, 0.3, 1,   26, 230],
@@ -38,6 +40,13 @@ let pmrem = null, envScene = null, envSkyMat = null, envSun = null, envRT = null
 let envGndMat = null;
 // grade temps (module-scope, reused - no per-frame allocation)
 const hemiMid = new THREE.Color();
+// water-volume temps (v0.6.28): the two wadeable bodies + their plane
+// heights (world.js builds the meshes at these y), the murk colour,
+// the eased submersion factor, and the tint element (built lazily).
+const WATER_BODIES = [[MAP.lagoon, 0.02], [MAP.frogPond, 0.06]];
+const SUBMERGE_FOG = new THREE.Color(0x14424e);
+let submergeK = 0;
+let waterTintEl = null;
 const grassBounce = new THREE.Color(0x66744c);
 const envGrass = new THREE.Color(0x4d7c3a);
 const lampWarm = new THREE.Color(0xff9a4d);
@@ -219,10 +228,44 @@ export function updateDaycycle(dt) {
       boat.position.x = d.cx + d.rx * Math.cos(th);
       boat.position.z = d.cz + d.rz * Math.sin(th);
       const vx = -d.rx * Math.sin(th) * d.w, vz = d.rz * Math.cos(th) * d.w;
-      boat.rotation.y = Math.atan2(-vx, -vz);
+      boat.rotation.y = (d.yaw !== undefined) ? d.yaw : Math.atan2(-vx, -vz);
     }
     boat.position.y = 0.05 + Math.sin(now * 0.7 + boat.userData.bobPhase) * 0.05;
     boat.rotation.z = Math.sin(now * 0.5 + boat.userData.bobPhase) * 0.012;
+  }
+  // fountain falls (v0.6.28): scroll the ONE flow texture. On the fall
+  // cylinders uv.y runs 0 at the bottom to 1 at the rim, so a growing
+  // offset walks every streak DOWN the fall. Offset only - the geometry
+  // never moves.
+  if (S.fountainFlowTex) S.fountainFlowTex.offset.y = (now * 0.85) % 1;
+  // water volume (v0.6.28): when the eye dips under a pond/lagoon plane,
+  // lay the murk on - fog pulled in and re-tealed, plus a flat tint
+  // (z 2: over the canvas, under the HUD). Eased both ways so wading
+  // the shoreline doesn't strobe. The surface itself is double-sided
+  // (world.js), so from inside you see its underside, not through it.
+  {
+    const P = S.player;
+    const eyeY = P.pos.y + 0.25;
+    let under = 0;
+    for (const [e, wy] of WATER_BODIES) {
+      const dx = (P.pos.x - e.x) / e.rx, dz = (P.pos.z - e.z) / e.rz;
+      if (dx * dx + dz * dz < 1 && eyeY < wy) { under = 1; break; }
+    }
+    submergeK += ((under ? 1 : 0) - submergeK) * Math.min(1, dt * 6);
+    if (submergeK < 0.004) submergeK = under ? submergeK : 0;
+    if (S.scene && S.scene.fog) {
+      if (submergeK > 0) {
+        S.scene.fog.color.lerp(SUBMERGE_FOG, submergeK);
+        S.scene.fog.near += (1.2 - S.scene.fog.near) * submergeK;
+        S.scene.fog.far += (30 - S.scene.fog.far) * submergeK;
+      }
+      if (!waterTintEl) {
+        waterTintEl = document.createElement('div');
+        waterTintEl.style.cssText = 'position:fixed;inset:0;background:#0d3742;opacity:0;pointer-events:none;z-index:2;';
+        document.body.appendChild(waterTintEl);
+      }
+      waterTintEl.style.opacity = (submergeK * 0.3).toFixed(3);
+    }
   }
   return lamp;
 }
