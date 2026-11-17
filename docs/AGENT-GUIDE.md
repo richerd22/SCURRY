@@ -360,6 +360,44 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   STILL generic, plainly: Tremont St east edge has ring blocks only
   (no streetwall row), and all facades are texture-on-box (no
   geometry window depth) - fine at park distance, not at the fence.
+- v0.6.17-0.6.19 (Nov 17 2026): the east-edge round. v0.6.17
+  TREMONT ST (`streetwalls.js buildTremontRow`): the Common's east
+  fence finally has its street - asphalt + sidewalk slabs, zebras at
+  the Park St / Frog Pond crossings, 8 sidewalk lamps (emissive
+  only), 8 parked cars, and an 18-unit streetwall row across the
+  street (fronts x=215.8, 11 m units, 15-24 m tall) wearing the new
+  `tremontFacade` texture (storefront glass + sign band below, five
+  office floors of stone-pier grid, dentil cornice), stone cornices,
+  roof caps, tilted awnings; all instanced, facades join S.cityMats.
+  Ring blocks' east row pushed 228 -> 237 to sit behind it. The
+  row's north units ride the State House terrace (groundHeight
+  plateau) and step down the hill like the real street. v0.6.18
+  BEACON RELIEF: every flat-front brownstone window got a real stone
+  lintel + sill (2 instanced meshes, positions derived from the
+  brownstoneFacade grid; skipped where the bow front covers the
+  window, parlor sill skipped beside the door). NO new R() calls in
+  the relief pass - the seeded row layout is byte-stable. v0.6.19
+  PARK STREET CHURCH (`landmarks.js buildParkStreetChurch`): brick
+  nave + extruded gable (brick caps / slate slopes), tall framed
+  windows, brick tower at the corner end with door + rose window,
+  white belfry with arched openings, 13 m white spire, gold ball +
+  vane (~30 m stack). Stands at the NE corner (219,-110) across
+  Tremont, tower facing the corner; the in-game Park St headhouse
+  stays with the Brewer Fountain cluster at the west end - the two
+  never meet. New shot poses: tremont, tremontclose, parkchurch,
+  parkspire, parkchurchfar. Perf (lowq spawn, herocount): round
+  baseline 650 calls / 194.3k tris -> 695 / 211.5k (+45 calls,
+  +17.3k tris for a streetscape + relief + a landmark). Walktest
+  102/102, zero console errors throughout. Two warts banked:
+  (1) the State House block floats over the terrace slope on its
+  west edge - visible from below at the north fence, pre-existing,
+  NOT fixed this round; (2) from the central Mall the church spire
+  hides behind the State House + ring blocks - it reads from the
+  NE corner and north edge, which matches the real sightlines.
+  Harness note: /tmp/sl-tools (vendored three + playwright-core)
+  was wiped by a service restart mid-round; rebuilt as symlinks
+  into ~/workspace/nolimits-revival/harness/node_modules (three
+  0.160.0 - the right version) and NODE_PATH pointed there.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

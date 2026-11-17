@@ -210,7 +210,9 @@ if (Q.has('shot')) {
     case 'charlesnorth': pose(-50, -34, -52, -78); break; // up Charles St toward the Beacon end
     case 'tremont': pose(66, 10, 214, 4); break; // Frog Pond looking east at the Tremont row
     case 'tremontclose': pose(194, -30, 216, -33); break; // Tremont fronts at fence distance
-    case 'parkchurch': pose(148, -66, 214, -110); break; // Park Street Church, NE corner
+    case 'parkchurch': pose(197, -97, 208, -110, 0.3); break; // Park Street Church tower from the Common's NE corner
+    case 'parkspire': pose(197, -97, 208, -110, 0.95); break; // the steeple stack: belfry, spire, gold ball
+    case 'parkchurchfar': pose(60, -18, 208, -110); break; // the steeple over the State House roofline, from the Mall
     case 'boylston': pose(60, 58, 62, 114); break; // Common south edge: the Boylston row
     case 'arlington': pose(-158, 16, -214, 18); break; // Garden west edge: the Arlington row
     case 'bandstand': pose(127, 29, 140, 42); break;

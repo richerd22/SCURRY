@@ -43,6 +43,7 @@ export function buildLandmarks(scene) {
   buildBandstand(scene);
   buildBrewerFountain(scene);
   buildParkStStation(scene);
+  buildParkStreetChurch(scene);
   buildBridge(scene);
   buildSwanBoats(scene);
   buildDucklings(scene);
@@ -358,6 +359,78 @@ function buildParkStStation(scene) {
   g.position.set(x, gy, z);
   scene.add(g);
   solidBox(x, z, 3.6, 2.6);
+}
+
+// --- Park Street Church, the Common's NE corner ---
+// Built v0.6.19: the white steeple at Park + Tremont is one of the most
+// recognizable silhouettes on the Common's edge, and the corner had
+// nothing. Composed the way the real one reads from the park: red-brick
+// nave under a slate gable, brick tower at the corner end, white belfry
+// stage, tall white spire, gold ball. Local -z is the tower end; the
+// group is rotated so the tower faces the corner (west). It stands
+// across Tremont from the fence - the in-game Park St headhouse lives
+// with the Brewer Fountain cluster at the Common's west end, so the two
+// never collide.
+const churchBrick = new THREE.MeshStandardMaterial({ color: 0x74452f, roughness: 0.95 });
+const churchSlate = new THREE.MeshStandardMaterial({ color: 0x3a4149, roughness: 0.7, metalness: 0.15 });
+const churchGlass = new THREE.MeshStandardMaterial({ color: 0x232b36, roughness: 0.3, metalness: 0.2 });
+function buildParkStreetChurch(scene) {
+  const g = new THREE.Group();
+  // nave: brick box + extruded gable roof (brick gable caps, slate slopes)
+  box(10.5, 8.5, 20, churchBrick, 0, 3.75, 2.5, g);
+  {
+    const tri = new THREE.Shape();
+    tri.moveTo(-5.9, 0); tri.lineTo(5.9, 0); tri.lineTo(0, 3.5); tri.closePath();
+    const roof = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(tri, { depth: 20.4, bevelEnabled: false }),
+      [churchBrick, churchSlate]);
+    roof.position.set(0, 8.0, -7.7);
+    roof.castShadow = true; roof.receiveShadow = true;
+    g.add(roof);
+  }
+  box(11.1, 0.5, 20.6, white, 0, 7.85, 2.5, g, false); // nave cornice line
+  // tall nave windows, both long sides: stone frame + dark glass
+  for (const sx of [-1, 1]) {
+    for (const wz of [-4.5, 0.5, 5.5, 10.5]) {
+      box(0.07, 4.9, 2.0, white, sx * 5.27, 4.4, wz, g, false);
+      box(0.1, 4.6, 1.7, churchGlass, sx * 5.3, 4.4, wz, g, false);
+    }
+  }
+  // tower at the corner end (local -z); deep enough to meet the nave flush
+  box(5.4, 13, 6.0, churchBrick, 0, 6.0, -10.5, g);
+  box(6.0, 0.5, 6.3, white, 0, 12.6, -10.5, g, false); // tower cornice
+  box(1.8, 3.4, 0.12, darkWood, 0, 1.2, -13.54, g, false); // door, corner face
+  box(2.1, 3.7, 0.07, white, 0, 1.25, -13.51, g, false);
+  // rose window on the tower face, over the door
+  {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.28, 1.56, 24), white);
+    ring.position.set(0, 9.8, -13.57); ring.rotation.y = Math.PI; g.add(ring);
+    const rose = new THREE.Mesh(new THREE.CircleGeometry(1.28, 24), churchGlass);
+    rose.position.set(0, 9.8, -13.56); rose.rotation.y = Math.PI; g.add(rose);
+  }
+  // white belfry stage with arched dark openings on all four faces
+  box(4.6, 4.2, 4.6, white, 0, 14.85, -10.5, g);
+  for (const [ox, oz, ry] of [[0, -12.83, 0], [0, -8.17, 0], [-2.33, -10.5, 1], [2.33, -10.5, 1]]) {
+    const m = box(ry ? 0.1 : 1.6, 2.8, ry ? 1.6 : 0.1, churchGlass, ox, 15.0, oz, g, false);
+    m.castShadow = false;
+  }
+  for (const px of [-2.15, 2.15]) for (const pz of [-12.65, -8.35])
+    box(0.34, 4.2, 0.34, white, px, 14.85, pz, g, false); // belfry corner posts
+  box(5.2, 0.4, 5.2, white, 0, 17.15, -10.5, g, false); // belfry cornice
+  // the spire: tall white octagon cone + gold ball + vane rod
+  {
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(2.95, 13, 8), white);
+    spire.position.set(0, 17.35 + 6.5, -10.5);
+    spire.castShadow = true; spire.receiveShadow = true;
+    g.add(spire);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 8), gold);
+    ball.position.set(0, 30.75, -10.5); g.add(ball);
+    cyl(0.035, 0.035, 1.7, gold, 0, 31.6, -10.5, g, 6);
+  }
+  const x = 219, z = -110, gy = groundHeight(x, z);
+  g.position.set(x, gy - 0.4, z);
+  g.rotation.y = Math.PI / 2; // local -z (tower) -> world -x (the corner)
+  scene.add(g);
 }
 
 // --- Public Garden lagoon bridge (1861 suspension bridge) ---
