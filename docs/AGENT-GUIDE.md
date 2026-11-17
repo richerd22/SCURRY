@@ -326,6 +326,40 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   platformBoxes). New `swanboats` shot pose (south shore, close on
   the west loop). Hollow gossip line updated (they no longer
   "sleep at the dock"). Walktest 102/102, zero console errors.
+- v0.6.14-0.6.16 (Nov 17 2026): the street-edges round
+  (`world/streetwalls.js`, groundHeight passed in - no import cycle).
+  Everything instanced via the local `instanced()` helper
+  (frustumCulled=false, instanceColor tones); new facade materials
+  join S.cityMats so daycycle drives their dusk glow.
+  v0.6.14 BEACON ST: 47 townhouse units (30 Common north front
+  z=-110.5, 17 Garden north front z=-107) - 4 brownstoneFacade
+  palettes, bow fronts (half-cylinder bays + separate dark/lit glass
+  boxes), stoops, doors, iron area rails, stone cornices; bases ride
+  groundHeight so the east end steps up the State House terrace.
+  v0.6.15 CHARLES ST: shopfront row behind the Garden fence (fronts
+  x=-63.8 facing the street; segments z -58..-26 and -8..22, gaps at
+  the -70/-18/30 path crossings; solidBoxes registered), storefront-
+  Facade textures with sign bands + near-always-lit shop glass,
+  awnings, sidewalks, crosswalk zebras, 8 street lamps (emissive
+  bulbs only - no PointLights), 13 parked cars (3 instanced meshes,
+  solidBox each, curbs clear near crossings). v0.6.16 RING BLOCKS:
+  the old ~38 unseeded individual boxes + caps in buildPerimeter
+  were replaced by buildRingBlocks (seeded, instanced by material,
+  45% setback tier 2 / tier 3, roof caps on the top tier, ~16%
+  rooftop water towers; north row pushed to z=-138 so Beacon owns
+  its edge) + buildSouthWestRows (Boylston front z=109, Arlington
+  front x=-211; 13 m units, cornices). New shot poses: beacon,
+  beaconwest, beaconclose, charles, charlesnorth, boylston,
+  arlington. Perf (lowq spawn, herocount): calls 645 -> 656 and
+  tris 181.5k -> 196.1k across the whole round - the streets cost
+  ~15k tris total; walktest 102/102, zero console errors throughout.
+  Two traps banked: (1) parapet/cornice heights must be computed
+  from the SAME base as the bodies they cap (an absolute-H parapet
+  floated 0.4 m over the Charles shops); (2) brownstone trim reads
+  cream if the texture frames are fat - thin trim, muted bands.
+  STILL generic, plainly: Tremont St east edge has ring blocks only
+  (no streetwall row), and all facades are texture-on-box (no
+  geometry window depth) - fine at park distance, not at the fence.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

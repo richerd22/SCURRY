@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex } from './textures.js';
-import { buildBeaconRow, buildCharlesStreet } from './streetwalls.js';
+import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows } from './streetwalls.js';
 
 // ---------- terrain height ----------
 function gauss(x, z, cx, cz, r) {
@@ -270,6 +270,8 @@ export function buildWorld(scene) {
   buildPerimeter(scene);
   buildBeaconRow(scene, groundHeight);
   buildCharlesStreet(scene, groundHeight);
+  buildRingBlocks(scene);
+  buildSouthWestRows(scene, groundHeight);
 }
 
 // ---------- wet path ribbons ----------
@@ -385,20 +387,9 @@ function buildPerimeter(scene) {
     });
     return m;
   });
-  const spots = [];
-  for (let x = -200; x <= 200; x += 34) { spots.push([x + 8, -128, 26, 30 + Math.random() * 55]); spots.push([x, 130, 26, 24 + Math.random() * 40]); }
-  for (let z = -100; z <= 100; z += 36) { spots.push([222, z, 24, 26 + Math.random() * 46]); spots.push([-228, z + 10, 24, 20 + Math.random() * 34]); }
-  let ci = 0;
-  for (const [x, z, w, h] of spots) {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), S.cityMats[ci++ % S.cityMats.length]);
-    b.position.set(x, h / 2 - 1, z);
-    scene.add(b);
-    // dark roof cap
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(w * 1.02, 1.2, w * 1.02),
-      new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 }));
-    cap.position.set(x, h - 0.4, z);
-    scene.add(cap);
-  }
+  // (the ring blocks themselves moved to streetwalls.js buildRingBlocks:
+  // instanced, setback tiers, seeded - this function keeps the fence,
+  // the shared city materials, and the landmark towers)
   buildSkylineTowers(scene);
 }
 

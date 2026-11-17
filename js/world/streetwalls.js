@@ -110,6 +110,81 @@ export function buildBeaconRow(scene, groundHeight) {
   scene.add(instanced(boxGeo(), ironMat, rails));
 }
 
+// ---------- Ring blocks: the city mass behind everything ----------
+// Was ~38 individual boxes + 38 roof caps (~76 draw calls, unseeded
+// heights). Now instanced by facade material with setback tiers, roof
+// caps on the top tier, and the odd rooftop water tower - 6 draw calls,
+// same city-glow materials, and pushed back a street's width on the
+// north so the Beacon row owns that edge.
+export function buildRingBlocks(scene) {
+  const R = rng(20261119);
+  const bodies = [[], [], []], caps = [], tanks = [], tankCaps = [];
+  const capMat = new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 });
+  const tankMat = new THREE.MeshStandardMaterial({ color: 0x4a3b2c, roughness: 0.95 });
+  function block(x, z, w, d, h, ry = 0) {
+    const v = (R() * 3) | 0, tone = 0.82 + R() * 0.3;
+    const col = new THREE.Color(tone, tone, tone).getHex();
+    bodies[v].push({ p: [x, h / 2 - 1, z], s: [w, h, d], ry, c: col });
+    let tw = w, td = d, top = h - 1;
+    if (R() < 0.45) { // setback tier 2
+      tw *= 0.68; td *= 0.68; const h2 = h * (0.4 + R() * 0.25);
+      bodies[v].push({ p: [x, top + h2 / 2, z], s: [tw, h2, td], ry, c: col });
+      top += h2;
+      if (R() < 0.4) { // tier 3
+        tw *= 0.7; td *= 0.7; const h3 = h * (0.22 + R() * 0.18);
+        bodies[v].push({ p: [x, top + h3 / 2, z], s: [tw, h3, td], ry, c: col });
+        top += h3;
+      }
+    }
+    caps.push({ p: [x, top + 0.3, z], s: [tw * 1.05, 0.6, td * 1.05], ry });
+    if (R() < 0.16) { // rooftop water tower (cap derived from the tank below)
+      tanks.push({ p: [x + (R() - 0.5) * w * 0.3, top + 2.2, z + (R() - 0.5) * d * 0.3], s: [1, 3.2, 1] });
+    }
+  }
+  for (let x = -204; x <= 208; x += 33) {
+    block(x + (R() - 0.5) * 6, -138, 24 + R() * 6, 22, 20 + R() * 26);       // north, behind Beacon
+    block(x + (R() - 0.5) * 6, 136, 24 + R() * 6, 22, 20 + R() * 26);        // south, behind Boylston
+  }
+  for (let z = -96; z <= 100; z += 33) {
+    block(228, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 22 + R() * 28);        // east (Tremont side)
+    block(-234, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 18 + R() * 22);       // west, behind Arlington
+  }
+  bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), S.cityMats[i], items)); });
+  scene.add(instanced(boxGeo(), capMat, caps));
+  if (tanks.length) {
+    scene.add(instanced(new THREE.CylinderGeometry(1.7, 1.7, 1, 9), tankMat, tanks));
+    for (const t of tanks) tankCaps.push({ p: [t.p[0], t.p[1] + 2.3, t.p[2]], s: [1, 1.5, 1] });
+    scene.add(instanced(new THREE.ConeGeometry(2.05, 1, 9), tankMat, tankCaps));
+  }
+}
+
+// ---------- Boylston (south) + Arlington (west): lower-detail street rows ----------
+// Plain city-facade slabs at streetwall scale, varied heights and tones,
+// stone cornice strips - the parks' south and west faces get a street,
+// not a void. One instanced pass per material, like the ring.
+export function buildSouthWestRows(scene, groundHeight) {
+  const R = rng(20261120);
+  const bodies = [[], [], []], cornices = [], caps = [];
+  const stoneMat = new THREE.MeshStandardMaterial({ color: 0xb8ac96, roughness: 0.9 });
+  const capMat = new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 });
+  function unit(cx, cz, w, d, frontGy) {
+    const v = (R() * 3) | 0, h = 10 + R() * 6, tone = 0.84 + R() * 0.26;
+    const base = frontGy - 0.6, col = new THREE.Color(tone, tone, tone).getHex();
+    bodies[v].push({ p: [cx, base + h / 2, cz], s: [w, h, d], c: col });
+    cornices.push({ p: [cx, base + h + 0.08, cz], s: [w + 0.3, 0.4, d + 0.3] });
+    caps.push({ p: [cx, base + h + 0.42, cz], s: [w - 0.2, 0.35, d - 0.2] });
+  }
+  for (let x = -202; x + 13 <= 204; x += 13) { // Boylston: fronts face the parks (north)
+    unit(x + 6.5, 114, 13, 10, groundHeight(x + 6.5, 108));
+  }
+  for (let z = -92; z + 13 <= 94; z += 13) { // Arlington: fronts face the Garden (east)
+    unit(-216, z + 6.5, 10, 13, groundHeight(-210, z + 6.5));
+  }
+  bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), S.cityMats[i], items)); });
+  scene.add(instanced(boxGeo(), stoneMat, cornices));
+  scene.add(instanced(boxGeo(), capMat, caps));
+}
+
 // ---------- Charles Street: shopfronts + streetscape between the parks ----------
 // The asphalt band alone read as a gap. Now it has sidewalks, crosswalks,
 // street lamps, parked cars, and a low shopfront row (Beacon Hill's Charles

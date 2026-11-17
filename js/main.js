@@ -208,6 +208,8 @@ if (Q.has('shot')) {
     case 'beaconclose': pose(36, -93, 43, -111); break; // one Beacon unit at stoop distance
     case 'charles': pose(-44, 52, -64, -4); break; // Charles St: shopfronts, awnings, parked cars
     case 'charlesnorth': pose(-50, -34, -52, -78); break; // up Charles St toward the Beacon end
+    case 'boylston': pose(60, 58, 62, 114); break; // Common south edge: the Boylston row
+    case 'arlington': pose(-158, 16, -214, 18); break; // Garden west edge: the Arlington row
     case 'bandstand': pose(127, 29, 140, 42); break;
     case 'monument': pose(47, -32, 60, -45); break;
     case 'bench': pose(48.6, -18.6, 52, -22); break;
