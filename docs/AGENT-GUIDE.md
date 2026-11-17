@@ -234,6 +234,26 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   human height, the Washington statue + swan boats (abstract
   low-poly), ducklings (stylized), generic ring-block facades
   between the four skyline towers, Park St headhouse (box + sign).
+- v0.6.8 (Nov 17 2026): hawk realism pass (owner tuning: "Hawk Dua
+  should be occasional"). Two layers now. AMBIENT HAWKS: 2 red-tails
+  (adult + juvenile variant with brown tail) in hawk.js - soar wide
+  circles (Common centre (55,-5) r68 h46; Garden centre (-135,5)
+  r52 h40), excursions every 50-110 s of soaring: a low glide across
+  the park at 12-17 m (shadow disc sweeps at <20 m) or a lamp-top
+  perch (perches picked from S.lamps, y = gy+3.62, snag fallback)
+  for 18-40 s; at night they sit their perches. No screech/dive/HUD
+  - S.ambientHawks exposes them for tests. HAWK DUA rarity: a hunt
+  needs cooldown spent AND interest >= patience (interest builds
+  only during continuous exposure, drains 2x under cover; patience
+  re-rolls 20-45 s after every resolution). Cooldown bands:
+  catch 110-170, miss 80-130, bite 150-210, screech-abort 30-45;
+  FIRST_DIVE_AFTER 20 -> 45. hawkState() gains dives/catches/
+  interest/patience counters. Verified by /tmp/shottools/hawktest.js
+  (drives updateHawk manually - shot mode freezes her): 25 min of
+  worst-case continuous exposure = 8 dives (all catches, player
+  stationary), ambients airborne 90% of sampled time with fly +
+  perch states and low passes seen, abort cd 34.6, bite cd 174.4,
+  night parks all three hawks, zero console errors.
 - Roadmap (owner's direction): Fenway + City Hall as teleport-reached
   expansion maps (Sketchfab models are WANTED in the ledger -
   account-gated, need a human grab).

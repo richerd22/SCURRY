@@ -38,6 +38,22 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.8
+
+- **Hawk Dua is occasional now.** She used to be a metronome - stand
+  in the open and she'd be on you inside half a minute, every time.
+  Now a hunt needs her cooldown spent AND a long, unbroken watch of
+  you standing careless in open sky (cover drains her interest twice
+  as fast as exposure builds it). Getting caught buys minutes of
+  peace; dodging buys a couple; booping her buys the longest memory
+  of all. She is a rare event with a rust-red tail, not a tax.
+- **Two more hawks moved in.** A pair of red-tails (one's a juvenile,
+  brown tail, still figuring it out) soar wide circles over the
+  Common and the Garden, glide low across the park so their shadows
+  sweep the lawn, and perch on lamp tops to watch. They are weather.
+  They will never dive at you. Only Dua does that, and now she
+  mostly doesn't.
+
 ## What's in v0.6.7
 
 - **The landmarks grew bones.** The lagoon bridge is a real

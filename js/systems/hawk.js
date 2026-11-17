@@ -1,10 +1,20 @@
-// SCURRY - HAWK DUA, the red-tailed hawk. Canon name, Richard's.
-// She owns the open sky over the Common. Canopy is safety, platforms are
-// safety, the Hollow is safety - bare ground under bare sky is hers.
-// State machine: ROOST / CIRCLE -> SCREECH (telegraph) -> DIVE -> RECOVER.
-// A catch is a relocation, never a harming: fade out, wake up in a canopy,
-// stash intact, dignity not. A well-timed bite as she swoops in boops her
-// off the line and she remembers it (longer cooldown, feather tax paid).
+// SCURRY - the hawks of the Common. Two layers, by the owner's tuning:
+//
+// AMBIENT HAWKS (systems below): a pair of red-tails who live here -
+// soaring wide circles over the Common and the Garden, gliding low
+// across the park on a shadow pass, perching on lamp tops to watch.
+// Atmosphere only. They never dive, never screech, never touch the HUD.
+//
+// HAWK DUA, the named one. Canon name, Richard's. She owns the open sky
+// over the Common. Canopy is safety, platforms are safety, the Hollow
+// is safety - bare ground under bare sky is hers. But she is OCCASIONAL:
+// a rare, special event, not a pressure system. Long cooldowns plus a
+// patience timer (she has to watch you be careless for a while) gate
+// the hunt. State machine: ROOST / CIRCLE -> SCREECH (telegraph) ->
+// DIVE -> RECOVER. A catch is a relocation, never a harming: fade out,
+// wake up in a canopy, stash intact, dignity not. A well-timed bite as
+// she swoops in boops her off the line and she remembers it for a
+// long while (the longest cooldown of all, feather tax paid).
 
 import * as THREE from 'three';
 import { S } from '../state.js';
@@ -24,7 +34,16 @@ const DIVE_SPEED = 27.5;                   // 25-30 m/s band, mid-picked
 const CATCH_RADIUS = 1.2;
 const DODGE_DISTANCE = 3.0;
 const BITE_RANGE = 3.0;
-const FIRST_DIVE_AFTER = 20;               // no dive in the first 20 s
+const FIRST_DIVE_AFTER = 45;               // no dive in the first 45 s
+// Hawk Dua rarity tuning (seconds). A dive needs BOTH an expired
+// cooldown AND a full patience watch of continuous exposure - so even
+// a player who camps in the open is only visited every few minutes,
+// and a player who uses cover may go a whole session unvisited.
+const CD_CATCH = [110, 170];               // after she catches you
+const CD_MISS = [80, 130];                 // after a clean dodge
+const CD_BITE = [150, 210];                // after a boop - she REMEMBERS
+const CD_ABORT = [30, 45];                 // you took cover mid-screech
+const PATIENCE = [20, 45];                 // exposure watch before a hunt
 const BANDSTAND = { x: 140, z: 42, r: 8.6 }; // roof cone radius (landmarks.js)
 const ROOST = { x: 60, z: -45 };           // Soldiers & Sailors Monument
 
@@ -95,12 +114,15 @@ function roostPos(out) {
 // ------------------------------------------------------------------ model
 // Procedural red-tailed hawk, low tri, no shadows (castShadow stays off -
 // the ground shadow DISC below is the readable telegraph, not a shadowmap).
-function makeHawkMesh() {
+// variant 1 = a juvenile: browner overall and a brown banded tail instead
+// of the adult's rust-red fan (real red-tail field marks).
+function makeHawkMesh(variant = 0) {
   const g = new THREE.Group();
-  const brown = new THREE.MeshStandardMaterial({ color: 0x6b4a2f, roughness: 1 });
-  const darkBrown = new THREE.MeshStandardMaterial({ color: 0x4a3018, roughness: 1 });
+  const juv = variant === 1;
+  const brown = new THREE.MeshStandardMaterial({ color: juv ? 0x5d3d22 : 0x6b4a2f, roughness: 1 });
+  const darkBrown = new THREE.MeshStandardMaterial({ color: juv ? 0x3c2712 : 0x4a3018, roughness: 1 });
   const pale = new THREE.MeshStandardMaterial({ color: 0xe8ddc8, roughness: 1 });
-  const rust = new THREE.MeshStandardMaterial({ color: 0xa03d1e, roughness: 0.95, side: THREE.DoubleSide });
+  const rust = new THREE.MeshStandardMaterial({ color: juv ? 0x74522e : 0xa03d1e, roughness: 0.95, side: THREE.DoubleSide });
   const beakMat = new THREE.MeshStandardMaterial({ color: 0x2e2a24, roughness: 0.5 });
   const cereMat = new THREE.MeshStandardMaterial({ color: 0xd8a921, roughness: 0.6 });
 
@@ -283,7 +305,12 @@ export function buildHawk(scene) {
   else circlePos(hawk.angle, hawk.pos);
   hawk.mesh.position.copy(hawk.pos);
   hawk.disc.visible = hawk.state !== 'roost';
+  hawk.interest = 0;                       // exposure watch accumulator
+  hawk.patience = randCooldown(PATIENCE[0], PATIENCE[1]);
+  hawk.dives = 0;                          // tuning counters (tests read)
+  hawk.catches = 0;
   S.hawk = hawk;
+  buildAmbients(scene);
   return hawk;
 }
 
@@ -293,9 +320,200 @@ export function hawkState() {
   return {
     state: hawk.state, cooldown: hawk.cooldown, timer: hawk.timer,
     sessionTime: hawk.sessionTime, warned: hawk.warned,
+    interest: hawk.interest, patience: hawk.patience,
+    dives: hawk.dives, catches: hawk.catches,
     pos: hawk.pos, diveTarget: hawk.diveTarget, screechTarget: hawk.screechTarget,
     featherCount: hawk.feathers.length,
   };
+}
+
+// ------------------------------------------------------- AMBIENT HAWKS
+// A pair of red-tails who simply live here. They soar wide slow circles
+// (one over the Common, one over the Garden), now and then glide low
+// across the park - a shadow sweeping the lawn - and perch on lamp tops
+// to watch the world. At night they sit their perches out. They are
+// weather, not threat: no screech, no dive, no HUD, ever.
+
+const _flyDir = new THREE.Vector3();
+
+function lampPerchNear(x, z, minDistFrom) {
+  let best = null, bd = 1e9;
+  for (const l of S.lamps || []) {
+    if (!l || typeof l.x !== 'number') continue;
+    if (minDistFrom && Math.hypot(l.x - minDistFrom.x, l.z - minDistFrom.z) < 30) continue;
+    const d = Math.hypot(l.x - x, l.z - z);
+    if (d < bd) { bd = d; best = l; }
+  }
+  if (!best) return null;
+  return { x: best.x, z: best.z, y: groundHeight(best.x, best.z) + 3.62, yaw: Math.random() * Math.PI * 2 };
+}
+
+function fallbackPerch() {
+  const snag = (S.trees || []).find((t) => t && t.snag);
+  if (snag) return { x: snag.x, z: snag.z, y: snag.canopyY + 0.05, yaw: 1.1 };
+  return null;
+}
+
+function ambientCirclePos(b, angle, out) {
+  out.set(
+    b.centre.x + Math.cos(angle) * b.r,
+    b.h,
+    b.centre.z + Math.sin(angle) * b.r
+  );
+  return out;
+}
+
+function startFly(b, to, speed, arc, then) {
+  b.flyFrom.copy(b.pos);
+  b.flyTo.copy(to);
+  const dist = b.flyFrom.distanceTo(b.flyTo);
+  b.flyDur = Math.max(0.6, dist / speed);
+  b.flyT = 0;
+  b.flyArc = arc;
+  b.flyThen = then;
+  b.state = 'fly';
+  if (b.disc) b.disc.visible = false;
+}
+
+function flyToCircle(b, then) {
+  const ang = Math.atan2(b.pos.z - b.centre.z, b.pos.x - b.centre.x);
+  ambientCirclePos(b, ang, _flyDir);
+  startFly(b, _flyDir, 13, 2.5, then || 'soar');
+}
+
+function buildAmbients(scene) {
+  const defs = [
+    { variant: 0, scale: 1.0, centre: { x: 55, z: -5 }, r: 68, h: 46, speed: 7.5, dir: 1, perchNear: [[60, -20], [150, 40]] },
+    { variant: 1, scale: 0.88, centre: { x: -135, z: 5 }, r: 52, h: 40, speed: 6.8, dir: -1, perchNear: [[-120, -30], [-80, 50]] },
+  ];
+  const list = [];
+  for (const d of defs) {
+    const mesh = makeHawkMesh(d.variant);
+    mesh.scale.setScalar(d.scale);
+    scene.add(mesh);
+    const disc = makeShadowDisc();
+    disc.visible = false;
+    scene.add(disc);
+    const perches = [];
+    let prev = null;
+    for (const [px, pz] of d.perchNear) {
+      const p = lampPerchNear(px, pz, prev) || fallbackPerch();
+      if (p) { perches.push(p); prev = p; }
+    }
+    const b = {
+      mesh, disc, discMat: disc.material,
+      state: 'soar',
+      pos: new THREE.Vector3(),
+      angle: Math.random() * Math.PI * 2,
+      flapPhase: Math.random() * 9,
+      centre: d.centre, r: d.r, h: d.h, speed: d.speed, dir: d.dir,
+      timer: randCooldown(15, 50),       // time until the first excursion
+      perches, perchIdx: 0,
+      flyFrom: new THREE.Vector3(), flyTo: new THREE.Vector3(),
+      flyT: 0, flyDur: 1, flyArc: 0, flyThen: 'soar',
+    };
+    ambientCirclePos(b, b.angle, b.pos);
+    b.mesh.position.copy(b.pos);
+    list.push(b);
+  }
+  S.ambientHawks = list;
+  return list;
+}
+
+function updateAmbients(dt, daylight) {
+  const list = S.ambientHawks;
+  if (!list) return;
+  for (const b of list) {
+    switch (b.state) {
+      case 'soar': {
+        b.angle += (b.speed / b.r) * dt * b.dir;
+        ambientCirclePos(b, b.angle, b.pos);
+        b.pos.y = b.h + Math.sin(b.flapPhase * 0.5) * 1.1;
+        b.mesh.position.copy(b.pos);
+        ambientCirclePos(b, b.angle + 0.05 * b.dir, _flyDir);
+        if (b.mesh.lookAt) b.mesh.lookAt(_flyDir.x, b.pos.y, _flyDir.z);
+        flapFor(b, dt, 'circle');
+        if (!daylight) {
+          // nightfall: go sit on a perch
+          if (b.perches.length) {
+            const p = b.perches[b.perchIdx % b.perches.length];
+            b.targetPerch = p;
+            startFly(b, _flyDir.set(p.x, p.y, p.z), 13, 2, 'perch');
+          }
+          break;
+        }
+        b.timer -= dt;
+        if (b.timer <= 0) {
+          if (b.perches.length && Math.random() < 0.5) {
+            const p = b.perches[b.perchIdx % b.perches.length];
+            b.perchIdx++;
+            b.targetPerch = p;
+            startFly(b, _flyDir.set(p.x, p.y, p.z), 14, 3, 'perch');
+          } else {
+            // the low crossing: mirror across the circuit, skim the park
+            const tx = THREE.MathUtils.clamp(b.centre.x * 2 - b.pos.x + randCooldown(-20, 20), -200, 200);
+            const tz = THREE.MathUtils.clamp(b.centre.z * 2 - b.pos.z + randCooldown(-20, 20), -95, 95);
+            startFly(b, _flyDir.set(tx, randCooldown(12, 17), tz), 16, 1.2, 'climb');
+          }
+        }
+        break;
+      }
+
+      case 'fly': {
+        b.flyT += dt / b.flyDur;
+        const t = Math.min(1, b.flyT);
+        const e = t * t * (3 - 2 * t);
+        b.pos.lerpVectors(b.flyFrom, b.flyTo, e);
+        b.pos.y += Math.sin(t * Math.PI) * b.flyArc;
+        b.mesh.position.copy(b.pos);
+        _flyDir.copy(b.flyTo).sub(b.flyFrom);
+        if (b.mesh.lookAt && _flyDir.lengthSq() > 0.01) {
+          _flyDir.add(b.pos);
+          b.mesh.lookAt(_flyDir.x, b.pos.y + (b.flyTo.y - b.flyFrom.y) * 0.3, _flyDir.z);
+        }
+        flapFor(b, dt, (b.flyTo.y > b.flyFrom.y + 2 && t < 0.4) ? 'hard' : 'circle');
+        // low enough and the shadow sweeps the ground - the shadow pass
+        if (b.disc) {
+          if (b.pos.y < 20) {
+            b.disc.visible = true;
+            b.disc.position.set(b.pos.x, groundHeight(b.pos.x, b.pos.z) + 0.06, b.pos.z);
+            b.disc.scale.set(2.6, 2.6, 1);
+            if (b.discMat) b.discMat.opacity = 0.15;
+          } else b.disc.visible = false;
+        }
+        if (t >= 1) {
+          if (b.disc) b.disc.visible = false;
+          if (b.flyThen === 'perch') {
+            b.state = 'perch';
+            b.timer = randCooldown(18, 40);
+            b.perchYaw = b.targetPerch ? b.targetPerch.yaw : 0;
+            b.pos.copy(b.flyTo);
+            b.mesh.position.copy(b.pos);
+          } else if (b.flyThen === 'climb') {
+            flyToCircle(b, 'soar');
+          } else {
+            b.state = 'soar';
+            b.angle = Math.atan2(b.pos.z - b.centre.z, b.pos.x - b.centre.x);
+            b.timer = randCooldown(50, 110);
+          }
+        }
+        break;
+      }
+
+      case 'perch': {
+        b.mesh.position.copy(b.pos);
+        b.mesh.rotation.set(0, b.perches.length ? (b.perchYaw || 0) : 0, 0);
+        flapFor(b, dt, 'folded');
+        if (daylight) {
+          b.timer -= dt;
+          if (b.timer <= 0) flyToCircle(b, 'soar');
+        }
+        break;
+      }
+
+      default: b.state = 'soar'; break;
+    }
+  }
 }
 
 // ------------------------------------------------------------------ catch
@@ -335,7 +553,8 @@ function doCatch() {
     toast(CATCH_TOAST, 4.5);
   }
   hawk.state = 'recover';
-  startRecover(randCooldown(18, 30));
+  hawk.catches++;
+  startRecover(randCooldown(CD_CATCH[0], CD_CATCH[1]));
 }
 
 function startRecover(cooldown) {
@@ -343,6 +562,10 @@ function startRecover(cooldown) {
   hawk.recoverT = 0;
   hawk.recoverDur = 2.8;
   hawk.cooldown = cooldown;
+  // every resolution earns a fresh patience watch - she starts
+  // half-forgetting you, and has to be re-tempted by open sky
+  hawk.patience = randCooldown(PATIENCE[0], PATIENCE[1]);
+  hawk.interest = 0;
   hawk.state = 'recover';
 }
 
@@ -350,26 +573,28 @@ function startRecover(cooldown) {
 const _next = new THREE.Vector3();
 const _discPos = new THREE.Vector3();
 
-function flap(dt, mode) {
+function flapFor(bird, dt, mode) {
   // mode: 'circle' slow flap with glides between, 'tucked' dive,
-  // 'folded' roost, 'hard' recover climb-out
-  if (!hawk) return;
-  hawk.flapPhase += dt * (mode === 'hard' ? 7 : 2.1);
-  const u = hawk.mesh.userData;
+  // 'folded' roost/perch, 'hard' recover climb-out / takeoff
+  if (!bird) return;
+  bird.flapPhase += dt * (mode === 'hard' ? 7 : 2.1);
+  const u = bird.mesh.userData;
   if (!u || !u.wingL || !u.wingR) return;
   let a;
   if (mode === 'tucked') a = -0.55;
   else if (mode === 'folded') a = -0.95;
-  else if (mode === 'hard') a = Math.sin(hawk.flapPhase) * 0.65;
+  else if (mode === 'hard') a = Math.sin(bird.flapPhase) * 0.65;
   else {
     // glide between flaps: flap hard for ~1.6 s of every ~4 s cycle
-    const cyc = hawk.flapPhase % 8.4;
-    a = cyc < 3.4 ? Math.sin(hawk.flapPhase * 2.4) * 0.38 : 0.1 + Math.sin(hawk.flapPhase * 0.7) * 0.04;
+    const cyc = bird.flapPhase % 8.4;
+    a = cyc < 3.4 ? Math.sin(bird.flapPhase * 2.4) * 0.38 : 0.1 + Math.sin(bird.flapPhase * 0.7) * 0.04;
   }
   u.wingL.rotation.z = -a;
   u.wingR.rotation.z = a;
   if (u.talons) u.talons.rotation.x = mode === 'tucked' ? 0.5 : 0;
 }
+
+function flap(dt, mode) { flapFor(hawk, dt, mode); }
 
 function placeDisc(x, z, scale, opacity) {
   if (!hawk || !hawk.disc) return;
@@ -387,6 +612,7 @@ export function updateHawk(dt) {
   updateFeathers(dt);
   const P = S.player;
   const daylight = isDaylight();
+  updateAmbients(dt, daylight);
 
   switch (hawk.state) {
     case 'roost': {
@@ -414,14 +640,25 @@ export function updateHawk(dt) {
       flap(dt, 'circle');
       // faint, wide disc drifting under her - present, not yet a threat
       placeDisc(hawk.pos.x, hawk.pos.z, 3.6, 0.13);
-      // start a hunt?
-      if (hawk.sessionTime > FIRST_DIVE_AFTER && hawk.cooldown <= 0 && isPlayerExposed()) {
-        hawk.state = 'screech';
-        hawk.timer = SCREECH_TIME;
-        hawk.screechTarget.copy(P.pos);
-        if (sfx.screech) sfx.screech();
-        S.hawkFlash = Math.max(S.hawkFlash || 0, 1.6);
-        if (!hawk.warned) { hawk.warned = true; toast(FIRST_DIVE_TOAST, 3.2); }
+      // start a hunt? She has to WATCH you be careless first: interest
+      // builds only while you stand exposed with her cooldown spent,
+      // and drains twice as fast the moment you take cover. A full
+      // patience watch of open sky is what earns a screech.
+      if (hawk.sessionTime > FIRST_DIVE_AFTER && hawk.cooldown <= 0) {
+        if (isPlayerExposed()) {
+          hawk.interest += dt;
+          if (hawk.interest >= hawk.patience) {
+            hawk.interest = 0;
+            hawk.state = 'screech';
+            hawk.timer = SCREECH_TIME;
+            hawk.screechTarget.copy(P.pos);
+            if (sfx.screech) sfx.screech();
+            S.hawkFlash = Math.max(S.hawkFlash || 0, 1.6);
+            if (!hawk.warned) { hawk.warned = true; toast(FIRST_DIVE_TOAST, 3.2); }
+          }
+        } else {
+          hawk.interest = Math.max(0, hawk.interest - dt * 2);
+        }
       }
       break;
     }
@@ -437,9 +674,12 @@ export function updateHawk(dt) {
       if (hawk.mesh.lookAt) hawk.mesh.lookAt(_next.x, hawk.pos.y, _next.z);
       flap(dt, 'circle');
       if (!isPlayerExposed()) {
-        // broke cover / climbed / ducked under canopy: abort, lesson taught
+        // broke cover / climbed / ducked under canopy: abort, lesson
+        // taught - and she sulks a while before watching you again
         hawk.state = 'circle';
-        hawk.cooldown = Math.max(hawk.cooldown, randCooldown(4, 6));
+        hawk.cooldown = Math.max(hawk.cooldown, randCooldown(CD_ABORT[0], CD_ABORT[1]));
+        hawk.patience = randCooldown(PATIENCE[0], PATIENCE[1]);
+        hawk.interest = 0;
         break;
       }
       // disc locks onto the player and pulses for the whole telegraph
@@ -455,6 +695,7 @@ export function updateHawk(dt) {
         const dist = hawk.diveFrom.distanceTo(hawk.diveTarget);
         hawk.diveDur = Math.max(0.3, dist / DIVE_SPEED);
         hawk.diveT = 0;
+        hawk.dives++;
         hawk.state = 'dive';
       }
       break;
@@ -483,7 +724,7 @@ export function updateHawk(dt) {
           // or started climbing (isPlayerExposed false / point vacated).
           // She swoops through and climbs out either way.
           if (distToPoint > DODGE_DISTANCE) { /* dodged - no comment, no spam */ }
-          startRecover(randCooldown(18, 30));
+          startRecover(randCooldown(CD_MISS[0], CD_MISS[1]));
         }
       }
       break;
@@ -522,10 +763,11 @@ export function biteHawk() {
   if (hawk.state !== 'screech' && hawk.state !== 'dive') return false;
   if (hawk.state === 'screech' && hawk.timer > BITE_SCREECH_WINDOW) return false;
   if (hawk.pos.distanceTo(S.player.pos) >= BITE_RANGE) return false;
-  // veer off hard: climb out sideways, feather tax, longer memory
+  // veer off hard: climb out sideways, feather tax, the longest memory
+  // of all - a booped Hawk Dua does not come back for minutes
   if (S.scene) spawnFeatherPuff(S.scene, hawk.pos);
   else spawnFeatherPuff(hawk.mesh && hawk.mesh.parent ? hawk.mesh.parent : null, hawk.pos);
   toast(BITE_TOAST, 3);
-  startRecover(randCooldown(38, 48));
+  startRecover(randCooldown(CD_BITE[0], CD_BITE[1]));
   return true;
 }
