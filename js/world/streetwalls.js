@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { brownstoneFacade, storefrontFacade } from './textures.js';
+import { brownstoneFacade, storefrontFacade, tremontFacade } from './textures.js';
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -146,7 +146,7 @@ export function buildRingBlocks(scene) {
     block(x + (R() - 0.5) * 6, 136, 24 + R() * 6, 22, 20 + R() * 26);        // south, behind Boylston
   }
   for (let z = -96; z <= 100; z += 33) {
-    block(228, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 22 + R() * 28);        // east (Tremont side)
+    block(237, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 22 + R() * 28);        // east, behind the Tremont row
     block(-234, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 18 + R() * 22);       // west, behind Arlington
   }
   bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), S.cityMats[i], items)); });
@@ -183,6 +183,107 @@ export function buildSouthWestRows(scene, groundHeight) {
   bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), S.cityMats[i], items)); });
   scene.add(instanced(boxGeo(), stoneMat, cornices));
   scene.add(instanced(boxGeo(), capMat, caps));
+}
+
+// ---------- Tremont Street: the downtown edge, east side of the Common ----------
+// The Common's east fence had only ring blocks behind it. Now the full
+// streetscape: sidewalk + asphalt + crosswalks + lamps + parked cars,
+// then a streetwall row across the street - storefront glass at street
+// level, office massing above (tremontFacade), stone cornices, awnings.
+// One notch more dressing than Boylston/Arlington because this edge is
+// in constant view from the Mall and Frog Pond. Fronts face WEST (-x);
+// they sit across the street from the fence, like the real Tremont.
+export function buildTremontRow(scene, groundHeight) {
+  const R = rng(20261121);
+  const FRONT = 215.8, DEPTH = 9, CX = FRONT + DEPTH / 2;
+  const bases = ['#6b5a48', '#59524e', '#716354'];
+  const mats = bases.map((b, i) => {
+    const f = tremontFacade(711 + i * 7, b);
+    const m = new THREE.MeshStandardMaterial({
+      map: f.map, emissiveMap: f.emissiveMap, emissive: 0xffc37a,
+      emissiveIntensity: 0.12, roughness: 0.92,
+    });
+    if (S.cityMats) S.cityMats.push(m);
+    return m;
+  });
+  const stoneMat = new THREE.MeshStandardMaterial({ color: 0xb8ac96, roughness: 0.9 });
+  const capMat = new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 });
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x9b968b, roughness: 0.95 });
+  const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x33343a, roughness: 0.97 });
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xd8d5cc, roughness: 0.8 });
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0x22252a, roughness: 0.55, metalness: 0.6 });
+  const bulbMat = new THREE.MeshStandardMaterial({
+    color: 0x443b28, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.4,
+  });
+  if (S.cityMats) S.cityMats.push(bulbMat);
+  const awnMat = new THREE.MeshStandardMaterial({ roughness: 0.9 });
+  const awnCols = [0x2e4a34, 0x6e2430, 0x24344e, 0x1c1c1e, 0x74552a];
+
+  // the street itself: asphalt slabs + a raised sidewalk on the park curb
+  const street = [], walks = [];
+  for (let z = -96; z < 96; z += 16) {
+    street.push({ p: [209.9, groundHeight(209.9, z + 8) + 0.02, z + 8], s: [13.2, 0.1, 16.4] });
+    walks.push({ p: [206.1, groundHeight(206.1, z + 8) + 0.09, z + 8], s: [3.0, 0.16, 16.4] });
+  }
+  scene.add(instanced(boxGeo(), asphaltMat, street));
+  scene.add(instanced(boxGeo(), concrete, walks));
+
+  // crosswalk zebras where the park paths meet the street (Park St, Frog Pond)
+  const stripes = [];
+  for (const cz of [-80, 14]) {
+    for (let i = 0; i < 5; i++) stripes.push({ p: [208.6 + i * 1.55, groundHeight(210, cz) + 0.1, cz], s: [1.1, 0.05, 4.4] });
+  }
+  scene.add(instanced(boxGeo(), stripeMat, stripes));
+
+  // street lamps on the park-side sidewalk (emissive bulbs only)
+  const posts = [], bulbs = [];
+  for (let i = 0; i < 8; i++) {
+    const z = -91 + i * 26, x = 205.3;
+    const gy = groundHeight(x, z);
+    posts.push({ p: [x, gy + 2.3, z], s: [1, 4.6, 1] });
+    bulbs.push({ p: [x, gy + 4.72, z], s: [1, 1, 1] });
+  }
+  scene.add(instanced(new THREE.CylinderGeometry(0.07, 0.1, 1, 6), ironMat, posts));
+  scene.add(instanced(new THREE.SphereGeometry(0.17, 8, 6), bulbMat, bulbs));
+
+  // parked cars along the far curb, clear of the two crossings
+  const paints = [0x8a8d90, 0x2a2d33, 0x5a1f1f, 0x1f3350, 0xd8d5cc, 0x3a4a3a, 0x74552a];
+  const carBodies = [], carCabins = [], carWheels = [];
+  const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.24, 10);
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.9 });
+  const cabinMat = new THREE.MeshStandardMaterial({ color: 0x1d242e, roughness: 0.3, metalness: 0.2 });
+  const paintMat = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0.35 });
+  function car(x, z) {
+    const gy = groundHeight(x, z);
+    carBodies.push({ p: [x, gy + 0.62, z], s: [1.72, 0.58, 4.35], c: paints[(R() * paints.length) | 0] });
+    carCabins.push({ p: [x, gy + 1.12, z + 0.28], s: [1.54, 0.46, 2.15] });
+    for (const sx of [-0.8, 0.8]) for (const sz of [-1.38, 1.38]) {
+      carWheels.push({ p: [x + sx, gy + 0.34, z + sz], s: [1, 1, 1], rz: Math.PI / 2 });
+    }
+    S.solidBoxes.push({ minX: x - 0.95, maxX: x + 0.95, minZ: z - 2.25, maxZ: z + 2.25 });
+  }
+  for (const z of [-92, -58, -40, -8, 34, 52, 78, 92]) car(213.4, z);
+  scene.add(instanced(boxGeo(), paintMat, carBodies));
+  scene.add(instanced(boxGeo(), cabinMat, carCabins));
+  scene.add(instanced(wheelGeo, wheelMat, carWheels));
+
+  // the streetwall row: 11 m units, storefront below, offices above
+  const bodies = [[], [], []], cornices = [], caps = [], awnings = [];
+  for (let z = -99; z + 11 <= 99.5; z += 11) {
+    const cz = z + 5.5, v = (R() * 3) | 0, h = 15 + R() * 9;
+    const base = groundHeight(CX, cz) - 0.6, tone = 0.82 + R() * 0.3;
+    bodies[v].push({ p: [CX, base + h / 2, cz], s: [DEPTH, h, 11], c: new THREE.Color(tone, tone, tone).getHex() });
+    cornices.push({ p: [CX, base + h + 0.12, cz], s: [DEPTH + 0.5, 0.5, 11.4] });
+    caps.push({ p: [CX, base + h + 0.55, cz], s: [DEPTH - 0.3, 0.4, 10.7] });
+    awnings.push({
+      p: [FRONT - 0.95, base + h * 0.215 + 0.1, cz], s: [2.1, 0.09, 9.6], rz: 0.38,
+      c: awnCols[(R() * awnCols.length) | 0],
+    });
+  }
+  bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), mats[i], items)); });
+  scene.add(instanced(boxGeo(), stoneMat, cornices));
+  scene.add(instanced(boxGeo(), capMat, caps));
+  scene.add(instanced(boxGeo(), awnMat, awnings));
 }
 
 // ---------- Charles Street: shopfronts + streetscape between the parks ----------

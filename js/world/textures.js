@@ -439,6 +439,70 @@ export function storefrontFacade(seed, base, band) {
   return { map, emissiveMap };
 }
 
+// --- Tremont St downtown unit: 11 m wide x ~19 m tall ---
+// Storefront at street level (tall glass under a sign band), five office
+// floors of stone-pier grid above, dentil cornice at the top. One texture
+// per whole unit - the downtown edge reads at park distance, so the
+// storefront glow + pier rhythm do the work.
+export function tremontFacade(seed, base) {
+  const W = 256, H = 512;
+  const [cv, g] = canvas(W, H);
+  const [ev, e] = canvas(W, H);
+  const R = rng(seed);
+  g.fillStyle = base; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 2200; i++) {
+    g.fillStyle = 'rgba(0,0,0,' + R() * 0.13 + ')';
+    g.fillRect(R() * W, R() * H, 3.2, 3.2);
+    if (R() < 0.22) { g.fillStyle = 'rgba(255,238,210,' + R() * 0.05 + ')'; g.fillRect(R() * W, R() * H, 2.2, 8 + R() * 18); }
+  }
+  e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
+  // cornice band + dentils
+  g.fillStyle = 'rgba(0,0,0,0.38)'; g.fillRect(0, 0, W, 27);
+  g.fillStyle = 'rgba(232,220,192,0.5)';
+  for (let x = 6; x < W - 8; x += 16) g.fillRect(x, 19, 8, 7);
+  g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(0, 27, W, 3);
+  // office floors: stone piers between the window columns
+  g.fillStyle = 'rgba(255,240,215,0.08)';
+  for (const px of [61, 122, 183]) g.fillRect(px, 34, 7, 296);
+  g.fillStyle = 'rgba(0,0,0,0.22)';
+  for (let i = 0; i < 5; i++) g.fillRect(0, 40 + i * 57, W, 2.2); // floor lines
+  for (let i = 0; i < 5; i++) {
+    const wy = 46 + i * 57, wh = 38;
+    for (let cx = 0; cx < 4; cx++) {
+      const x = 15 + cx * 61, ww = 38;
+      g.fillStyle = '#d8cfb8'; g.fillRect(x - 2, wy - 2, ww + 4, wh + 4);
+      g.fillStyle = '#20242c'; g.fillRect(x, wy, ww, wh);
+      g.fillStyle = 'rgba(178,206,230,0.35)'; g.fillRect(x + 3, wy + 4, 11, 18);
+      g.fillStyle = '#d8cfb8'; g.fillRect(x, wy + wh * 0.5, ww, 2.4);
+      if (R() < 0.3) {
+        e.fillStyle = R() < 0.8 ? 'rgba(255,196,110,1)' : 'rgba(190,214,255,1)';
+        e.fillRect(x + 1, wy + 1, ww - 2, wh - 2);
+      }
+    }
+  }
+  // stone frieze between offices and storefront
+  g.fillStyle = 'rgba(226,210,182,0.4)'; g.fillRect(0, 332, W, 26);
+  g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(0, 358, W, 3);
+  // sign band: dark + pale blocks suggesting lettering (no words)
+  g.fillStyle = 'rgba(12,12,14,0.88)'; g.fillRect(0, 366, W, 32);
+  g.fillStyle = 'rgba(240,230,205,0.85)';
+  let lx = 16 + R() * 10;
+  while (lx < W - 24) { const lw = 7 + R() * 12; g.fillRect(lx, 376, lw, 12); lx += lw + 6 + R() * 7; }
+  // storefront glass: four tall panes, iron mullions, mostly lit
+  g.fillStyle = '#191c20'; g.fillRect(5, 402, W - 10, 86);
+  for (let i = 0; i < 4; i++) {
+    const x = 11 + i * 59;
+    g.fillStyle = '#2c3844'; g.fillRect(x, 407, 50, 76);
+    g.fillStyle = 'rgba(190,216,235,0.3)'; g.fillRect(x + 4, 412, 13, 34);
+    if (R() < 0.85) { e.fillStyle = R() < 0.85 ? 'rgba(255,198,118,1)' : 'rgba(205,225,255,1)'; e.fillRect(x + 2, 409, 46, 72); }
+  }
+  g.fillStyle = '#101216'; g.fillRect(0, 488, W, 24); // bulkhead
+  const map = toTex(cv), emissiveMap = toTex(ev, false);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  emissiveMap.wrapS = emissiveMap.wrapT = THREE.RepeatWrapping;
+  return { map, emissiveMap };
+}
+
 // --- grass blades alpha texture for instanced tufts ---
 export function grassBladeTex() {
   const [cv, g] = canvas(128, 128);
