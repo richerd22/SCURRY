@@ -660,6 +660,24 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   street-width off their real frontage; the sign's letters
   are sub-pixel at game distance - the trimark carries it,
   same as the real sign at 300 m.
+- v0.6.26 (Nov 17 2026): TD GARDEN RELEASED (garden.js
+  RELEASED flag; assets/models/garden.glb, new in repo).
+  The v0.6.24 licensing hold is lifted on the project
+  owner's explicit decision (Nov 17 2026): RELEASED flipped
+  false -> true, the banked TDGarden.glb (6,988,596 bytes)
+  copied to play/assets/models/garden.glb and pushed, the
+  ATTRIBUTION.md row and garden.js header rewritten to
+  released status (terms remain unrecorded - the release is
+  the owner's call, documented like the 3D Warehouse Fenway
+  row). Nothing else changed: the gate's design meant the
+  flip + the file drop is the whole release. The harness
+  window-flag path still exists but is no longer needed -
+  the local build now loads the real file exactly as
+  production does. Verified: tdgarden / tdgardenbowl /
+  tdgardenjumbo poses against the live production site
+  with the real model (court, bowl, jumbotron), the live
+  GLB URL serving 200 at the banked byte size, walktest
+  102/102, zero console errors.
 - Roadmap (owner's direction): City Hall as the next
   teleport-reached expansion map (Fenway shipped in v0.6.22;
   Sketchfab models are WANTED in the ledger - account-gated,

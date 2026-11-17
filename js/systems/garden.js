@@ -8,12 +8,12 @@
 // parquet, seating bowl, jumbotron) from Richard's model haul - see
 // assets-library/ATTRIBUTION.md, TD Garden row. LICENSING: that file's
 // terms are UNKNOWN (the haul recorded no author or license), so the
-// converted GLB is HELD in the asset library and is deliberately NOT
-// shipped in this repo. This file loads assets/models/garden.glb
-// best-effort through the standard sourced-model pattern: with the
-// asset absent the destination still works (hole, signs, lights,
-// doors) and the game never blocks on it. Release = dropping the GLB
-// at that path; no code change needed.
+// converted GLB was HELD in the asset library through v0.6.25 and the
+// load below stayed gated. RELEASED Nov 17 2026 on the project
+// owner's explicit decision: the GLB now ships at
+// assets/models/garden.glb and this file loads it through the
+// standard sourced-model pattern (best-effort - the destination
+// still works, hole/signs/lights/doors, if the file ever fails).
 //
 // It lives far off-map at GDN (-6000, 0, 6000), same trick as the
 // Hollow, the Burrows and Fenway. Reachable the same way Fenway is:
@@ -183,16 +183,15 @@ export function buildGarden(scene) {
   }
 
   // the building itself: async, best-effort, exactly like every other
-  // sourced model in this game - and unlike Fenway's, this GLB is
-  // license-held (see header), so absence is the expected live state.
-  // The load is GATED, not just tolerated: an un-gated request would
-  // 404 on every boot of the live site and log a console resource
-  // error for every player until release, and this game's bar is a
-  // clean console. Flip RELEASED when the GLB is cleared and dropped
-  // at assets/models/garden.glb (the verification harness sets the
-  // window flag instead, and route-fulfills the file from the asset
-  // library, so local proof needs no code change).
-  const RELEASED = false;
+  // sourced model in this game. Through v0.6.25 this load was GATED
+  // (RELEASED=false) while the model was license-held: an un-gated
+  // request would have 404'd on every boot of the live site and
+  // logged a console resource error for every player, and this
+  // game's bar is a clean console. RELEASED Nov 17 2026 on the
+  // project owner's explicit decision, with the GLB dropped at
+  // assets/models/garden.glb. (The harness window flag remains as a
+  // local-proof path; it is no longer needed.)
+  const RELEASED = true;
   if (RELEASED || (typeof window !== 'undefined' && window.__scurryGardenAsset)) {
     loadModel('assets/models/garden.glb').then((tpl) => {
     if (!tpl) return;

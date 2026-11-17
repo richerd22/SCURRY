@@ -38,6 +38,15 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.26
+
+- **The other Garden is IN.** The TD Garden model held
+  back in v0.6.24 is released (project owner's call,
+  Nov 17 2026): the north run from the rat market now
+  really does pop you up through the parquet into the
+  full arena - bowl, banners, jumbotron and all. See the
+  v0.6.24 notes for the tour.
+
 ## What's in v0.6.25
 
 - **Fenway has a neighborhood now.** Emerge behind home
@@ -70,7 +79,7 @@ loses 25%. Relocated, never harmed.
   sourced model whose paperwork is still being sorted out, so
   the door, the run and the lights ship now and the Garden
   itself fades in when its license clears - the game doesn't
-  wait on it either way.
+  wait on it either way. (Update: it cleared - see v0.6.26.)
 
 ## What's in v0.6.23
 
@@ -309,10 +318,10 @@ poly.pizza):
   (3D Warehouse; used under the 3D Warehouse Terms of Use, not CC0 -
   this line is the exception to the "all CC0" note above)
 - TD Garden interior - author and license **not recorded** (model
-  haul): the converted model is held in the project asset library
-  and is **not distributed with the game**; `garden.js` loads it
-  best-effort if it is ever cleared and placed at
-  `assets/models/garden.glb`
+  haul): the converted model was held in the project asset library
+  through v0.6.25 and **released with the game in v0.6.26 on the
+  project owner's explicit decision** (Nov 17, 2026); it ships at
+  `assets/models/garden.glb` and `garden.js` loads it best-effort
 
 Everything else is procedural: canvas textures, code-built landmarks, and
 synthesized WebAudio. No AI-generated imagery anywhere, ever.
