@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { meshTerrainHeight } from '../systems/collision.js';
+import { createPathProximityIndex } from './path-index.js';
 import { insideParkLawn } from './ground-rules.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
@@ -31,9 +32,11 @@ export function visibleGroundHeight(x, z) {
   // The rendered wet path / plaza ribbons sit 2-6cm ABOVE the lawn mesh.
   // Feet must follow those visible surfaces at a 25cm squirrel viewpoint.
   const analytic = groundHeight(x, z);
-  const d = distToPaths(x, z);
+  // Path ribbons are relevant only within 2.15m of a path; the cache
+  // preserves exact segment projection without an entire park scan.
+  const d2 = pathProximity.nearestSquaredWithin(x,z,2.15);
   let top = h;
-  if (d <= 2.15) top = Math.max(top, analytic + (d <= 1.8 ? 0.04 : 0.022));
+  if (d2 <= 2.15*2.15) top = Math.max(top, analytic + (d2 <= 1.8*1.8 ? 0.04 : 0.022));
   // The Mall's broad gravel apron overlays the ordinary path ribbon.
   if (x >= -36 && x <= 196 && Math.abs(z + 18) <= 5.4) {
     top = Math.max(top, analytic + (Math.abs(z + 18) <= 4.7 ? 0.058 : 0.03));
@@ -89,6 +92,10 @@ export const PATHS = [
   [[-36, -18], [-44, -18], [-76, -14]],
 ];
 
+// Immutable PATHS data also drives terrain painting, tree placement and
+// NPC movement. This index is for bounded *contact* queries only.
+const pathProximity = createPathProximityIndex(PATHS,12,2.5);
+
 export function distToPaths(x, z) {
   let best = 1e9;
   for (const line of PATHS) {
@@ -117,7 +124,7 @@ export function isGrass(x, z) {
   // park: the authored two-park footprint is the only eligible region.
   if (!insideParkLawn(x, z, MAP)) return false;
   if (inWater(x, z) || onRoad(x, z)) return false;
-  if (distToPaths(x, z) < 2.4) return false;
+  if (pathProximity.nearestSquaredWithin(x,z,2.4) < 2.4*2.4) return false;
   return true;
 }
 

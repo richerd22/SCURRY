@@ -162,3 +162,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Extend the existing software-WebGL browser suite with an actual non-shot PLAY session. A local-host-only `?qa=1` hook exposes minimal state snapshots and controlled feet placement to skip long traversal; movement, jump and portal activation still go through real DOM keyboard input. Include all four burrow destinations, returns, and grounded invariants. Clear held inputs on pause/resume and match burrow exit feet to rendered terrain.
 
 **Consequence:** Reproducible runtime movement and route evidence from CI without publishing test controls at the live hostname. Software-rendered tests may be slow and cannot verify iOS Safari or subjective camera feel; failed tests should be investigated before expanding the suite.
+
+
+## ADR-019 — bounded path proximity queries should not scan the whole park
+
+**Context:** A 90Hz squirrel physics loop repeatedly computes park-path distance just to decide whether it is within roughly two metres of a path ribbon; an exact long-range distance is still needed by tree placement.
+
+**Decision:** Cache a 12m grid of the immutable authored PATHS segments, expanded by a 2.5m search radius; use local clamped segment math for bounded physics and burial queries, with full fallback for wider requests. Keep the legacy unbounded distance helper and seeded world layout unchanged.
+
+**Consequence:** Fewer unrelated path segments in common ground contact, without shifting terrain ribbons or their visible surfaces; new path geometry would require rebuilding the immutable cache. Validate with seeded full-scan parity tests and manual path-transition QA.

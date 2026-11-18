@@ -142,3 +142,10 @@ New [browser-smoke workflow](../.github/workflows/browser-smoke.yml) launches th
 ## Live browser route check (v0.6.46)
 
 The headless WebGL workflow now runs `?qa=1&lowq=1` on a local HTTP server, clicks PLAY, holds W to establish movement, executes an actual Space jump, tests that a held W is cleared by pause/resume, and interacts using E through the surface burrow to Fenway/TD Garden/City Hall/Esplanade and back. CI's QA hook is absent on the public hostname. Inspect `desktop-live-play.png` and `report.json` after the run. A red browser workflow is a real release blocker until the failing phase is diagnosed, though a CDNs/SwiftShader outage may be an environment-only issue. Physical iPhone/controller and multi-minute route playtests remain separately necessary.
+
+
+## Path-ground parity (v0.6.47)
+
+- Traverse the wet ribbons and Mall apron at multiple headings; look at 0.25m eye height to make sure foot contact matches the rendered pathway without sudden 2–6cm drops.
+- Check BURY on lawn immediately adjacent to the Garden and Common path network; crossing a path edge should toggle bury eligibility at the same distance as earlier builds.
+- Seeded canopy/tree placements must remain identical: this optimization affects bounded path contact queries only, not the placement distance function.
