@@ -1251,3 +1251,8 @@ Added an optional map to improve wayfinding from squirrel height. `js/ui/park-ma
 ## v0.6.42 (Nov 18 2026) — mobile performance lifecycle
 
 Replaced the one-way mobile quality ladder in `main.js` with `systems/mobile-quality.js`: uses raw frame duration rather than the physics-clamped dt; time-weighted FPS EMA, 3s under 39fps downgrade and 12s over 54fps recovery, ignoring >1s Safari resume gaps; shadows/grass/pixel ratio restore when tiers improve. `?diag=1` reports real instantaneous FPS and EMA. Title/pause GPU render throttled to ~4fps while CSS remains responsive, instead of burning full GPU every browser frame. Six unit tests cover slow/fast frames, hysteresis and resume. Test on real iOS hardware before claiming a specific battery or FPS gain.
+
+
+## v0.6.43–v0.6.44 (Nov 18 2026) — indexed horizontal contacts and jump/interaction polish
+
+v0.6.43 introduced `createObstacleIndex` in collision.js, grouping nearby trunks, boxes and fences into radius-expanded 8m buckets. Candidate arrays preserve original solver order; a collision push leaving its initial cell cancels the indexed attempt, rewinds XZ and executes the original complete solver. Tests: 3,500 deterministic samples plus corner, realm, climbing and dynamic registration parity. v0.6.44 adds `climbRegrab` grace (300ms regular jump, 380ms climb-off), enforced through a pure `climb-gate.js` function, to prevent launch-canceling trunk snap. Food prompts now report actual distance instead of defaulting to 0.5m, and the obsolete Esplanade ground-food re-pin interactable was removed now that food retains explicit floorY. Both remain free of additional assets or dependencies. QA: test actual canopy launch/grab behavior and close-together food/door priorities on desktop and physical iOS.

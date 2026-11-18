@@ -29,6 +29,7 @@ export const S = {
     grounded: false,
     climbing: null,     // tree object being climbed, or null
     climbAngle: 0,
+    climbRegrab: 0,     // seconds before a jump can latch onto another trunk
     begging: 0,         // seconds remaining in beg pose
     biteCooldown: 0,
     biteAnim: 0,

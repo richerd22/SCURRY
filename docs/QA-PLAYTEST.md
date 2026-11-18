@@ -119,3 +119,11 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 - On iPhone Safari open `?diag=1`, observe instantaneous FPS and EMA while walking around the dense canopy and Charles Street. A sustained slow GPU should degrade quality gradually; returning to lighter scenes at fast FPS should restore it slowly, not bounce between levels.
 - Open PAUSE / background Safari for 30s. The view should not degrade further on return due to the hidden-time gap. Paused/title scenes render the static park at about 4fps to save battery, not full-rate WebGL.
 - If performance or visual quality regresses, report hardware model, iOS version, time-of-day, quality tier, observed EMA, shadow state and whether the app was warm or throttled.
+
+
+## Trunk jump/regrab, action priority (v0.6.44)
+
+- Stand close to a climbable tree, face trunk and jump while moving. The jump must actually launch, not immediately attach to the same trunk. A new climb should be possible after about a third of a second.
+- While climbing, leap backward/sideways, then hold toward the trunk; no instant re-grab should cancel the leap. After the short grace expires, normal midair grabs should still work.
+- Find a burrow mouth/rat market stall with food nearby. A physically closer door/interactable should outrank a more distant snack; the opposite when food is genuinely nearer. Keyboard E and touch ACT must agree.
+- In Esplanade, food on the grass embankment must remain at LAND_Y across many game frames without the old artificial tick; no dummy interactable should be needed.

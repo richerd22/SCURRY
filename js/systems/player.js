@@ -7,6 +7,7 @@ import { S } from '../state.js';
 import { visibleGroundHeight, inWater } from '../world/world.js';
 import { walkSurface, resolveHorizontal, createSurfaceIndex, createObstacleIndex } from './collision.js';
 import { advanceJumpIntent, resetJumpIntent } from './jump.js';
+import { mayAttachToTrunk } from './climb-gate.js';
 import { sfx } from './audio.js';
 
 const EYE = 0.25;
@@ -304,6 +305,7 @@ export function updatePlayer(dt, camera) {
   if (P.biteCooldown > 0) P.biteCooldown -= dt;
   if (P.biteAnim > 0) P.biteAnim -= dt;
   if (P.scramble > 0) P.scramble -= dt;
+  if (P.climbRegrab > 0) P.climbRegrab = Math.max(0, P.climbRegrab - dt);
   const wantsJump = advanceJumpIntent(jumpIntent, !!keys.Space, P.grounded, !!P.climbing, dt);
   if (P.begging > 0) {
     P.begging -= dt; syncPlayerCamera(camera); animatePaws(dt, camera); return;
@@ -329,14 +331,15 @@ export function updatePlayer(dt, camera) {
     P.moving = mag > 0.12;
 
     if (wantsJump) {
-      P.vel.y = 6.1; P.grounded = false; sfx.squeak();
+      P.vel.y = 6.1; P.grounded = false;
+      P.climbRegrab = 0.30; // launching beside a trunk must not cancel jump
+      sfx.squeak();
     }
     if (P.moving) {
       const t = nearestTrunk(P.pos);
-      if (t && P.pos.y < t.trunkTop - 0.5
-          && (P.grounded || P.pos.y > t.gy + 0.3)) {
+      if (t) {
         const toward = ((t.x - P.pos.x) * wx + (t.z - P.pos.z) * wz) / wl;
-        if (toward > (P.grounded ? 0.45 : 0.3)) {
+        if (mayAttachToTrunk(P, t, toward)) {
           P.climbing = t;
           P.climbAngle = Math.atan2(P.pos.x - t.x, P.pos.z - t.z);
           P.vel.set(0, 0, 0);
@@ -384,6 +387,7 @@ function updateClimb(dt, fwd, str, wantsJump) {
   if (wantsJump) {
     // leap off
     P.climbing = null;
+    P.climbRegrab = 0.38; // intentional dismount, no instant re-attachment
     P.vel.set(Math.sin(P.climbAngle) * 4.5, 5.2, Math.cos(P.climbAngle) * 4.5);
     P.grounded = false;
     return;

@@ -198,6 +198,7 @@ export function nearestFoodAction() {
   if (best.steal) {
     const b = best.blanket;
     return {
+      distance: bd,
       label: b.lookingAway ? 'E - snatch it (they\'re not looking)' : 'E - snatch it (THEY ARE LOOKING)',
       action: () => {
         // The crow, goose or another input may already have consumed it
@@ -217,6 +218,7 @@ export function nearestFoodAction() {
     };
   }
   return {
+    distance: bd,
     label: S.carried ? 'E - swap for ' + best.type : 'E - take ' + best.type,
     action: () => {
       if (!canReachFood(best, P) || !removeFood(best)) return;

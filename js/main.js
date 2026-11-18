@@ -101,8 +101,9 @@ function scanInteractions() {
   }
   const fa = nearestFoodAction();
   if (fa) {
-    const d = 0.5; // food at your feet beats distant prompts
-    if (d < bd) { bestLabel = fa.label; bestAction = fa.action; }
+    // Use actual food distance. A snack 1m away must not steal a closer
+    // door, sitter or perch interaction by pretending to be at 0.5m.
+    if (fa.distance < bd) { bestLabel = fa.label; bestAction = fa.action; }
   }
   currentE = bestAction ? { label: bestLabel, action: bestAction } : null;
   currentF = buryAction();

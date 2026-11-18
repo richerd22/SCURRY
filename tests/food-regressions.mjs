@@ -143,3 +143,14 @@ test('toss trajectory stays on the correct arc above terrain instead of sinking 
   assert.equal(h.S.foods.length,1,'landing creates one collectible food item');
   assert.equal(h.S.foods[0].floorY,0,'landed food rests on terrain');
 });
+
+test('nearest food reports actual distance for prompt priority', async () => {
+  const h=await harness();
+  h.spawnFood('acorn',1.8,1);
+  let choice=h.nearestFoodAction();
+  assert.ok(choice);
+  assert.ok(Math.abs(choice.distance-.8)<1e-9);
+  h.spawnFood('pretzel',1.1,1);
+  choice=h.nearestFoodAction();
+  assert.ok(Math.abs(choice.distance-.1)<1e-9);
+});

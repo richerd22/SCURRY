@@ -228,7 +228,6 @@ function buildEspSky(scene) {
 // ------------------------------------------------------------------ build
 let discovered = false;
 const espLights = [];   // PointLights driven by S.lampFactor
-const espFoods = [];    // this zone's food items (re-pinned by tick)
 const TREE_SPOTS = [];  // filled in build; the canopy cap rides one
 
 export function buildEsplanade(scene) {
@@ -567,9 +566,9 @@ export function buildEsplanade(scene) {
     spawnCapAt(ESP.x + 0, ESP.z + 9, PAD.y + 0.04, 52);
     spawnCapAt(ESP.x - 150, ESP.z - 35, LAND_Y + 0.04, 53);
     spawnCapAt(ESP.x + 64, ESP.z + 22, LAND_Y + 0.04, 54);
-    espFoods.push(spawnFood('pretzel', ESP.x + 33, ESP.z - 27, { y: LAND_Y + 0.05 }));
-    espFoods.push(spawnFood('peanut', ESP.x - 23, ESP.z - 27, { y: LAND_Y + 0.05 }));
-    espFoods.push(spawnFood('popcorn', ESP.x + 10, ESP.z - 4, { y: LAND_Y + 0.05 }));
+    spawnFood('pretzel', ESP.x + 33, ESP.z - 27, { y: LAND_Y + 0.05 });
+    spawnFood('peanut', ESP.x - 23, ESP.z - 27, { y: LAND_Y + 0.05 });
+    spawnFood('popcorn', ESP.x + 10, ESP.z - 4, { y: LAND_Y + 0.05 });
   });
 
   // the burrow-side door: a dark mouth on the market's NORTH wall,
@@ -633,21 +632,6 @@ export function initEsplanade() {
     x: ESP.x + HOLE_L.x, z: ESP.z + HOLE_L.z, y: LAND_Y, r: 1.9,
     label: () => S.player.inEsplanade ? 'E - dive back to the burrows' : null,
     action: () => exitEsplanade(),
-  });
-  // food.js re-pins every ground food to groundHeight() + 0.05 each
-  // frame - right for the park, wrong on a 1.05 m embankment whose
-  // heightfield answers 0. updateFood runs interactable ticks AFTER
-  // its re-pin, so this tick (canopy.js's trick, same hook) keeps
-  // the zone's food on the lawn where it was dropped.
-  S.interactables.push({
-    x: ESP.x, z: ESP.z, y: 0, r: 0,
-    label: () => null,
-    tick: () => {
-      const now = performance.now() / 1000;
-      for (const f of espFoods) {
-        if (f.mesh.parent) f.mesh.position.y = LAND_Y + 0.1 + Math.sin(now * 2 + f.x) * 0.008;
-      }
-    },
   });
 }
 

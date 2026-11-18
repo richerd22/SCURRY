@@ -118,3 +118,20 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Separate raw render-frame time from physics dt, track a time-weighted FPS EMA and downgrade after 3s <39fps. Upgrade after 12s >54fps, excluding >1s visibility gaps. Restore DPR/shadows/grass on recovery. Idle at ~4 canvas renders per second while title/paused, retaining the existing continuous requestAnimationFrame scheduling to resume immediately.
 
 **Consequences:** Battery relief and adaptive rendering without misrepresenting phone performance. Extra quality transitions are infrequent, but each shadow/pixel-ratio change can briefly incur a resource resize. Benchmark and tune on a physical iPhone before claiming a numerical FPS/power improvement.
+
+
+## ADR-014 — local horizontal collision optimization with exact restart
+
+**Context:** Horizontal collision used to test every world trunk, solid box and fence for every physics substep, even when the player was elsewhere.
+
+**Decision:** Use a conservative radius-expanded 8m spatial index. Preserve original registration order and height rules, restarting the full two-pass solver from original XZ whenever a collision push escapes the starting cell. Keep an explicit invalidate option for in-place edits.
+
+**Consequence:** Faster common-case obstacles with guaranteed full-scan fallback on difficult multi-cell corner resolution, verified over 3,500 seeded parity cases.
+
+## ADR-015 — brief climb regrab grace and physically nearest prompt wins
+
+**Context:** A just-initiated jump could be canceled if movement toward a nearby trunk immediately started climbing again. Main's hardcoded food priority distance of 0.5m also let an actually more distant snack steal a nearby interactable prompt.
+
+**Decision:** Prevent trunk attachment for 300ms after regular jump and 380ms after a climb push-off; preserve old approach thresholds outside that interval. Report food's real distance and rank against all other current interactions. Remove Esplanade's redundant re-pin tick now that food floor heights are stable.
+
+**Consequence:** More intentional climbing/jumps and predictable action selection without changing jump physics or interaction radii. Real input feel still requires playtesting at canopy branch joins.
