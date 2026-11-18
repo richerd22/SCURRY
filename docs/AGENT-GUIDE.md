@@ -1011,10 +1011,20 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   Perf: spawn view 553 calls / 331,404 tris - calls
   AND tris identical to the pre-round baseline (the
   destination is frustum-culled 6.7 km away; S.trees
-  123 -> 134 is registry only). Live-byte verification
-  (version poll, GLB byte count, espwalktestlive.js,
-  esplivetravel.js) is the release gate run against
-  the pushed build. Evidence:
+  123 -> 134 is registry only). Live-byte gate run
+  against the pushed build (commit 09af3865): version
+  meta polled to 0.6.30, hatchshell.glb serves 200 at
+  exactly 21,166 bytes, espwalktestlive 102/102,
+  esplivetravel round trip through the REAL door both
+  ways on production bytes + live shots in
+  esplanade-after-live/. One sampling note:
+  esplivetravel's emergence check read grounded=false
+  on its single sampled frame while y sat at exactly
+  1.05 - espgroundlive.js shows the designed spawn
+  drop (spawn +0.4, monotone fall 1.411 -> 1.05, no
+  oscillation, grounded through the settled tail);
+  the local esptravel reads grounded=true outright.
+  Evidence:
   v0.6-shots/esplanade-{before,after}/ (market north
   wall before/after, emergence, shell wide, shell face,
   river, wade murk, canopy, door) +
