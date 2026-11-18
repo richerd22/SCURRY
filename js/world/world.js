@@ -191,7 +191,7 @@ function paintGround() {
     g.strokeStyle = '#c8b490';
   }
   // plaza discs
-  for (const [cx, cz, r] of [[140, 42, 13], [-25, -58, 10], [60, -45, 12], [-132, 0, 0]]) {
+  for (const [cx, cz, r] of [[140,42,13], [BREWER_FOUNTAIN.x,BREWER_FOUNTAIN.z,10], [60,-45,12]]) {
     if (!r) continue;
     g.fillStyle = '#cdbb96';
     g.beginPath(); g.ellipse(px(cx), pz(cz), r * m, r * m * (H / W) * (MAP.maxX - MAP.minX) / (MAP.maxZ - MAP.minZ), 0, 0, 7); g.fill();
@@ -421,11 +421,11 @@ function buildWetPaths(scene) {
   scene.add(mallApron);
   // plazas
   scene.add(terrainDisc(140, 42, 13, wetPathMat));
-  scene.add(terrainDisc(-25, -58, 10, wetPathMat));
+  scene.add(terrainDisc(BREWER_FOUNTAIN.x,BREWER_FOUNTAIN.z,10,wetPathMat));
   scene.add(terrainDisc(60, -45, 12.5, wetPathMat));
   // plaza shoulders (v0.6.27): a darker ring peeking past each disc
   scene.add(terrainDisc(140, 42, 13.6, pathBorderMat, 0.028));
-  scene.add(terrainDisc(-25, -58, 10.6, pathBorderMat, 0.028));
+  scene.add(terrainDisc(BREWER_FOUNTAIN.x,BREWER_FOUNTAIN.z,BREWER_FOUNTAIN.plazaRadius,pathBorderMat,0.028));
   scene.add(terrainDisc(60, -45, 13.1, pathBorderMat, 0.028));
 }
 

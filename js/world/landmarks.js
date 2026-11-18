@@ -906,7 +906,8 @@ function buildSwanBoats(scene) {
       torsos.setColorAt(i,new THREE.Color(colors[i%colors.length]));
       matrix.position.set(s.x,1.85,s.z);matrix.scale.set(.135,.155,.13);
       matrix.updateMatrix();heads.setMatrixAt(i,matrix.matrix);
-      heads.setColorAt(i,new THREE.Color(skins[(i+drift.ph*10|0+skins.length)%skins.length]));
+      const skinIndex=(((i+Math.floor(drift.ph*10))%skins.length)+skins.length)%skins.length;
+      heads.setColorAt(i,new THREE.Color(skins[skinIndex]));
     });
     torsos.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
     if(torsos.instanceColor)torsos.instanceColor.needsUpdate=true;

@@ -293,7 +293,7 @@ async function checkGameplay() {
     const aboard0=await get();
     assert.equal(aboard0.swan.stage,'moving');
     assert.equal(aboard0.swan.hidden,true);
-    await page.waitForTimeout(1100);
+    await page.evaluate(()=>window.__scurryQA.advanceSwanRide(2));
     const aboard1=await get();
     assert.ok(Math.hypot(aboard1.pos.x-aboard0.pos.x,
       aboard1.pos.z-aboard0.pos.z)>.15,

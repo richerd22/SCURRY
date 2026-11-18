@@ -130,3 +130,10 @@ Source comparison with Friends of the Public Garden and MBTA found a larger geog
 New pure tests enforce those spatial and model-to-portal constraints. This is a real geography correction within still-stylized park coordinates, not survey-accurate terrain. The Garden bridge remains to be rebuilt as one coupled water/deck/goose/Swan Boat physics project, not a reckless prop rotation.
 
 Sources: https://friendsofthepublicgarden.org/our-parks/the-common/brewer-fountain-plaza/ ; https://friendsofthepublicgarden.org/our-parks/visit/hours-and-directions/ ; https://www.mbta.com/guides/subway-guide ; https://www.boston.gov/sites/default/files/file/2023/05/BCMP_Executive%2BSummary.pdf
+
+
+## v0.6.91 — no phantom fountain plaza; deterministic boat motion and correct boat skin colors
+
+Follow-up on v0.6.90: a source audit located **three remaining visual ground paint layers at (-25,-58)** even though the actual Brewer Fountain, its collider and the walkable plaza top moved east. Both rendered wet/path-border discs AND the painted canvas path-plaza oval now read the same BREWER_FOUNTAIN position. An independent pure regression prevents the old footprint returning. This preserves physical/display parity instead of leaving a ghost plaza.
+
+Software WebGL can render less than 1fps in the CI environment, so the boarding movement acceptance test now advances the real boat update clock in fixed ≤50ms steps through a localhost-only QA helper, just as the existing final-tour QA clock does. E boarding, E peek/hide, and actual dock exit remain real browser events. Also removed an ambiguous bitwise skin-tone index in instanced Swan Boat passenger coloring: it now uses a simple explicitly bounded modulo, producing valid indices for all three boats.

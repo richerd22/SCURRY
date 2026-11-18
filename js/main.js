@@ -24,7 +24,7 @@ import { buildEsplanade, initEsplanade, updateEsplanade, debugEnterEsplanade } f
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
-import { initSwanRide, updateSwanRide, qaFinishSwanRide, swanRideStatus } from './systems/swan-ride.js';
+import { initSwanRide, updateSwanRide, qaFinishSwanRide, qaAdvanceSwanRide, swanRideStatus } from './systems/swan-ride.js';
 import { buildWildlife, updateWildlife, biteWildlife } from './systems/wildlife.js';
 import { buildMBTA, initMBTA, updateMBTA, mbtaDebugState, qaAdvanceMBTA } from './systems/mbta.js';
 import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } from './systems/audio.js';
@@ -555,6 +555,7 @@ if (qaLocal) {
       grounded:true, message:'QA relocation complete'
     }),
     finishSwanRide: qaFinishSwanRide,
+    advanceSwanRide: qaAdvanceSwanRide,
     wildlife: () => (S.wildlifeActors||[]).map(a=>({kind:a.kind,x:a.x,y:a.y,z:a.z,visible:a.mesh.visible})),
     mbta: mbtaDebugState,
     advanceMBTA: qaAdvanceMBTA,

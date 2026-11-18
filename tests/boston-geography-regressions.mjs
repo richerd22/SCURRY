@@ -32,3 +32,15 @@ test('Brewer atlas discovery follows the moved physical fountain',()=>{
  const b=LANDMARKS.find(l=>l.id==='fountain');
  assert.deepEqual([b.x,b.z],[BREWER_FOUNTAIN.x,BREWER_FOUNTAIN.z]);
 });
+
+test('rendered plaza paint, wet paving, terrain contact and fountain props never diverge',()=>{
+ const world=readFileSync(new URL('../js/world/world.js',import.meta.url),'utf8');
+ const art=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
+ assert.doesNotMatch(world,/-25\s*,\s*-58/,
+   'old west-Common Brewer ghost must not remain in any paint layer');
+ assert.match(world,/terrainDisc\(BREWER_FOUNTAIN\.x,BREWER_FOUNTAIN\.z,10,wetPathMat\)/);
+ assert.match(world,/terrainDisc\(BREWER_FOUNTAIN\.x,BREWER_FOUNTAIN\.z,BREWER_FOUNTAIN\.plazaRadius,pathBorderMat/);
+ assert.match(world,/\[BREWER_FOUNTAIN\.x,BREWER_FOUNTAIN\.z,10\]/);
+ assert.match(world,/PLAZA_TOPS = .*BREWER_FOUNTAIN\.x/);
+ assert.match(art,/const \{ x,z \} = BREWER_FOUNTAIN, gy = groundHeight/);
+});

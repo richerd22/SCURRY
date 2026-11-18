@@ -123,3 +123,14 @@ export function swanRideStatus() {
   return {stage,hidden,elapsed,exposed,
     x:boat?.position.x??null,z:boat?.position.z??null};
 }
+
+
+// Localhost-only test harness advances *normal* ride update. No direct
+// teleport, no render-frame assumptions under slow software Chromium.
+export function qaAdvanceSwanRide(seconds) {
+  if(!Number.isFinite(seconds)||seconds<0||seconds>6)
+    throw new RangeError('0..6 simulated Swan Boat seconds');
+  const n=Math.max(1,Math.ceil(seconds/.05));
+  for(let i=0;i<n;i++)updateSwanRide(seconds/n);
+  return swanRideStatus();
+}
