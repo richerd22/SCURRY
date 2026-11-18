@@ -58,3 +58,8 @@ The existing headless Chromium suite now physically places a player on the alrea
 ## v0.6.78 — real passengers and visible Swan Boat operator
 
 The boats were visually empty, despite the official Swan Boat operator guidance that passenger weight is necessary for the paddlewheel to sit properly. Each of the three already-authored Swan Boats now has ten small seated silhouettes instantiated into TWO mesh draws (body/head) plus a simple crew operator at the stern. The crew operator turns during the same existing sightline glance that powers the player hide/peek mechanic — detection has a visible actor instead of only text. No photo assets, third-party licensing or additional boat collider. Tests enforce all ten seats remain distinct and within the canopy interior. This is a stylized visual approximation rather than real-life boat operating physics. Source: https://swanboats.com/plan-your-visit/
+
+
+## v0.6.79 — animal shoreline sanity
+
+A grounded path audit revealed the former Garden dog loop explicitly entered the lagoon and the former Common loop approached Frog Pond at water level. Both patrols are authored around their *existing* real park water-body bounds; new pure tests sample every patrol leg and reject water/Charles Street intersections. Pursuit movement also sidesteps along a safe shoreline tangent rather than dragging a dog across water. These are visual NPCs, not extra player collisions. A live AI/chase path recording remains necessary to verify that every dog turns naturally at water edges.

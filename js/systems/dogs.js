@@ -6,14 +6,14 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { groundHeight } from '../world/world.js';
+import { groundHeight, inWater, onRoad } from '../world/world.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { dropCarried } from './food.js';
 import { isOnGroundLow } from './player.js';
 import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
 import { makeHuman, setActorRole } from './humans.js';
-import { DOG_PROFILES, dogMayChase } from './dog-rules.js';
+import { DOG_PROFILES, DOG_PATROLS, dogMayChase } from './dog-rules.js';
 
 const dogs = [];
 
@@ -49,13 +49,7 @@ function makeDog(coat, profile) {
   return g;
 }
 
-const PATROLS = [
-  [[20, 20], [70, 60], [110, 20], [60, -10]],
-  [[150, -30], [185, 20], [150, 70], [120, 10]],
-  [[-90, -40], [-150, -20], [-170, 30], [-110, 45]],
-  [[90, 30], [45, 60], [80, 85], [124, 48]],
-  [[-20, -70], [25, -90], [70, -80], [90, -45]],
-];
+const PATROLS = DOG_PATROLS;
 export function buildDogs(scene) {
   S.dogPositions=dogs;
   for (let i = 0; i < DOG_PROFILES.length; i++) {
@@ -214,9 +208,24 @@ function moveToward(d, target, dirSign, speed, dt) {
   const dx = (target.x - d.pos.x) * dirSign, dz = (target.z - d.pos.z) * dirSign;
   const l = Math.hypot(dx, dz);
   if (l < 0.05) return;
-  d.pos.x += dx / l * speed * dt;
-  d.pos.z += dz / l * speed * dt;
-  const targetYaw = Math.atan2(dx, dz);
+  const step=speed*dt,ux=dx/l,uz=dz/l;
+  let sx=ux,sz=uz,nx=d.pos.x+ux*step,nz=d.pos.z+uz*step;
+  if(inWater(nx,nz)||onRoad(nx,nz)){
+    // A non-player creature should not walk straight through the lagoon
+    // or across the busy Charles Street simply because it sees a squirrel.
+    // Follow either shoreline tangent instead; if neither is safe, stay.
+    let found=false;
+    for(const side of [1,-1]){
+      const vx=-uz*side,vz=ux*side;
+      const x=d.pos.x+vx*step,z=d.pos.z+vz*step;
+      if(!inWater(x,z)&&!onRoad(x,z)){
+        nx=x;nz=z;sx=vx;sz=vz;found=true;break;
+      }
+    }
+    if(!found)return;
+  }
+  d.pos.x=nx;d.pos.z=nz;
+  const targetYaw = Math.atan2(sx, sz);
   let dy = targetYaw - d.mesh.rotation.y;
   while (dy > Math.PI) dy -= Math.PI * 2;
   while (dy < -Math.PI) dy += Math.PI * 2;

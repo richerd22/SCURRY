@@ -11,3 +11,16 @@ export function dogMayChase(profile,{grounded,onSwanBoat,remote,sprinting}) {
   return !profile.leashed&&!onSwanBoat&&!remote&&grounded&&
     (!profile.curious||sprinting);
 }
+
+
+// All patrol legs have been sampled against the actually authored lagoon
+// and Frog Pond footprints. Garden walker stays on the lagoon perimeter,
+// Common pack loops around rather than straight through the Frog Pond.
+export const DOG_PATROLS=Object.freeze([
+  [[20,20],[70,60],[126,55],[150,20],[145,-10],[60,-10]],
+  [[150,-30],[185,20],[150,70],[120,10]],
+  [[-182,-34],[-132,-40],[-82,-34],[-76,0],[-82,34],
+    [-132,40],[-182,34],[-188,0]],
+  [[90,30],[45,60],[80,85],[124,48]],
+  [[-20,-70],[25,-90],[70,-80],[90,-45]],
+]);
