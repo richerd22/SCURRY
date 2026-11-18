@@ -9,6 +9,7 @@ import { TUN } from './burrows.js';
 import { setCarriedVisual } from './player.js';
 import { toast } from '../ui/hud.js';
 import { WILDLIFE_SPAWNS, wildlifeResponse, nearestThreatDistance } from './wildlife-rules.js';
+import { parkShift } from './park-shifts.js';
 
 const actors=[];
 const geo=new THREE.SphereGeometry(1,10,7);
@@ -69,7 +70,7 @@ function makeCritter(kind,variant) {
 }
 function isRemote() {
   const p=S.player;
-  return p.inHollow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade;
+  return p.inHollow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade||p.inMBTA;
 }
 function usable(x,z) {
   return insideParkLawn(x,z,MAP)&&!inWater(x,z)&&!onRoad(x,z);
@@ -131,13 +132,17 @@ export function buildWildlife(scene) {
 export function updateWildlife(dt) {
   if(!S.player.pos)return;
   const P=S.player,burrow=!!P.inBurrow,remote=isRemote();
+  const shift=parkShift(S.timeHours);
   for(const a of actors){
     const sameRealm=a.underground?burrow:!remote&&!burrow;
     const dist=Math.hypot(P.pos.x-a.x,P.pos.z-a.z);
     // Urban rat leaves hiding mostly after dark. A sparse, plausible
     // background character, not evidence of a resident wildlife census.
     const nocturnal=a.kind==='rat'&&!a.underground;
-    const visible=sameRealm&&dist<65&&(!nocturnal||(S.timeHours>19||S.timeHours<6));
+    const habitatActive=a.underground?true:
+      a.kind==='squirrel'?shift.squirrels:
+      a.kind==='rabbit'?shift.rabbits:shift.rats;
+    const visible=sameRealm&&dist<65&&habitatActive;
     a.mesh.visible=visible;
     if(!visible)continue;
     a.clock+=dt;

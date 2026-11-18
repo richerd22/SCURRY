@@ -33,3 +33,9 @@ test('wildlife reads live dog record positions (not missing top-level x/z)',()=>
   assert.equal(nearestThreatDistance(0,0,[{pos:{x:NaN,z:1}}]),Infinity);
   assert.equal(nearestThreatDistance(0,0,[{x:3,z:4}]),5);
 });
+
+test('hidden off-duty dogs do not frighten late-night rats',()=>{
+ const sleeping=[{pos:{x:0,z:0},mesh:{visible:false}}];
+ assert.equal(nearestThreatDistance(0,1,sleeping),Infinity);
+ assert.equal(wildlifeResponse('rat',7,0,Infinity,false),'idle');
+});

@@ -84,3 +84,8 @@ Sources: [MBTA Park Street](https://www.mbta.com/stops/place-pktrm), [MBTA Arlin
 ## v0.6.82 — night-shift civilians and proper picnic hours
 
 The new deterministic parkShift(hour) policy controls real moving passerby visibility and their E prompts, seated people, the vendor, picnic blankets and owners, as well as the live stealable blanket snacks. One nearby Park Street night worker replaces the unconvincing crowd of tourists and picnickers at 3 AM. The parked pretzel cart remains physical when closed. Night-shift rules are a stylized city simulation, not real schedule data. Test cases cover midnight, day/rush/evening, and cyclic hours. Further update applies the shared policy to dogs and wildlife.
+
+
+## v0.6.83 — wildlife knows when to sleep
+
+Existing five dog profiles and their leash/walker visual groups now follow the common NPC shift policy: no roaming dogs at 3 AM, reduced numbers around dawn and evening. Off-duty hidden dogs cannot threaten rabbits or squirrels. Surface squirrels are daytime, cottontails are crepuscular, and surface rats active at night. Resident tunnel rats stay active independently of park shifts. Wildlife disables outside its own realm including MBTA. No new models or global collision shapes; pure threat-policy regression ensures hidden dog exclusion. Next: active network navigation for underground rats and companion squirrels.

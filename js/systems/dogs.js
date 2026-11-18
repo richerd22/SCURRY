@@ -14,6 +14,7 @@ import { isOnGroundLow } from './player.js';
 import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
 import { makeHuman, setActorRole } from './humans.js';
 import { DOG_PROFILES, DOG_PATROLS, dogMayChase } from './dog-rules.js';
+import { parkShift, actorVisible } from './park-shifts.js';
 
 const dogs = [];
 
@@ -75,7 +76,7 @@ export function buildDogs(scene) {
         new THREE.LineBasicMaterial({color:0x6e6255,transparent:true,opacity:.82}));
       leash.frustumCulled=false;scene.add(leash);d.leash=leash;
       const it={x:d.pos.x,z:d.pos.z,y:0,r:1.55,
-        label:()=>d.petCooldown>0||S.player.onSwanBoat||S.player.inBurrow||S.player.inHollow?
+        label:()=>!d.mesh.visible||d.petCooldown>0||S.player.onSwanBoat||S.player.inBurrow||S.player.inHollow||S.player.inMBTA?
           null:'E - say hello to '+profile.name,
         action:()=>{
           if(d.petCooldown>0||S.player.onSwanBoat||d.pos.distanceTo(S.player.pos)>1.7)return;
@@ -130,7 +131,14 @@ export function nearestDogDist() {
 export function updateDogs(dt) {
   const P = S.player;
   const now = performance.now() / 1000;
-  for (const d of dogs) {
+  const shift=parkShift(S.timeHours);
+  for (let i=0;i<dogs.length;i++) {
+    const d=dogs[i];
+    const active=actorVisible(i,dogs.length,shift.dogs);
+    d.mesh.visible=active;
+    if(d.walker)d.walker.visible=active;
+    if(d.leash)d.leash.visible=active;
+    if(!active){d.state='patrol';continue;}
     const dist = d.pos.distanceTo(P.pos);
     if (d.barkCd > 0) d.barkCd -= dt;
     if (d.petCooldown > 0) d.petCooldown -= dt;
@@ -144,7 +152,7 @@ export function updateDogs(dt) {
       if (d.timer <= 0) d.state = 'patrol';
     } else if (dist < d.profile.alert && dogMayChase(d.profile,{
       grounded:isOnGroundLow(),onSwanBoat:!!P.onSwanBoat,
-      remote:P.inHollow||P.inBurrow||P.inFenway||P.inGarden||P.inCityHall||P.inEsplanade,
+      remote:P.inHollow||P.inBurrow||P.inFenway||P.inGarden||P.inCityHall||P.inEsplanade||P.inMBTA,
       sprinting:P.sprinting,
     })) {
       if (d.state !== 'chase') {
@@ -236,7 +244,7 @@ function moveToward(d, target, dirSign, speed, dt) {
 export function biteDogs() {
   const P = S.player.pos;
   for (const d of dogs) {
-    if (!d.profile.leashed && d.pos.distanceTo(P) < 1.5 && d.state !== 'flee') {
+    if (!d.profile.leashed && d.mesh.visible && d.pos.distanceTo(P) < 1.5 && d.state !== 'flee') {
       d.state = 'flee'; d.timer = 3.5; d.fleeFrom = P.clone();
       sfx.yelp();
       toast('nose booped. the dog reconsiders everything.', 2.2);

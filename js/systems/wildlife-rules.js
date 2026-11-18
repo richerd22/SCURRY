@@ -13,6 +13,7 @@ export const WILDLIFE_SPAWNS=Object.freeze([
 export function nearestThreatDistance(x,z,dogs=[]) {
   let best=Infinity;
   for(const d of dogs) {
+    if(d?.mesh?.visible===false)continue;
     const p=d?.pos||d;
     if(Number.isFinite(p?.x)&&Number.isFinite(p?.z))
       best=Math.min(best,Math.hypot(p.x-x,p.z-z));
@@ -20,7 +21,8 @@ export function nearestThreatDistance(x,z,dogs=[]) {
   return best;
 }
 export function wildlifeResponse(kind, distance, pace, dogDistance, carryingFood) {
-  if(![distance,pace,dogDistance].every(Number.isFinite)||distance<0)return 'idle';
+  if(![distance,pace].every(Number.isFinite)||distance<0||
+    !(Number.isFinite(dogDistance)||dogDistance===Infinity))return 'idle';
   if(kind==='burrow-rat')return 'idle';
   if(dogDistance<4.5)return 'flee';
   if(kind==='rabbit'&&(distance<2.3||(distance<5&&pace>2)))return 'flee';
