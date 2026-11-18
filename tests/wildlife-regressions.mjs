@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 const src=readFileSync(new URL('../js/systems/wildlife-rules.js',import.meta.url),'utf8');
-const {WILDLIFE_SPAWNS,wildlifeResponse}=await import(
+const {WILDLIFE_SPAWNS,wildlifeResponse,nearestThreatDistance}=await import(
   'data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 test('authored urban wildlife is bounded, diverse, and includes the burrow network',()=>{
   assert.equal(WILDLIFE_SPAWNS.length,18);
@@ -24,4 +24,12 @@ test('rabbit is skittish, squirrel takes interest in food, tunnel rats are peace
   assert.equal(wildlifeResponse('rat',3,0,50,false),'flee');
   assert.equal(wildlifeResponse('burrow-rat',1,6,0,false),'idle');
   assert.equal(wildlifeResponse('rabbit',NaN,0,50,false),'idle');
+});
+
+test('wildlife reads live dog record positions (not missing top-level x/z)',()=>{
+  const pack=[{pos:{x:4,z:5}},{pos:{x:50,z:50}}];
+  assert.ok(Math.abs(nearestThreatDistance(4,6,pack)-1)<1e-9);
+  assert.equal(wildlifeResponse('rabbit',12,0,nearestThreatDistance(4,6,pack),false),'flee');
+  assert.equal(nearestThreatDistance(0,0,[{pos:{x:NaN,z:1}}]),Infinity);
+  assert.equal(nearestThreatDistance(0,0,[{x:3,z:4}]),5);
 });

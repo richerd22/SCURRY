@@ -8,7 +8,7 @@ import { insideParkLawn } from '../world/ground-rules.js';
 import { TUN } from './burrows.js';
 import { setCarriedVisual } from './player.js';
 import { toast } from '../ui/hud.js';
-import { WILDLIFE_SPAWNS, wildlifeResponse } from './wildlife-rules.js';
+import { WILDLIFE_SPAWNS, wildlifeResponse, nearestThreatDistance } from './wildlife-rules.js';
 
 const actors=[];
 const geo=new THREE.SphereGeometry(1,10,7);
@@ -70,11 +70,6 @@ function makeCritter(kind,variant) {
 function isRemote() {
   const p=S.player;
   return p.inHollow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade;
-}
-function dogDistance(x,z) {
-  let best=1e6;
-  for(const d of S.dogPositions||[])best=Math.min(best,Math.hypot(d.x-x,d.z-z));
-  return best;
 }
 function usable(x,z) {
   return insideParkLawn(x,z,MAP)&&!inWater(x,z)&&!onRoad(x,z);
@@ -152,7 +147,7 @@ export function updateWildlife(dt) {
     a.flee=Math.max(0,a.flee-dt);
     const pace=P.sprinting?6.6:P.moving?3.3:0;
     const response=wildlifeResponse(a.underground?'burrow-rat':a.kind,
-      dist,pace,a.underground?100:dogDistance(a.x,a.z),!!S.carried);
+      dist,pace,a.underground?100:nearestThreatDistance(a.x,a.z,S.dogPositions),!!S.carried);
     if(response==='flee'&&a.flee<=0&&a.calm<=0)a.flee=2.8;
     let tx=a.homeX+Math.cos(a.clock*.31+a.phase)*a.roam,
       tz=a.homeZ+Math.sin(a.clock*.29+a.phase)*a.roam;

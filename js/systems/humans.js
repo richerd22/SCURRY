@@ -144,11 +144,26 @@ export function buildHumans(scene) {
     const h = makeHuman(0.93 + Math.random() * 0.15);
     setActorRole(h, 'walk');
     scene.add(h);
-    wanderers.push({
-      mesh: h, path: PATHS[loopIdx[i % loopIdx.length]],
-      seg: Math.random() * 3 | 0, t: Math.random(), dir: 1,
-      speed: 0.05 + Math.random() * 0.03, phase: Math.random() * 9,
-    });
+    const path=PATHS[loopIdx[i % loopIdx.length]];
+    const w={
+      mesh:h,path,seg:i%Math.max(1,path.length-1),t:(i*.217)%1,dir:1,
+      speed:.05+(i%4)*.009,phase:i*1.53, cooldown:0, pause:0,
+      pauseCooldown:0,x:path[0][0],z:path[0][1],interactable:null,
+    };
+    wanderers.push(w);
+    const it={
+      x:w.x,z:w.z,y:groundHeight(w.x,w.z),r:1.9,
+      label:()=>w.cooldown>0||S.player.onSwanBoat||S.player.inBurrow||
+        S.player.inHollow||S.player.inFenway||S.player.inGarden||
+        S.player.inCityHall||S.player.inEsplanade?null:'E - beg from passerby',
+      action:()=>{
+        if(w.cooldown>0||S.player.begging>0||S.player.onSwanBoat||
+           Math.hypot(S.player.pos.x-w.x,S.player.pos.z-w.z)>2)return;
+        startBeg(w);
+        toast('the passerby stops to see what a squirrel wants.',1.8);
+      }
+    };
+    w.interactable=it;S.interactables.push(it);
   }
   // blanket owners
   for (const b of S.blankets) {
@@ -206,11 +221,14 @@ export function updateHumans(dt) {
     s.mesh.rotation.z = Math.sin(now * 0.8 + s.phase) * 0.02;
   }
   for (const w of wanderers) {
+    w.cooldown=Math.max(0,w.cooldown-dt);
+    w.pauseCooldown=Math.max(0,w.pauseCooldown-dt);
+    w.pause=Math.max(0,w.pause-dt);
     const line = w.path;
-    const a = line[w.seg], b = line[(w.seg + 1) % line.length];
+    let a = line[w.seg], b = line[(w.seg + 1) % line.length];
     if (!a || !b) continue;
     const segLen = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    w.t += w.dir * w.speed * dt * 10 / segLen;
+    if(w.pause<=0)w.t += w.dir * w.speed * dt * 10 / segLen;
     if (w.t > 1) {
       if (w.seg >= line.length - 2 && line === PATHS[0]) { w.seg = 0; w.t = 0; } // perimeter wraps
       else if (w.seg >= line.length - 2) { w.dir = -1; w.t = 1; }
@@ -218,13 +236,31 @@ export function updateHumans(dt) {
     } else if (w.t < 0) {
       if (w.seg <= 0) { w.dir = 1; w.t = 0; } else { w.seg--; w.t = 1; }
     }
+    // Segment boundary may have changed above: recalculate endpoints
+    // before painting the actor, otherwise a one-frame path discontinuity.
+    a=line[w.seg];b=line[(w.seg+1)%line.length];
     const x = a[0] + (b[0] - a[0]) * w.t, z = a[1] + (b[1] - a[1]) * w.t;
     const gy = groundHeight(x, z);
+    w.x=x;w.z=z;
+    w.interactable.x=x;w.interactable.z=z;w.interactable.y=gy;
     w.mesh.position.set(x, gy + Math.abs(Math.sin(now * 7 + w.phase)) * 0.04, z);
     w.mesh.rotation.y = Math.atan2((b[0] - a[0]) * w.dir, (b[1] - a[1]) * w.dir);
+    // Passersby actually notice small park residents. Only a nearby
+    // squirrel can draw a short, cooldown-gated pause; other walkers
+    // continue their paths rather than freezing the whole crowd.
+    if(w.pauseCooldown<=0&&w.pause<=0&&S.wildlifeActors){
+      const nearby=S.wildlifeActors.find(v=>v.kind==='squirrel'&&v.mesh.visible&&
+        Math.hypot(v.x-x,v.z-z)<1.55);
+      if(nearby){
+        w.pause=1.8;w.pauseCooldown=18;
+        w.mesh.rotation.y=Math.atan2(nearby.x-x,nearby.z-z);
+        setActorRole(w.mesh,'idle');
+      }
+    }
+    if(w.pause<=0&&w.mesh.userData.actor?.role==='idle')setActorRole(w.mesh,'walk');
     if (!w.mesh.userData.actor || !w.mesh.userData.actor.model) {
       const p = w.mesh.userData.parts;
-      const sw = Math.sin(now * 7 + w.phase) * 0.5;
+      const sw = w.pause>0?0:Math.sin(now * 7 + w.phase) * 0.5;
       p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
       p.armL.rotation.x = -sw * 0.7; p.armR.rotation.x = sw * 0.7;
     }
