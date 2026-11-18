@@ -26,7 +26,7 @@ import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
 import { initSwanRide, updateSwanRide, qaFinishSwanRide, swanRideStatus } from './systems/swan-ride.js';
 import { buildWildlife, updateWildlife, biteWildlife } from './systems/wildlife.js';
-import { buildMBTA, initMBTA, updateMBTA, mbtaDebugState } from './systems/mbta.js';
+import { buildMBTA, initMBTA, updateMBTA, mbtaDebugState, qaAdvanceMBTA } from './systems/mbta.js';
 import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
@@ -38,6 +38,7 @@ import { beginRelocation, completeRelocation, advanceRelocation } from './system
 import { createMobileQualityState, advanceMobileQuality } from './systems/mobile-quality.js';
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
+import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
 
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
@@ -279,16 +280,16 @@ if (Q.has('shot')) {
     case 'garden': pose(-96, -27, -132, 0); break;
     case 'statehouse': pose(116, -36, 186, -92); break;
     case 'bridge': pose(-110, 3, -132, 0); break; // lagoon bridge elevation from across the water
-    case 'washington': pose(-125, 83.5, -132, 76); break; // the General, Garden south mall, front three-quarter
+    case 'washington': pose(-180, 12, -193, 0); break; // west Arlington entrance, facing Washington
     case 'swanboats': // south shore of the lagoon, close on the west boat's drift loop
       pose(-141, -25, -154, -11);
       break;
-    case 'parkst': // Brewer Fountain in front, Park St headhouse behind it
-      pose(-10, -42, -29, -69);
+    case 'parkst': // Brewer plaza with Park Street T headhouse at the east Common
+      pose(133, -54, PARK_ST_ENTRY.x, PARK_ST_ENTRY.z);
       break;
-    case 'fountain': pose(-16.5, -49.5, -25, -58, 0.24); break; // Brewer Fountain close, figures + tiers
-    case 'headhouse': pose(-23.5, -67, -33, -80); break; // Park St headhouse front three-quarter
-    case 'ducklings': pose(-73.5, 28.5, -78, 34, 0.1); break; // Mrs. Mallard's line, Garden path
+    case 'fountain': pose(BREWER_FOUNTAIN.x-9, BREWER_FOUNTAIN.z+7, BREWER_FOUNTAIN.x, BREWER_FOUNTAIN.z, 0.24); break;
+    case 'headhouse': pose(PARK_ST_HEADHOUSE.x-11, PARK_ST_HEADHOUSE.z+8, PARK_ST_HEADHOUSE.x, PARK_ST_HEADHOUSE.z); break;
+    case 'ducklings': pose(-88, -62, -78, -80, 0.1); break; // Beacon/Charles north-east Garden
     case 'promenade': pose(2, -18, 150, -18); break; // ON the Mall apron (v0.6.27), east down the promenade
     case 'pondedge': pose(74.5, 21.5, 95, 12, -0.1); break; // Frog Pond SW shore (v0.6.27): curb stones + water at eye height
     case 'wade': pose(-132, 10, -132, -2); break; // IN the lagoon (v0.6.28): bed level, eye under the water plane, looking at the bridge
@@ -556,12 +557,14 @@ if (qaLocal) {
     finishSwanRide: qaFinishSwanRide,
     wildlife: () => (S.wildlifeActors||[]).map(a=>({kind:a.kind,x:a.x,y:a.y,z:a.z,visible:a.mesh.visible})),
     mbta: mbtaDebugState,
+    advanceMBTA: qaAdvanceMBTA,
     // Simulation time only, local-only test hook. Never present on live URL.
     setTime: (hour) => {
       if(!Number.isFinite(hour)||hour<0||hour>=24)throw new RangeError('0..24 hour');
       S.timeHours=hour;return hour;
     },
     population: () => ({
+      hour: S.timeHours,
       bench: S.benchSitters.filter(x=>x.mesh?.visible).length,
       picnics: S.blankets.filter(x=>x.mesh?.visible).length,
       dogs: (S.dogPositions||[]).filter(x=>x.mesh?.visible).length,

@@ -210,14 +210,20 @@ async function checkGameplay() {
     // vanish in the middle of the night; noon restores the same pooled
     // actors without allocating new models or breaking E-prompt lifecycles.
     await page.evaluate(()=>window.__scurryQA.setTime(3));
-    await page.waitForTimeout(300);
+    await page.waitForFunction(()=>{
+      const p=window.__scurryQA.population();
+      return p.picnics===0&&p.bench===0&&p.dogs===0&&p.nightWorker;
+    },null,{timeout:30000,polling:100});
     const night=await page.evaluate(()=>window.__scurryQA.population());
     assert.equal(night.picnics,0,'3 AM must not have six unattended picnics');
     assert.equal(night.bench,0,'3 AM park benches must not be full of beg targets');
     assert.equal(night.dogs,0,'3 AM off-leash dog pack should be sleeping');
     assert.equal(night.nightWorker,true,'night-shift staff should be nearby');
     await page.evaluate(()=>window.__scurryQA.setTime(12));
-    await page.waitForTimeout(300);
+    await page.waitForFunction(()=>{
+      const p=window.__scurryQA.population();
+      return p.picnics>=4&&p.bench>=9&&p.dogs>=4&&!p.nightWorker;
+    },null,{timeout:30000,polling:100});
     const noon=await page.evaluate(()=>window.__scurryQA.population());
     assert.ok(noon.picnics>=4 && noon.bench>=9 && noon.dogs>=4,
       'daytime must restore real park actors: '+JSON.stringify(noon));
@@ -239,11 +245,13 @@ async function checkGameplay() {
     assert.match(await choose('come out from under the bench'),/come out/i);
     await page.keyboard.press('e');
     assert.equal(await page.evaluate(()=>window.__scurryQA.mbta().hidden),false);
-    // The staff warning timer starts only after arrival cooldown; use
-    // actual frames and real shoo consequence, not an internal teleport.
+    // Fast-forward *the real updateMBTA simulation* in localhost QA,
+    // not its relocation action. SwiftShader can render only ~1fps.
+    await page.evaluate(()=>window.__scurryQA.advanceMBTA(3.6));
     await page.evaluate(()=>window.__scurryQA.place(8000+76,0,-8000+0));
+    await page.evaluate(()=>window.__scurryQA.advanceMBTA(2.5));
     await page.waitForFunction(()=>!window.__scurryQA.state().inMBTA,
-      null,{timeout:15000,polling:120});
+      null,{timeout:10000,polling:120});
     const escorted=await get();
     assert.ok(escorted.grounded&&!escorted.inBurrow);
     assert.ok(Math.abs(escorted.pos.y-escorted.floor)<.1);
@@ -253,7 +261,7 @@ async function checkGameplay() {
     await page.keyboard.press('e');
     await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
       null,{timeout:8000});
-    await page.waitForTimeout(3800);
+    await page.evaluate(()=>window.__scurryQA.advanceMBTA(3.6));
     const beforeResidents=await page.evaluate(()=>window.__scurryQA.wildlife()
       .filter(a=>a.visible&&(a.kind==='rat'||a.kind==='squirrel')));
     assert.ok(beforeResidents.length>2,'shared underground must have living NPCs');
@@ -262,7 +270,7 @@ async function checkGameplay() {
     await page.waitForFunction(()=>window.__scurryQA.state().inMBTA,
       null,{timeout:8000});
     assert.equal((await get()).inBurrow,false);
-    await page.waitForTimeout(3800);
+    await page.evaluate(()=>window.__scurryQA.advanceMBTA(3.6));
     assert.match(await choose('return to the rat market'),/rat market/i);
     await page.keyboard.press('e');
     await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,

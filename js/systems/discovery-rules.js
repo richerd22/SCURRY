@@ -3,7 +3,7 @@
 export const LANDMARKS = Object.freeze([
   {id:'garden-bridge',x:-132,z:0,r:13,label:'Garden Bridge'},
   {id:'washington',x:-193,z:0,r:12,label:'Washington Statue'},
-  {id:'fountain',x:-25,z:-58,r:12,label:'Brewer Fountain'},
+  {id:'fountain',x:148,z:-70,r:12,label:'Brewer Fountain'},
   {id:'monument',x:60,z:-45,r:16,label:'Soldiers Monument'},
   {id:'frog-pond',x:95,z:12,r:23,label:'Frog Pond'},
   {id:'bandstand',x:140,z:42,r:16,label:'Parkman Bandstand'},

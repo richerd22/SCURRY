@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundHeight, terrainDisc } from './world.js';
 import { ETHER, etherColliders } from './ether-layout.js';
+import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE } from './boston-landmark-layout.js';
 import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
@@ -321,7 +322,7 @@ function fountainFigure() {
 }
 function buildBrewerFountain(scene) {
   const g = new THREE.Group();
-  const x = -25, z = -58, gy = groundHeight(x, z);
+  const { x,z } = BREWER_FOUNTAIN, gy = groundHeight(x,z);
   cyl(4.6, 5, 0.8, granite, 0, 0.4, 0, g, 20);
   const basinWater = new THREE.Mesh(new THREE.CircleGeometry(4.2, 20), fountainWaterMat);
   basinWater.rotation.x = -Math.PI / 2; basinWater.position.y = 0.75; g.add(basinWater);
@@ -398,6 +399,19 @@ function buildBrewerFountain(scene) {
   g.position.set(x, gy, z);
   scene.add(g);
   S.solids.push({ x, z, r: 5.1, minY: gy, maxY: gy + 3.5 });
+  // The geometry, collision and historical E prompt all use the SAME anchor.
+  S.interactables.push({
+    x,z,y:gy,r:6.8,
+    label:()=>S.player.inHollow||S.player.inBurrow||S.player.inMBTA||
+      S.player.inFenway||S.player.inGarden||S.player.inCityHall||
+      S.player.inEsplanade||S.player.onSwanBoat?null:
+      'E - inspect Brewer Fountain',
+    action:()=>{
+      const p=S.player.pos;
+      if(Math.hypot(p.x-x,p.z-z)>6.9||Math.abs(p.y-gy)>1.6)return;
+      toast('Brewer Fountain (1868). A little piece of Paris beside Park Street.',3);
+    },
+  });
 }
 
 // --- Park Street station headhouse ---
@@ -425,7 +439,7 @@ function roundelTex() {
 }
 function buildParkStStation(scene) {
   const g = new THREE.Group();
-  const x = -33, z = -80, gy = groundHeight(x, z);
+  const { x,z } = PARK_ST_HEADHOUSE, gy = groundHeight(x,z);
   if (S.cityMats) S.cityMats.push(headhouseGlass);
   box(7.2, 0.5, 5.2, granite, 0, 0.25, 0, g);                       // stone base
   // the stairwell inside the glass (v0.6.28): was a plain dark mass -
@@ -549,9 +563,8 @@ function buildParkStStation(scene) {
 // nave under a slate gable, brick tower at the corner end, white belfry
 // stage, tall white spire, gold ball. Local -z is the tower end; the
 // group is rotated so the tower faces the corner (west). It stands
-// across Tremont from the fence - the in-game Park St headhouse lives
-// with the Brewer Fountain cluster at the Common's west end, so the two
-// never collide.
+// across Tremont from the fence; the real-world-inspired T headhouse
+// and Brewer plaza now lie on the Common's east/northeast side.
 const churchBrick = new THREE.MeshStandardMaterial({ color: 0x74452f, roughness: 0.95 });
 const churchSlate = new THREE.MeshStandardMaterial({ color: 0x3a4149, roughness: 0.7, metalness: 0.15 });
 const churchGlass = new THREE.MeshStandardMaterial({ color: 0x232b36, roughness: 0.3, metalness: 0.2 });

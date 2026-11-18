@@ -7,9 +7,9 @@ export const MBTA_STATIONS = Object.freeze([
   Object.freeze({id:'arlington',name:'ARLINGTON',line:'GREEN LINE',x:-80,z:10,
     surfaceX:-193,surfaceZ:88}),
   Object.freeze({id:'boylston',name:'BOYLSTON',line:'GREEN LINE',x:0,z:10,
-    surfaceX:-29,surfaceZ:90}),
+    surfaceX:189,surfaceZ:91}),
   Object.freeze({id:'park',name:'PARK STREET',line:'GREEN / RED',x:76,z:10,
-    surfaceX:-29,surfaceZ:-86}),
+    surfaceX:165.6,surfaceZ:-85}),
 ]);
 export const MBTA_ROOMS = Object.freeze([
   Object.freeze({id:'green-walk',minX:-104,maxX:103,minZ:-2,maxZ:9}),

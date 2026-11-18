@@ -9,6 +9,7 @@ import { seededRandom } from './seeded-random.js';
 import { makeParkFenceLayout } from './fence-layout.js';
 import { buildParkEntrances } from './gate-art.js';
 import { insideParkLawn } from './ground-rules.js';
+import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE } from './boston-landmark-layout.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
 
@@ -27,7 +28,7 @@ function ellipseDip(x, z, e) {
 const TERRAIN_X = 150, TERRAIN_Z = 86;
 let terrainGrid = null;
 // Static plaza footprint cache: never allocate in the per-substep height query.
-const PLAZA_TOPS = [[140, 42, 13.6], [-25, -58, 10.6], [60, -45, 13.1]];
+const PLAZA_TOPS = [[140,42,13.6],[BREWER_FOUNTAIN.x,BREWER_FOUNTAIN.z,BREWER_FOUNTAIN.plazaRadius],[60,-45,13.1]];
 // Match actual rendered triangle faces, rather than the interpolated math hill.
 export function visibleGroundHeight(x, z) {
   const h = meshTerrainHeight(terrainGrid, x, z, MAP.minX, MAP.maxX, MAP.minZ, MAP.maxZ, TERRAIN_X, TERRAIN_Z);
@@ -55,7 +56,7 @@ export function groundHeight(x, z) {
   let h = 0;
   h += 6.5 * gauss(x, z, 60, -45, 36);            // Soldiers & Sailors Monument hill
   h += 1.3 * gauss(x, z, 140, 42, 17);            // bandstand knoll
-  h += 0.9 * gauss(x, z, -25, -58, 14);           // Brewer Fountain rise
+  h += 0.9 * gauss(x, z, BREWER_FOUNTAIN.x, BREWER_FOUNTAIN.z, 14); // Brewer Fountain rise
   // State House terrace, NE corner plateau
   const tx = smooth01((x - 146) / 26), tz = smooth01((-z - 50) / 22);
   h += 8.0 * tx * tz;
@@ -77,8 +78,11 @@ export const PATHS = [
   [[60, -94], [60, -52], [60, -18], [60, 30], [60, 94]],
   [[112, -60], [112, -18], [112, 8], [112, 60], [112, 94]],
   [[158, -94], [158, -40], [158, -18], [158, 42], [158, 94]],
-  // Diagonal: Park St corner to bandstand
+  // Historic west Common connector (retained for continuous traversal)
   [[-34, -80], [30, -40], [80, 0], [140, 42]],
+  // Real east-Common Park Street headhouse route toward the Bandstand.
+  // Curves around, rather than through, the Brewer Fountain basin.
+  [[PARK_ST_HEADHOUSE.x+5.6,PARK_ST_HEADHOUSE.z],[163,-76],[158,-58],[148,-41],[143,-12],[140,42]],
   // Frog pond loop feeders
   [[60, 12], [80, 12], [112, 12]],
   [[140, 42], [112, 42], [60, 42]],

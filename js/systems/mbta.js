@@ -346,3 +346,15 @@ export function mbtaDebugState(){
   return {inMBTA:!!S.player.inMBTA,hidden:hide,alert,
     crowd:transitCrowdLevel(S.timeHours),greenX:trainGreen?.position.x??null};
 }
+
+
+// Test-only time advancement: this calls the SAME station simulation and
+// encounter logic as the real world. Only localhost ?qa=1 exposes it;
+// no debug UI or public hook. Headless SwiftShader may draw 1 fps.
+export function qaAdvanceMBTA(seconds) {
+  if(!Number.isFinite(seconds)||seconds<0||seconds>12)
+    throw new RangeError('0..12 simulated MBTA seconds');
+  const steps=Math.max(1,Math.ceil(seconds/.05));
+  for(let i=0;i<steps;i++)updateMBTA(seconds/steps);
+  return mbtaDebugState();
+}
