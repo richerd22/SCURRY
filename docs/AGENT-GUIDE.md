@@ -1029,6 +1029,88 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   wall before/after, emergence, shell wide, shell face,
   river, wade murk, canopy, door) +
   esplanade-after-live/ after the push.
+- v0.6.31 - THE HOME MAP PERFECTION PASS (owner-directed
+  convergence round: the Common + Garden are the main focus;
+  no destination work). Worked the v0.6.28 closing census in
+  order. (1) FENCE-LINE FACADE DEPTH COMPLETE. The cityFacade
+  relief program (Beacon v0.6.18, Tremont/Charles v0.6.21,
+  Fenway panes v0.6.23) now covers every face wearing the
+  generic facade: cityRelief() in streetwalls.js derives
+  instanced panes from the texture's own 7x16 grid (NO rng -
+  the seeded layouts are byte-stable). Ring blocks: recessed
+  panes on the park face of all 38 main tiers (4,256 panes -
+  dark glass + a deterministic ~20% lit set registered in
+  S.cityMats); setback tiers keep the paint (they step back
+  and up, out of the fence read) and the roofs already had
+  caps/tanks. Boylston + Arlington rows - the closest
+  unreleved faces in the game, 8-9 m off the fences: full
+  treatment, stone frame (23x25px cell, ~0.13 m trim at
+  Beacon's weight) + recessed pane on all 5,040 windows.
+  Skyline towers ASSESSED, NOT CHURNED, with reasons: the
+  Hancock slab is a flush glass curtain wall by design (the
+  real building's panes ARE flush; geometric panes add no
+  read at 55 m+ behind two rows); the setback stack's park
+  faces are occluded below ~46 m by the ring NW blocks and
+  read at 60-110 m slant; the Pru shaft is occluded below
+  its crown (crown band + antenna + beacon already
+  geometry); the clock tower's lower tiers sit behind the
+  ring south row and its read (clock band + pyramid cap)
+  is already geometry. Proof: harness/perfprobe.js asserts
+  the exact instance multiset (ring 3404 dark / 852 lit,
+  SW 4032 dark / 1008 lit / 5040 frames); the boylston-night
+  shot shows the lit grid in register with the facades.
+  (2) FOAM + WATER LIFE. The Brewer foam rings breathe:
+  landmarks registers S.fountainFoamMat and daycycle pulses
+  its opacity 0.33-0.48 on two incommensurate sines - churn,
+  not a blink (perfprobe samples it moving, in band). The
+  pond surface gets value-only life: S.waterMat roughness
+  breathes 0.13 +- 0.018 on a ~9 s beat, so the sky
+  reflection's lobe widens and tightens - a live surface
+  instead of a fixed mirror. Deliberately NOT a texture
+  scroll: the water discs' UVs are radial (an offset would
+  swirl like a drain) and the shared material rides into
+  every destination's water too. (3) SWAN BOATS +
+  HEADHOUSE. Boats: the canopy wears a drawn canvas
+  texture (sewn-panel seams running fore-aft + grain)
+  instead of the flat slab; a dark waterline band (a
+  squashed hull copy - the rail-cap trick at the bottom)
+  grounds each hull at the water; benches + stern deck
+  wear the plank texture instead of flat colour; the
+  moored boat's dock gains a coiled mooring line + a
+  crate. Headhouse ASSESSED, NOT CHURNED: the v0.6.12
+  glass/iron build + v0.6.28 stairwell (landing, treads,
+  handrails, warm light bar, lit via S.cityMats) already
+  carry everything visible through 0.38-opacity glass at
+  0.25 m eye height, and the pit floors are black BY
+  DESIGN (depth illusion) - nothing honest was left to
+  add without inventing an interior nobody can see.
+  (4) CLOSING CENSUS, refreshed. DONE on the home map:
+  hero trees 121/123; every park-facing facade now has
+  geometric relief (Beacon, Tremont, Charles, Ring,
+  Boylston, Arlington); animated fountain falls + breathing
+  foam; breathing water; wading murk on all four water
+  bodies; golden-hour grade keys. STILL STYLISED, plainly:
+  swan boats + Park St headhouse remain composed-procedural
+  (no licensed GLB exists for either - settled, do not
+  re-litigate); the skyline towers stay textured backdrop
+  above/behind the relieved rows; the Mall waypoint elm +
+  Charles St snag are procedural BY DESIGN; the ducklings
+  are stylised bronze (they ARE statues of book
+  characters); State House wings unbuilt (no map room -
+  v0.6.27, settled). STILL THE OWNER'S CALLS (cannot be
+  closed headlessly): real-device mobile perf at 121 hero
+  trees; the golden-hour grade + long shadows on a real
+  GPU; bronze near-black in shadowless lowq; submerged
+  refraction/caustics (the murk is the read). With this
+  the home map stands TEST-READY - the grind stops here
+  per the owner's convergence direction, pending his
+  playtest. Perf: spawn 552 calls / 358,224 tris (before
+  559 / 333,256 - calls flat, tris +7.5% for 14,336
+  instanced relief planes). Walktest 102/102 local + live,
+  zero console errors. Before/after:
+  v0.6-shots/perfection-{before,after}/ (boylston day +
+  night, arlington, swanclose, swanboats, fountain;
+  headhouse before only - assessed, untouched).
 - Roadmap (owner's direction): City Hall shipped as the
   east teleport-reached expansion map in v0.6.29, the
   Esplanade as the north one in v0.6.30 (Fenway

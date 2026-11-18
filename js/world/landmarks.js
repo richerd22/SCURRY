@@ -365,6 +365,10 @@ function buildBrewerFountain(scene) {
     const foamMat = new THREE.MeshStandardMaterial({
       color: 0xe8f2f2, transparent: true, opacity: 0.4, roughness: 0.6, depthWrite: false,
     });
+    // v0.6.31: daycycle breathes this one material's opacity (see
+    // there) - the foam rings pulse like churn instead of sitting
+    // as static decals under the animated falls.
+    S.fountainFoamMat = foamMat;
     const fall = (r, yTop, yBot) => {
       const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.03, yTop - yBot, 20, 1, true), streamMat);
       m.position.y = (yTop + yBot) / 2;
@@ -708,7 +712,9 @@ function buildBridge(scene) {
 // via userData.drift), never crossing the bridge or the goose deck.
 const swanBlack = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.55 });
 const swanBeak = new THREE.MeshStandardMaterial({ color: 0xe07b28, roughness: 0.55 });
-const benchWood = new THREE.MeshStandardMaterial({ color: 0x8a6a42, roughness: 0.85 });
+// v0.6.31: the benches wear the same plank texture as the decks -
+// flat colour read as painted blocks at dock distance.
+const benchWood = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.85 });
 // scalloped canopy valance (v0.6.28): the real boats' canopy edge is a
 // scalloped skirt, and at lagoon distance that broken edge is half of
 // what makes a white box read as a swan boat. Canvas alpha, one texture.
@@ -723,9 +729,35 @@ function valanceTex() {
   t.wrapS = THREE.RepeatWrapping; t.repeat.set(3, 1);
   return t;
 }
+// canopy canvas (v0.6.31): the roof was one flat pale material -
+// at lagoon distance a swan boat is mostly canopy, and flat white
+// reads as a slab. Faint sewn-panel seams + a whisper of canvas
+// grain, drawn once. The seams run fore-aft: on the roof cylinder
+// (rotated so its height axis lies along the boat) constant-u
+// lines run along the length, so the texture's vertical stripes
+// land as lengthwise seams, ~0.75 m apart over the arc.
+function canopyTex() {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#f4f0e4'; c.fillRect(0, 0, 256, 128);
+  let seed = 777001;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 2600; i++) { // canvas grain
+    c.fillStyle = 'rgba(120,110,90,' + (rnd() * 0.05) + ')';
+    c.fillRect(rnd() * 256, rnd() * 128, 2, 1);
+  }
+  for (let x = 0; x <= 256; x += 64) { // panel seams + their highlight lip
+    c.fillStyle = 'rgba(105,98,84,0.55)'; c.fillRect(x, 0, 2, 128);
+    c.fillStyle = 'rgba(255,255,252,0.5)'; c.fillRect(x + 2, 0, 1, 128);
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
 function buildSwanBoats(scene) {
   const boatMat = new THREE.MeshStandardMaterial({ color: 0xf0ebdd, roughness: 0.6 });
-  const canvasMat = new THREE.MeshStandardMaterial({ color: 0xf4f0e4, roughness: 0.9, side: THREE.DoubleSide });
+  const canvasMat = new THREE.MeshStandardMaterial({ map: canopyTex(), roughness: 0.9, side: THREE.DoubleSide });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0x27313a, roughness: 0.7 });
   const valanceMat = new THREE.MeshStandardMaterial({
     map: valanceTex(), transparent: true, alphaTest: 0.45, roughness: 0.9, side: THREE.DoubleSide,
   });
@@ -792,6 +824,12 @@ function buildSwanBoats(scene) {
     hull.castShadow = true; hull.receiveShadow = true; g.add(hull);
     const rail = new THREE.Mesh(hullGeo, darkWood);
     rail.scale.set(1.045, 1, 1.03); rail.position.y = 0.7; rail.scale.y = 0.16; g.add(rail);
+    // waterline band (v0.6.31): the real boats sit on a dark-painted
+    // bottom; the flat white hull side used to run straight into the
+    // water. A squashed dark copy of the hull at the base - same
+    // trick as the rail cap above it, mirrored to the bottom.
+    const boot = new THREE.Mesh(hullGeo, bootMat);
+    boot.scale.set(1.03, 0.3, 1.02); boot.position.y = 0.01; g.add(boot);
     const deck = new THREE.Mesh(new THREE.ShapeGeometry(hullShape), deckMat);
     deck.geometry.rotateX(-Math.PI / 2);
     deck.scale.set(0.94, 1, 0.97); deck.position.y = 0.73; deck.receiveShadow = true; g.add(deck);
@@ -854,6 +892,13 @@ function buildSwanBoats(scene) {
     for (const px of [-4.4, -1.5, 1.5, 4.4]) for (const pz of [-1.5, 1.5])
       cyl(0.09, 0.09, 1.15, darkWood, px, -0.12, pz, g, 6);
     for (const px of [-3.6, 3.6]) cyl(0.11, 0.13, 0.34, darkWood, px, 0.6, -1.45, g, 8); // mooring bollards
+    // dock dressing (v0.6.31): a coiled mooring line by the bollard
+    // + a crate at the back corner - the dock was clean geometry,
+    // and working docks have stuff on them.
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 7, 18),
+      new THREE.MeshStandardMaterial({ color: 0x9a8a68, roughness: 1 }));
+    coil.rotation.x = Math.PI / 2; coil.position.set(3.4, 0.52, -1.05); g.add(coil);
+    box(0.62, 0.5, 0.62, benchWood, -3.9, 0.7, 1.15, g);
     // dock sign, park-board green like the station sign
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
     const c = cv.getContext('2d');

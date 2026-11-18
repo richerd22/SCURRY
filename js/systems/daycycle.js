@@ -238,6 +238,24 @@ export function updateDaycycle(dt) {
   // offset walks every streak DOWN the fall. Offset only - the geometry
   // never moves.
   if (S.fountainFlowTex) S.fountainFlowTex.offset.y = (now * 0.85) % 1;
+  // fountain foam (v0.6.31): the rings where the falls land breathe.
+  // Two slow incommensurate sines on the ONE foam material's opacity
+  // (registered in landmarks.js) - the foam brightens and settles
+  // like churn under the animated falls instead of sitting as a
+  // static decal. Amplitude kept small: a pulse, not a blink.
+  if (S.fountainFoamMat) {
+    const fp = 0.5 + 0.5 * Math.sin(now * 2.3) * Math.sin(now * 0.77 + 1.3);
+    S.fountainFoamMat.opacity = 0.33 + 0.15 * fp;
+  }
+  // pond surface (v0.6.31): the water's roughness breathes a hair
+  // (0.13 +- 0.018 on a ~9 s beat) - the sky reflection's lobe
+  // widens and tightens almost imperceptibly, which in motion
+  // reads as a live surface instead of a fixed mirror. Deliberately
+  // NOT a texture scroll: the water discs' UVs are radial, so an
+  // offset would swirl the surface like a drain, and a world-space
+  // detail map would have to ride the shared material into every
+  // destination's water too. Value-only, like the foam.
+  if (S.waterMat) S.waterMat.roughness = 0.13 + 0.018 * Math.sin(now * 0.7) * Math.sin(now * 0.23 + 0.8);
   // water volume (v0.6.28): when the eye dips under a pond/lagoon plane,
   // lay the murk on - fog pulled in and re-tealed, plus a flat tint
   // (z 2: over the canvas, under the HUD). Eased both ways so wading

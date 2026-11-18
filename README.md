@@ -38,6 +38,28 @@ No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
 
+## What's in v0.6.31
+
+- **The fence line got its depth.** Every building face
+  around the Common and the Garden now has real windows -
+  recessed glass and stone trim standing proud of the
+  paint, all the way around: the big ring blocks behind
+  the park, the Boylston row across from the Garden, the
+  Arlington Street wall. Stand at any fence at dusk and
+  the city reads as buildings, not boxes.
+- **The water is alive, quietly.** The Brewer Fountain's
+  foam breathes where the falls land, and the lagoon and
+  Frog Pond surfaces shift almost imperceptibly as you
+  watch - the reflection breathes. Stare at the water by
+  the bridge for ten seconds. It is doing something.
+- **Swan boat details.** Canvas seams on the canopies, a
+  dark waterline where the hulls meet the lagoon, real
+  wood grain on the benches, and the moored boat's dock
+  has picked up a coiled rope and a crate, like docks do.
+- This is the home map's polish pass - the Common and
+  the Garden themselves, made as right as they can be
+  made. The burrows still run everywhere they ran.
+
 ## What's in v0.6.30
 
 - **The burrows run north now.** The rat market has a

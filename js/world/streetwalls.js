@@ -31,6 +31,47 @@ function instanced(geo, mat, items) {
   return m;
 }
 const boxGeo = () => new THREE.BoxGeometry(1, 1, 1);
+const planeGeo = () => new THREE.PlaneGeometry(1, 1);
+
+// ---------- city-facade relief (v0.6.31) ----------
+// The ring blocks + Boylston/Arlington rows wear the generic
+// cityFacade texture (textures.js: 7 cols x 16 rows of windows,
+// x = 14 + cx*34 w 18, y = 16 + ry*30 h 20, on a 256x512 canvas)
+// painted flat on the box. The Beacon/Tremont/Charles passes
+// (v0.6.18/21/23) proved the fence-line fix: real geometry over the
+// painted windows, positions derived from the texture's own grid.
+// This is that treatment for the cityFacade faces. NO rng anywhere
+// in here - the lit/dark split is a deterministic sequence, and the
+// seeded layouts in the builders below must not shift.
+// nrm names the face's outward normal; `fixed` is the wall plane's
+// coordinate on that axis, [cA, cB] the box centre on the other two
+// axes (width axis first), yBot/h the face's vertical span, w its
+// width. Panes sit 0.024 proud of the wall, frames 0.012 (behind
+// the pane, in front of the paint). frames=true adds the stone
+// frame planes (the near streetwall rows); the far ring gets panes
+// only - at 30-60 m a 4 cm frame is sub-read, the glass carries it.
+function cityRelief(arrays, seq, nrm, fixed, cA, cB, yBot, w, h, frames) {
+  const pw = 18 / 256 * w * 0.82, ph = 20 / 512 * h * 0.82;
+  const fw = 23 / 256 * w, fh = 25 / 512 * h; // ~0.13 m trim border - Beacon's weight, not a panel
+  const sgn = (nrm === 'pz' || nrm === 'px') ? 1 : -1;
+  const fP = fixed + sgn * 0.024, fF = fixed + sgn * 0.012;
+  for (let cx = 0; cx < 7; cx++) {
+    const u = (14 + cx * 34 + 9) / 256;
+    for (let ry = 0; ry < 16; ry++) {
+      const vTop = (16 + ry * 30 + 10) / 512;
+      const y = yBot + h * (1 - vTop);
+      let a, rotY;
+      if (nrm === 'pz') { a = cA + (u - 0.5) * w; rotY = 0; }
+      else if (nrm === 'nz') { a = cA + (0.5 - u) * w; rotY = Math.PI; }
+      else if (nrm === 'px') { a = cB + (0.5 - u) * w; rotY = Math.PI / 2; }
+      else { a = cB + (u - 0.5) * w; rotY = -Math.PI / 2; } // 'nx'
+      const at = (f) => (nrm === 'pz' || nrm === 'nz') ? [a, y, f] : [f, y, a];
+      if (frames) arrays.frame.push({ p: at(fF), s: [fw, fh, 1], ry: rotY });
+      const lit = (seq.n++ * 37) % 10 < 2;
+      (lit ? arrays.lit : arrays.dark).push({ p: at(fP), s: [pw, ph, 1], ry: rotY });
+    }
+  }
+}
 
 // ---------- Beacon Street: the brownstone / bow-front row ----------
 // Faces the Common along its whole north edge (and the Garden's), at
@@ -156,10 +197,26 @@ export function buildRingBlocks(scene) {
   const bodies = [[], [], []], caps = [], tanks = [], tankCaps = [];
   const capMat = new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 });
   const tankMat = new THREE.MeshStandardMaterial({ color: 0x4a3b2c, roughness: 0.95 });
-  function block(x, z, w, d, h, ry = 0) {
+  // fence-line relief (v0.6.31): recessed panes on the park-facing
+  // face of every main-tier block, from the cityFacade grid (see
+  // cityRelief above). Panes only - the ring stands 25-60 m from
+  // the fences, where frames go sub-read. Setback tiers keep the
+  // paint (their faces step back and up, out of the fence read).
+  const panes = { frame: [], dark: [], lit: [] };
+  const paneSeq = { n: 0 };
+  const paneDarkMat = new THREE.MeshStandardMaterial({ color: 0x232b36, roughness: 0.16, metalness: 0.35 });
+  const paneLitMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2118, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.3,
+  });
+  if (S.cityMats) S.cityMats.push(paneLitMat);
+  function block(x, z, w, d, h, face, ry = 0) {
     const v = (R() * 3) | 0, tone = 0.82 + R() * 0.3;
     const col = new THREE.Color(tone, tone, tone).getHex();
     bodies[v].push({ p: [x, h / 2 - 1, z], s: [w, h, d], ry, c: col });
+    if (face === 'pz') cityRelief(panes, paneSeq, 'pz', z + d / 2, x, z, -1, w, h, false);
+    else if (face === 'nz') cityRelief(panes, paneSeq, 'nz', z - d / 2, x, z, -1, w, h, false);
+    else if (face === 'px') cityRelief(panes, paneSeq, 'px', x + w / 2, x, z, -1, d, h, false);
+    else if (face === 'nx') cityRelief(panes, paneSeq, 'nx', x - w / 2, x, z, -1, d, h, false);
     let tw = w, td = d, top = h - 1;
     if (R() < 0.45) { // setback tier 2
       tw *= 0.68; td *= 0.68; const h2 = h * (0.4 + R() * 0.25);
@@ -177,14 +234,16 @@ export function buildRingBlocks(scene) {
     }
   }
   for (let x = -204; x <= 208; x += 33) {
-    block(x + (R() - 0.5) * 6, -138, 24 + R() * 6, 22, 20 + R() * 26);       // north, behind Beacon
-    block(x + (R() - 0.5) * 6, 136, 24 + R() * 6, 22, 20 + R() * 26);        // south, behind Boylston
+    block(x + (R() - 0.5) * 6, -138, 24 + R() * 6, 22, 20 + R() * 26, 'pz');       // north, behind Beacon
+    block(x + (R() - 0.5) * 6, 136, 24 + R() * 6, 22, 20 + R() * 26, 'nz');        // south, behind Boylston
   }
   for (let z = -96; z <= 100; z += 33) {
-    block(237, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 22 + R() * 28);        // east, behind the Tremont row
-    block(-234, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 18 + R() * 22);       // west, behind Arlington
+    block(237, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 22 + R() * 28, 'nx');        // east, behind the Tremont row
+    block(-234, z + (R() - 0.5) * 6, 22, 24 + R() * 6, 18 + R() * 22, 'px');       // west, behind Arlington
   }
   bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), S.cityMats[i], items)); });
+  if (panes.dark.length) scene.add(instanced(planeGeo(), paneDarkMat, panes.dark));
+  if (panes.lit.length) scene.add(instanced(planeGeo(), paneLitMat, panes.lit));
   scene.add(instanced(boxGeo(), capMat, caps));
   if (tanks.length) {
     scene.add(instanced(new THREE.CylinderGeometry(1.7, 1.7, 1, 9), tankMat, tanks));
@@ -202,22 +261,40 @@ export function buildSouthWestRows(scene, groundHeight) {
   const bodies = [[], [], []], cornices = [], caps = [];
   const stoneMat = new THREE.MeshStandardMaterial({ color: 0xb8ac96, roughness: 0.9 });
   const capMat = new THREE.MeshStandardMaterial({ color: 0x2e2c2a, roughness: 1 });
-  function unit(cx, cz, w, d, frontGy) {
+  // fence-line relief (v0.6.31): these are the CLOSEST unreleved
+  // facades left - Boylston fronts stand 9 m off the south fence,
+  // Arlington's ~8 m off the Garden's west fence. Full treatment:
+  // stone frame + recessed pane on every cityFacade window (see
+  // cityRelief above; no rng, seeded layout untouched).
+  const relief = { frame: [], dark: [], lit: [] };
+  const reliefSeq = { n: 0 };
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0xa2967f, roughness: 0.9 });
+  const glassDarkMat = new THREE.MeshStandardMaterial({ color: 0x232b36, roughness: 0.16, metalness: 0.35 });
+  const glassLitMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2118, emissive: 0xffc37a, emissiveIntensity: 0.12, roughness: 0.3,
+  });
+  if (S.cityMats) S.cityMats.push(glassLitMat);
+  function unit(cx, cz, w, d, frontGy, face) {
     const v = (R() * 3) | 0, h = 10 + R() * 6, tone = 0.84 + R() * 0.26;
     const base = frontGy - 0.6, col = new THREE.Color(tone, tone, tone).getHex();
     bodies[v].push({ p: [cx, base + h / 2, cz], s: [w, h, d], c: col });
     cornices.push({ p: [cx, base + h + 0.08, cz], s: [w + 0.3, 0.4, d + 0.3] });
     caps.push({ p: [cx, base + h + 0.42, cz], s: [w - 0.2, 0.35, d - 0.2] });
+    if (face === 'nz') cityRelief(relief, reliefSeq, 'nz', cz - d / 2, cx, cz, base, w, h, true);
+    else if (face === 'px') cityRelief(relief, reliefSeq, 'px', cx + w / 2, cx, cz, base, d, h, true);
   }
   for (let x = -202; x + 13 <= 204; x += 13) { // Boylston: fronts face the parks (north)
-    unit(x + 6.5, 114, 13, 10, groundHeight(x + 6.5, 108));
+    unit(x + 6.5, 114, 13, 10, groundHeight(x + 6.5, 108), 'nz');
   }
   for (let z = -92; z + 13 <= 94; z += 13) { // Arlington: fronts face the Garden (east)
-    unit(-216, z + 6.5, 10, 13, groundHeight(-210, z + 6.5));
+    unit(-216, z + 6.5, 10, 13, groundHeight(-210, z + 6.5), 'px');
   }
   bodies.forEach((items, i) => { if (items.length) scene.add(instanced(boxGeo(), S.cityMats[i], items)); });
   scene.add(instanced(boxGeo(), stoneMat, cornices));
   scene.add(instanced(boxGeo(), capMat, caps));
+  if (relief.frame.length) scene.add(instanced(planeGeo(), frameMat, relief.frame));
+  if (relief.dark.length) scene.add(instanced(planeGeo(), glassDarkMat, relief.dark));
+  if (relief.lit.length) scene.add(instanced(planeGeo(), glassLitMat, relief.lit));
 }
 
 // ---------- Tremont Street: the downtown edge, east side of the Common ----------
