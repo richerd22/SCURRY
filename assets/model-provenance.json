@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "policy": "Existing review entries are unresolved, not licensing approval. New assets require verified evidence.",
+  "updated": "2026-11-18",
+  "assets": [
+    {
+      "id": "bench",
+      "files": [
+        "assets/models/Bench.glb"
+      ],
+      "kind": "props",
+      "author": "unknown",
+      "source": "legacy collection",
+      "url": null,
+      "license": "CC0 claimed; exact per-model source missing",
+      "status": "review",
+      "use": "park benches"
+    },
+    {
+      "id": "park-bench",
+      "files": [
+        "assets/models/ParkBench.glb"
+      ],
+      "kind": "props",
+      "author": "unknown",
+      "source": "legacy collection",
+      "url": null,
+      "license": "CC0 claimed; exact per-model source missing",
+      "status": "review",
+      "use": "park benches"
+    },
+    {
+      "id": "dog",
+      "files": [
+        "assets/models/Dog.glb"
+      ],
+      "kind": "characters",
+      "author": "Quaternius (project credit)",
+      "source": "Poly Pizza",
+      "url": null,
+      "license": "CC0 claimed; exact item license missing",
+      "status": "review",
+      "use": "park dogs"
+    },
+    {
+      "id": "man",
+      "files": [
+        "assets/models/Man.glb"
+      ],
+      "kind": "characters",
+      "author": "Quaternius (project credit)",
+      "source": "Poly Pizza",
+      "url": null,
+      "license": "CC0 claimed; exact item license missing",
+      "status": "review",
+      "use": "park NPCs"
+    },
+    {
+      "id": "shiba",
+      "files": [
+        "assets/models/ShibaInu.glb"
+      ],
+      "kind": "characters",
+      "author": "Quaternius (project credit)",
+      "source": "Poly Pizza",
+      "url": null,
+      "license": "CC0 claimed; exact item license missing",
+      "status": "review",
+      "use": "park dogs"
+    },
+    {
+      "id": "lantern",
+      "files": [
+        "assets/models/PostLantern.glb"
+      ],
+      "kind": "props",
+      "author": "Kay Lousberg / KayKit (project credit)",
+      "source": "Poly Pizza",
+      "url": null,
+      "license": "CC0 claimed; exact item license missing",
+      "status": "review",
+      "use": "park lights"
+    },
+    {
+      "id": "elm-pack",
+      "files": [
+        "assets/models/Tree1.gltf",
+        "assets/models/Tree1.bin",
+        "assets/models/Tree2.gltf",
+        "assets/models/Tree2.bin",
+        "assets/models/Tree3.gltf",
+        "assets/models/Tree3.bin",
+        "assets/models/Tree4.gltf",
+        "assets/models/Tree4.bin",
+        "assets/models/Tree5.gltf",
+        "assets/models/Tree5.bin",
+        "assets/models/tex/tree-tex-6e06166c.png",
+        "assets/models/tex/tree-tex-bb2b27d5.png",
+        "assets/models/tex/tree-tex-d371222b.png"
+      ],
+      "kind": "foliage",
+      "author": "unknown",
+      "source": "workspace sourced-tree collection",
+      "url": null,
+      "license": "unverified; public item/source ledger missing",
+      "status": "review",
+      "use": "hero elm canopy"
+    },
+    {
+      "id": "city-hall",
+      "files": [
+        "assets/models/cityhall.glb"
+      ],
+      "kind": "city-data",
+      "author": "BPDA / City of Boston (project credit)",
+      "source": "Boston 3D open data",
+      "url": "https://www.bostonplans.org/3d-data-maps/3d-smart-model/3d-data-download",
+      "license": "PDDL source family verified; exact tile/conversion not documented",
+      "status": "review",
+      "use": "City Hall"
+    },
+    {
+      "id": "fenway-surrounds",
+      "files": [
+        "assets/models/fenway-neighborhood.glb"
+      ],
+      "kind": "city-data",
+      "author": "BPDA / City of Boston (project credit)",
+      "source": "Boston 3D open data",
+      "url": "https://www.bostonplans.org/3d-data-maps/3d-smart-model/3d-data-download",
+      "license": "PDDL source family verified; exact tile/conversion not documented",
+      "status": "review",
+      "use": "Fenway neighborhood"
+    },
+    {
+      "id": "hatch-shell",
+      "files": [
+        "assets/models/hatchshell.glb"
+      ],
+      "kind": "city-data",
+      "author": "BPDA / City of Boston (project credit)",
+      "source": "Boston 3D open data",
+      "url": "https://www.bostonplans.org/3d-data-maps/3d-smart-model/3d-data-download",
+      "license": "PDDL source family verified; exact tile/conversion not documented",
+      "status": "review",
+      "use": "Esplanade"
+    },
+    {
+      "id": "fenway",
+      "files": [
+        "assets/models/fenway.glb"
+      ],
+      "kind": "landmark",
+      "author": "Bruce Garner, Nathan King, Mason Thrall (project credit)",
+      "source": "SketchUp 3D Warehouse",
+      "url": "https://3dwarehouse.sketchup.com/",
+      "license": "3D Warehouse General Model License; exact item/distribution terms under review",
+      "status": "review",
+      "use": "Fenway Park"
+    },
+    {
+      "id": "td-garden",
+      "files": [
+        "assets/models/garden.glb"
+      ],
+      "kind": "landmark",
+      "author": "unknown",
+      "source": "legacy model haul",
+      "url": null,
+      "license": "unknown",
+      "status": "unknown",
+      "use": "TD Garden interior",
+      "notes": "Owner documented public release in v0.6.26 despite unverified original author/license; published bytes are not automatically licensed."
+    }
+  ]
+}
