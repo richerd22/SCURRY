@@ -288,3 +288,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Maintain a complete public manifest, portable Node-only audit and CI gate for all binary/dependency paths, formats, file budgets and actual per-model license evidence. New models require verified source URLs and authors. Freeze pre-existing review exemptions as explicit warnings, not permission or approval. Document separate mobile, visual, collision and provenance acceptance rules for SCURRY and future projects.
 
 **Consequence:** Future assets cannot silently appear without a recorded model page and rights; existing provenance gaps remain visible. This is not legal clearance for the current legacy set or a replacement for real-device quality testing.
+
+
+## ADR-033 — instanced graded wrought-iron perimeter instead of hundreds of disconnected objects
+
+**Context:** The perimeter was a visually sparse two-rail fence with posts ~2.2m apart. Every post/rail was an independent mesh, while long straight rails were placed at one midpoint terrain height and could float across sloping grass. Collision was only one constant-height wall per long fence run.
+
+**Decision:** Preserve exactly the existing twelve runs and all crossing gaps. Build densely spaced slender iron pickets with spear-like finials and thicker uprights via five instanced mesh batches. Subdivide the rails into <=2.2m terrain-fitted panels, with a matching continuous 2D collision and jump-on rail segment per panel; use a pure exported layout function and permanent gate/height/math tests.
+
+**Consequence:** More distinctive Boston park ironwork at 25cm viewpoint and dramatically fewer fence draw calls, with tighter visual/physics alignment. Detailed geometry increases triangles while lowering draw-call overhead; measure true GPU/frame time on iPhone, and do not assume it is faster just because it is instanced.

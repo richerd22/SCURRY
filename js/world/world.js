@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { meshTerrainHeight } from '../systems/collision.js';
 import { createPathProximityIndex } from './path-index.js';
+import { makeParkFenceLayout } from './fence-layout.js';
 import { insideParkLawn } from './ground-rules.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
@@ -449,43 +450,61 @@ function buildPondCurbs(scene) {
   scene.add(mesh);
 }
 
-// park perimeter: low iron fence + gates, city backdrop blocks beyond
+// Park perimeter: high-detail black iron pickets with a continuous
+// traversable top rail. Only five shared instanced draw calls, not hundreds
+// of independent fence objects. Panels follow the *actual* hill gradient.
 function buildPerimeter(scene) {
-  const iron = new THREE.MeshStandardMaterial({ color: 0x22252a, roughness: 0.6, metalness: 0.6 });
-  const postGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.1, 5);
-  const railGeo = new THREE.BoxGeometry(1, 0.05, 0.05);
-  const group = new THREE.Group();
-  function fenceRun(x0, z0, x1, z1) {
-    const len = Math.hypot(x1 - x0, z1 - z0);
-    const n = Math.floor(len / 2.2);
-    for (let i = 0; i <= n; i++) {
-      const t = i / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t;
-      const p = new THREE.Mesh(postGeo, iron);
-      p.position.set(x, groundHeight(x, z) + 0.55, z);
-      group.add(p);
+  const iron = new THREE.MeshStandardMaterial({color:0x22252a,roughness:0.54,metalness:0.75});
+  const {posts,pickets,panels}=makeParkFenceLayout(groundHeight);
+  const dummy=new THREE.Object3D();
+  const xAxis=new THREE.Vector3(1,0,0);
+  const heading=new THREE.Vector3();
+
+  function placeVertical(items,geo,height,offset) {
+    const mesh=new THREE.InstancedMesh(geo,iron,items.length);
+    mesh.frustumCulled=false; // long perimeter set, no inaccurate partial cull
+    for(let i=0;i<items.length;i++){
+      const p=items[i];
+      dummy.position.set(p.x,p.y+offset,p.z);
+      dummy.rotation.set(0,0,0);
+      dummy.quaternion.identity();dummy.scale.set(1,1,1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i,dummy.matrix);
     }
-    for (const ry of [0.35, 0.95]) {
-      const r = new THREE.Mesh(railGeo, iron);
-      r.scale.x = len;
-      r.position.set((x0 + x1) / 2, groundHeight((x0 + x1) / 2, (z0 + z1) / 2) + ry, (z0 + z1) / 2);
-      r.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
-      group.add(r);
-    }
-    // A continuous rail: no giant invisible bubbles along the fence.
-    const top = groundHeight((x0 + x1) / 2, (z0 + z1) / 2) + 0.975;
-    S.walls.push({ x0, z0, x1, z1, r: 0.055, minY: -2, maxY: top });
-    S.platformSegments.push({ x0, z0, x1, z1, r: 0.19, y: top, jumpOnly: true });
+    mesh.instanceMatrix.needsUpdate=true;
+    scene.add(mesh);
+    return mesh;
   }
-  // Common fence (gaps at Park St corner + Charles St crossings are implied by short runs)
-  fenceRun(-38, -100, 120, -100); fenceRun(150, -100, 203, -100);
-  fenceRun(-38, 100, 203, 100);
-  fenceRun(203, -100, 203, 100);
-  fenceRun(-38, -100, -38, -84); fenceRun(-38, -60, -38, 100);
-  // Garden fence
-  fenceRun(-203, -96, -62, -96); fenceRun(-203, 96, -62, 96);
-  fenceRun(-203, -96, -203, 96);
-  fenceRun(-62, -96, -62, -76); fenceRun(-62, -56, -62, 20); fenceRun(-62, 44, -62, 96);
-  scene.add(group);
+  // Turn-of-century park fence vocabulary: thicker regular uprights,
+  // close slender pickets, and spear-tip silhouettes readable at 25cm.
+  placeVertical(posts,new THREE.CylinderGeometry(.055,.07,1.09,7),1.09,.545);
+  placeVertical(posts,new THREE.ConeGeometry(.078,.16,5),.16,1.17);
+  placeVertical(pickets,new THREE.CylinderGeometry(.018,.021,1.05,5),1.05,.525);
+  placeVertical(pickets,new THREE.ConeGeometry(.042,.115,5),.115,1.1075);
+
+  // Two locally graded horizontal rails, top one matched exactly to the
+  // physical jump-on platform at ground + .975m at each panel midpoint.
+  const rail=new THREE.InstancedMesh(new THREE.BoxGeometry(1,.05,.065),iron,panels.length*2);
+  rail.frustumCulled=false;
+  for(let i=0;i<panels.length;i++){
+    const p=panels[i],dx=p.x1-p.x0,dz=p.z1-p.z0,dy=p.y1-p.y0;
+    const fullLength=Math.hypot(dx,dy,dz);
+    heading.set(dx,dy,dz).normalize();
+    for(let level=0;level<2;level++){
+      dummy.position.set((p.x0+p.x1)/2,(p.y0+p.y1)/2+(level?.95:.35),
+        (p.z0+p.z1)/2);
+      dummy.quaternion.setFromUnitVectors(xAxis,heading);
+      dummy.scale.set(fullLength,1,1);dummy.updateMatrix();
+      rail.setMatrixAt(i*2+level,dummy.matrix);
+    }
+    const top=(p.y0+p.y1)/2+.975;
+    S.walls.push({x0:p.x0,z0:p.z0,x1:p.x1,z1:p.z1,
+      r:.055,minY:-2,maxY:top});
+    S.platformSegments.push({x0:p.x0,z0:p.z0,x1:p.x1,z1:p.z1,
+      r:.19,y:top,jumpOnly:true});
+  }
+  rail.instanceMatrix.needsUpdate=true;
+  scene.add(rail);
 
   // city backdrop: textured facade blocks with lit-window emissive maps
   // (windows come alive at dusk via daycycle), plus a few taller towers

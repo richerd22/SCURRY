@@ -227,3 +227,11 @@ Discover Bandstand or Frog Pond, open MAP, and confirm green numbered pin plus a
 ## Public model acceptance and future asset intake (v0.6.59)
 
 For a new 3D asset: record the exact original item URL, author, license version and visible license evidence; list every texture/binary; run node tools/audit-assets.mjs, Node regression tests and browser smoke. New assets with review/unknown rights must FAIL the gate. Existing review warning records are technical debt, not clearance. Reconcile TD Garden and Fenway distribution rights with original source terms; inspect BPDA-derived tile IDs and tree texture origins. For quality, test real-world 0.25m squirrel and 1.7m human eye heights, 90Hz collision, shadow/UV/LOD and iPhone Safari memory and FPS. See docs/MODEL-SOURCING.md.
+
+
+## Terrain-following Common/Garden iron fence (v0.6.60)
+
+- Walk the original fence openings at Common north Park St crossing and Garden Charles St crossings. No invisible collider should bridge a gate: enter and exit smoothly at both squirrel and reference human inspection poses.
+- Follow Beacon Street slope and State House terrace: spear pickets and top/mid bars should stay grounded across grade changes rather than float through/above the hill. From the 0.25m squirrel camera, bars should form a recognizable dense black-iron silhouette; no camera clipping through post bases.
+- Jump on the fence cap along several different grades and corners, turn and land on either side. Physical wall top/platform height should match the visible top rail rather than an unrelated long-fence midpoint plane.
+- Benchmark real iPhone Safari FPS, shade quality, texture pop-in and draw calls. Five instanced batches reduce draw calls but add detailed picket geometry; record actual metrics rather than inferring performance improvement.
