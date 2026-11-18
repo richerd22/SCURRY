@@ -24,7 +24,7 @@ import { buildEsplanade, initEsplanade, updateEsplanade, debugEnterEsplanade } f
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
-import { initSwanRide, updateSwanRide } from './systems/swan-ride.js';
+import { initSwanRide, updateSwanRide, qaFinishSwanRide, swanRideStatus } from './systems/swan-ride.js';
 import { buildWildlife, updateWildlife, biteWildlife } from './systems/wildlife.js';
 import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
@@ -387,7 +387,8 @@ if (qaLocal) {
           p.inEsplanade ? S.realmGround.esplanade?.(p.pos.x,p.pos.z) :
           p.inHollow || p.inBurrow ? 0 : visibleGroundHeight(p.pos.x,p.pos.z),
         velY: p.vel.y, yaw: p.yaw, biteCooldown:p.biteCooldown,
-        grounded: p.grounded, climbing: !!p.climbing,
+        grounded: p.grounded, climbing: !!p.climbing, onSwanBoat:!!p.onSwanBoat,
+        swan: swanRideStatus(),
         inHollow: p.inHollow, inBurrow: p.inBurrow, inFenway: p.inFenway,
         inGarden: p.inGarden, inCityHall: p.inCityHall, inEsplanade: p.inEsplanade,
         prompt: currentE?.label || null, bury: currentF?.label || null,
@@ -549,6 +550,8 @@ if (qaLocal) {
       pos: new THREE.Vector3(0, visibleGroundHeight(0, 0), 0),
       grounded:true, message:'QA relocation complete'
     }),
+    finishSwanRide: qaFinishSwanRide,
+    wildlife: () => (S.wildlifeActors||[]).map(a=>({kind:a.kind,x:a.x,y:a.y,z:a.z,visible:a.mesh.visible})),
     interactions: () => S.interactables.map(it => ({
       x: it.x, y: it.y, z: it.z, r: it.r, label: it.label(),
     })).filter(it => typeof it.label === 'string'),

@@ -205,6 +205,44 @@ async function checkGameplay() {
       await page.keyboard.press('e');
       await page.waitForFunction(() => !window.__scurryQA.state().inBurrow,null,{timeout:10000});
     }
+    // The real dock and real E prompt must mount the actual moving boat;
+    // peeking/hiding and safe landing also run through E, not direct
+    // internal action calls. Local QA only fast-forwards the tour clock.
+    await page.evaluate(()=>window.__scurryQA.place(-140.5,.45,22.9));
+    assert.match((await get()).prompt,/sneak aboard the Swan Boat/i);
+    await page.keyboard.press('e');
+    await page.waitForFunction(()=>window.__scurryQA.state().onSwanBoat,
+      null,{timeout:5000});
+    const aboard0=await get();
+    assert.equal(aboard0.swan.stage,'moving');
+    assert.equal(aboard0.swan.hidden,true);
+    await page.waitForTimeout(1100);
+    const aboard1=await get();
+    assert.ok(Math.hypot(aboard1.pos.x-aboard0.pos.x,
+      aboard1.pos.z-aboard0.pos.z)>.15,
+      'stowaway must travel with an actually moving boat');
+    assert.ok(aboard1.pos.y>.65,'feet ride above the water, not below the lagoon');
+    await page.keyboard.press('e');
+    assert.equal((await get()).swan.hidden,false,'E peeks over the boat benches');
+    await page.keyboard.press('e');
+    assert.equal((await get()).swan.hidden,true,'E hides from operator again');
+    assert.equal(await page.evaluate(()=>window.__scurryQA.finishSwanRide()),true);
+    assert.equal((await get()).swan.stage,'docked');
+    await page.keyboard.press('e');
+    assert.equal((await get()).onSwanBoat,false,'E returns to the real dock');
+    assert.ok(Math.abs((await get()).pos.y-.45)<.01,
+      'boat exit must meet existing dock physics deck');
+
+    // At least one real squirrel interaction is rendered and keyboard
+    // reachable; the same E handler handles passengers and wildlife.
+    const critter=await page.evaluate(()=>window.__scurryQA.wildlife()
+      .find(a=>a.kind==='squirrel'&&a.visible));
+    assert.ok(critter,'nearby Public Garden squirrel should be present');
+    await page.evaluate(a=>window.__scurryQA.place(a.x,a.y,a.z),critter);
+    await page.waitForTimeout(250);
+    assert.match((await get()).prompt,/chatter with squirrel|share your food with squirrel/i);
+    await page.keyboard.press('e');
+
     // Independent *rendered* sidewalk wedge parity, not merely shared
     // formula agreement between the layout and platform collision.
     const curbs=await page.evaluate(()=>window.__scurryQA.surveySidewalkSurfaces());

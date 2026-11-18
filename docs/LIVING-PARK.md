@@ -48,3 +48,8 @@ Boston anchors corrected against Friends of the Public Garden and the City histo
 Still essential and NOT silently changed: the model's suspension bridge runs north/south with insufficient deck-to-Swan-Boat clearance, while the historic real bridge is on the Garden east/west axis. Changing it also affects the goose-deck jurisdiction, dock, boat routes, path navigation and collision tests, so requires a measured geometry rebuild with independent raycast collision-parity acceptance, rather than moving props and hoping. Likewise the Common's basin/hill/path placements need a map survey before touching the shared terrain. Keep this as an explicit fidelity debt.
 
 References: https://friendsofthepublicgarden.org/our-parks/the-garden/ ; https://www.boston.gov/sites/default/files/embed/b/boston-public-garden-study-report.pdf ; https://www.cityofboston.gov/images_documents/boston%20Common%20History%20%26%20Map_tcm3-30691.pdf
+
+
+## v0.6.77 — browser integration gate for new systems
+
+The existing headless Chromium suite now physically places a player on the already-collidable Swan Boat pier, presses the actual E handler to board, verifies that real player feet move with the boat above the water plane, peeks and hides via E, fast-forwards the boat clock using a **localhost-only** QA hook, and presses E to disembark at precisely the existing dock platform height. A second scenario places the player by a visible living squirrel and requires a real E prompt, then interacts through the same input path. No player-visible debug control or public QA API was added. These run alongside the preexisting 12 continuous terrain walk routes and elevated support probes; green CI will constitute desktop Chromium smoke evidence, not an iPhone acceptance.

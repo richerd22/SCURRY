@@ -105,3 +105,17 @@ export function updateSwanRide(dt) {
   }else exposed=Math.max(0,exposed-dt*2);
   lastWarning=glance;
 }
+
+
+// Only exported to the localhost ?qa=1 harness via main.js.
+// Fast-forward the physical route without forcing a 56-second CI delay.
+export function qaFinishSwanRide() {
+  if(!S.player.onSwanBoat||stage!=='moving')return false;
+  elapsed=SWAN_RIDE_SECONDS;
+  updateSwanRide(0);
+  return stage==='docked';
+}
+export function swanRideStatus() {
+  return {stage,hidden,elapsed,exposed,
+    x:boat?.position.x??null,z:boat?.position.z??null};
+}
