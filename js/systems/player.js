@@ -343,6 +343,7 @@ function moveSubstep(dt, wx, wz, wl, mag, speed) {
 
 export function updatePlayer(dt, camera) {
   const P = S.player;
+  if (P.onSwanBoat) { syncPlayerCamera(camera); animatePaws(dt,camera); return; }
   if (P.biteCooldown > 0) P.biteCooldown -= dt;
   if (P.biteAnim > 0) P.biteAnim -= dt;
   if (P.scramble > 0) P.scramble -= dt;

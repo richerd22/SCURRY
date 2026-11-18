@@ -24,6 +24,7 @@ import { buildEsplanade, initEsplanade, updateEsplanade, debugEnterEsplanade } f
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
+import { initSwanRide, updateSwanRide } from './systems/swan-ride.js';
 import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
@@ -81,6 +82,7 @@ buildEsplanade(scene);
 initFood();
 initHollowInteractables();
 initBurrows();
+initSwanRide();
 initFenway();
 initGarden();
 initCityHall();
@@ -680,6 +682,7 @@ function loop() {
     } // no second catch during fade; frozen in screenshot mode
     updateHollow(dt);
     updateBurrows(dt);
+    updateSwanRide(dt);
     updateFenway(dt);
     updateFenwayHood(dt);
     updateGarden(dt);

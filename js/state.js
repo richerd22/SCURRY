@@ -40,6 +40,7 @@ export const S = {
     inGarden: false,    // popped up at TD Garden (systems/garden.js)
     inCityHall: false,  // popped up at City Hall Plaza (systems/cityhall.js)
     inEsplanade: false, // emerged at the Charles River Esplanade (systems/esplanade.js)
+    onSwanBoat: false, // anchored to an actual moving deck, not terrain
     moving: false,
     sprinting: false,
   },
