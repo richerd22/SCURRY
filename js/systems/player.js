@@ -21,6 +21,15 @@ let paws, belly, bellyMat, hindMat, pawL, pawR, carriedMesh, carriedVisual;
 let tailGroup, tailMat, tailTipMat;
 let runPhase = 0;
 
+// Every pause, app switch, and new session discards held keys and queued
+// jumps. A missed keyup after Escape must never cause ghost movement.
+export function clearPlayerInput() {
+  for (const code in keys) keys[code] = false;
+  resetJumpIntent(jumpIntent);
+  S.player.moving = false;
+  S.player.sprinting = false;
+}
+
 export function initPlayer(scene, camera) {
   const P = S.player;
   P.pos = new THREE.Vector3(24, 0, 30);
@@ -29,16 +38,14 @@ export function initPlayer(scene, camera) {
   P.vel = new THREE.Vector3();
   P.yaw = -2.2; P.pitch = 0;
   buildPawRig(camera);
-  document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+  document.addEventListener('keydown', (e) => {
+    if (S.started && !S.paused) keys[e.code] = true;
+  });
   document.addEventListener('keyup', (e) => { keys[e.code] = false; });
-  const resetHeldKeys = () => {
-    for (const code in keys) keys[code] = false;
-    resetJumpIntent(jumpIntent);
-  };
-  window.addEventListener('blur', resetHeldKeys);
-  window.addEventListener('pagehide', resetHeldKeys);
+  window.addEventListener('blur', clearPlayerInput);
+  window.addEventListener('pagehide', clearPlayerInput);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) resetHeldKeys();
+    if (document.hidden) clearPlayerInput();
   });
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== document.body && document.pointerLockElement !== S.renderer.domElement) return;
@@ -204,7 +211,10 @@ function tryBite() {
 // touch plumbing: the BITE button calls pressBite; JUMP/SPRINT buttons
 // write into the same key table the keyboard uses.
 export function pressBite() { tryBite(); }
-export function setTouchKey(code, down) { keys[code] = !!down; }
+export function setTouchKey(code, down) {
+  if (down && (!S.started || S.paused)) return;
+  keys[code] = !!down;
+}
 
 // The squirrel's position is at its feet, never at its camera or torso.
 const PHYSICS_DT = 1 / 90;  // ~7cm max horizontal stride at full sprint

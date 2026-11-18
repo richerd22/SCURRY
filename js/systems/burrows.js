@@ -12,7 +12,7 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { groundHeight } from '../world/world.js';
+import { groundHeight, visibleGroundHeight } from '../world/world.js';
 import { sfx } from './audio.js';
 import { toast, setGossip } from '../ui/hud.js';
 import { spawnFood } from './food.js';
@@ -508,8 +508,11 @@ function enterBurrow(ent) {
 function exitBurrow(ent) {
   const P = S.player;
   const ex = ent.sx + 1.3, ez = ent.sz + 0.9; // just beside the hole, not in it
-  P.pos.set(ex, groundHeight(ex, ez), ez);
+  // Return onto the same triangle/path/plaza floor used by live player
+  // physics, not the lower analytic terrain heightfield.
+  P.pos.set(ex, visibleGroundHeight(ex, ez), ez);
   P.vel.set(0, 0, 0);
+  P.climbing = null; P.climbRegrab = 0;
   P.inBurrow = false;
   P.grounded = true;
   setGossip('');

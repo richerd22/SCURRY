@@ -1266,3 +1266,10 @@ A permanent `harness/browser-smoke.mjs` plus `.github/workflows/browser-smoke.ym
 ## v0.6.45 (Nov 18 2026) — map label readability corrected from screenshot evidence
 
 The first green permanent WebGL smoke (run 44254317541) rendered spawn, Public Garden and mobile spawn with no page/console errors. The captured mobile map image showed very obvious clipped text: long direct labels crowded the Garden's left edge and Frog Pond. Map pins are now numbered and paired with a static two-column HTML legend with accessible names; the Hollow Tree is H. Realm titles suppress the park legend. Common label moved south, mobile MAP toggle shortened, close note adaptive. No change in coordinate projection, gameplay, Three.js or build step. Follow-up browser smoke must verify legend DOM and updated screenshot, then physical iPhone usability remains open.
+
+
+## v0.6.46 — playable browser smoke and portal grounding (Nov 18 2026)
+
+Browser CI now runs a **real gameplay session** as well as still screenshot poses. `harness/browser-smoke.mjs` clicks PLAY in a local non-shot page, drives W movement/Space jump, pauses while holding W and verifies no ghost movement on resume, then E-interacts through a surface burrow, all four destination runs (Fenway, TD Garden, City Hall, Esplanade), and the return path. A `?qa=1` helper is available *only on localhost or 127.0.0.1* and reports state/interactions or places feet at a known interactable so the test can skip lengthy cross-map travel. It is absent from the public domain; no in-game control or production feature depends on it. The underlying interactions remain the real E handler.
+
+Additional gameplay corrections: `clearPlayerInput()` on pause/resume, pointerlock loss and hidden events prevents missed keyboard keyup causing runaway squirrels; keyboard downs are ignored while not playing; touch downs are ignored while paused. Hollow enter/exit consistently set grounded and clear climbing. Burrow exit uses `visibleGroundHeight` to match the visible terrain. Browser smoke remains software WebGL, not physical iOS.

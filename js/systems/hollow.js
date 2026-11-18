@@ -160,6 +160,7 @@ function enterHollow() {
   const P = S.player;
   P.pos.set(CENTER.x, 0, CENTER.z + 3.6);
   P.vel.set(0, 0, 0);
+  P.climbing = null; P.grounded = true; P.climbRegrab = 0;
   P.yaw = 0; // face into the room (elder is to the north)
   P.inHollow = true;
   sfx.gossip();
@@ -171,6 +172,7 @@ function exitHollow() {
   const t = S.hollowTreePos;
   P.pos.set(t.x + 1.5, t.y, t.z + 2.6);
   P.vel.set(0, 0, 0);
+  P.climbing = null; P.grounded = true; P.climbRegrab = 0;
   P.inHollow = false;
   setGossip('');
   toast('back to the park. try to look innocent.', 2.4);

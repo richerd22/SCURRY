@@ -153,3 +153,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Preserve source coordinates and draw concise numbered map pins with an accessible, static two-column HTML legend. Use a distinct H pin for Hollow Tree and hide the park legend when visiting a separate realm. Keep the map optional and its 5Hz redraw budget unchanged.
 
 **Consequence:** Better legibility and touch navigation without adding images, textures, layout computation per frame or build dependencies. Screenshot evidence remains part of the automated browser-smoke artifact.
+
+
+## ADR-018 — local-only QA hooks, actual player inputs and portal contracts
+
+**Context:** Pure math collision tests and still screenshots cannot verify the actual PLAY button, W/Space movements, pause/key lifecycle, portal E handlers or realm transitions. Automation that calls `enterFenway` directly would skip the exact prompt/input bugs players see.
+
+**Decision:** Extend the existing software-WebGL browser suite with an actual non-shot PLAY session. A local-host-only `?qa=1` hook exposes minimal state snapshots and controlled feet placement to skip long traversal; movement, jump and portal activation still go through real DOM keyboard input. Include all four burrow destinations, returns, and grounded invariants. Clear held inputs on pause/resume and match burrow exit feet to rendered terrain.
+
+**Consequence:** Reproducible runtime movement and route evidence from CI without publishing test controls at the live hostname. Software-rendered tests may be slow and cannot verify iOS Safari or subjective camera feel; failed tests should be investigated before expanding the suite.

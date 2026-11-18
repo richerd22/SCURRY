@@ -137,3 +137,8 @@ New [browser-smoke workflow](../.github/workflows/browser-smoke.yml) launches th
 ## Browser screenshot review — 18 November 2026, v0.6.44 → 0.6.45
 
 [Green WebGL smoke run](https://github.com/richerd22/SCURRY/actions/runs/44254317541) generated desktop spawn, Garden, mobile spawn, and mobile map PNGs, plus a clean JSON console/error report. Manual review of `mobile-spawn-atlas.png` at 390×844 found the *map labels* clamped into the left edge and overlapping nearby water/points; v0.6.45 fixes this using a static numbered legend. The software-lowq screenshots also showed dark flat foreground grass, but `lowq=1` intentionally suppresses grass/shadows, so **do not treat that as a measured real GPU lighting regression**. The map UI change needs rerun of headless smoke and a real iPhone readability check before closure.
+
+
+## Live browser route check (v0.6.46)
+
+The headless WebGL workflow now runs `?qa=1&lowq=1` on a local HTTP server, clicks PLAY, holds W to establish movement, executes an actual Space jump, tests that a held W is cleared by pause/resume, and interacts using E through the surface burrow to Fenway/TD Garden/City Hall/Esplanade and back. CI's QA hook is absent on the public hostname. Inspect `desktop-live-play.png` and `report.json` after the run. A red browser workflow is a real release blocker until the failing phase is diagnosed, though a CDNs/SwiftShader outage may be an environment-only issue. Physical iPhone/controller and multi-minute route playtests remain separately necessary.

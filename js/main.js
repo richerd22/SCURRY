@@ -8,7 +8,7 @@ import { buildTrees } from './world/trees.js';
 import { buildLandmarks } from './world/landmarks.js';
 import { buildProps } from './world/props.js';
 import { initDaycycle, updateDaycycle, setSunShadows, setShadowSize } from './systems/daycycle.js';
-import { initPlayer, updatePlayer, syncPlayerCamera } from './systems/player.js';
+import { initPlayer, updatePlayer, syncPlayerCamera, clearPlayerInput } from './systems/player.js';
 import { buildHumans, updateHumans } from './systems/humans.js';
 import { initFood, updateFood, nearestFoodAction, buryAction } from './systems/food.js';
 import { buildDogs, updateDogs, biteDogs, nearestDogDist } from './systems/dogs.js';
@@ -157,6 +157,8 @@ S.fadeCatch = (lost, opts) => {
 const titleEl = document.getElementById('title');
 const pauseEl = document.getElementById('pause');
 function startGame() {
+  // Starting/resuming is a new input session: no keys held behind overlays.
+  clearPlayerInput();
   initAudio();
   S.started = true;
   S.paused = false;
@@ -177,6 +179,7 @@ document.addEventListener('pointerlockchange', () => {
   if (S.debugShot || S.isTouch) return;
   const locked = document.pointerLockElement === renderer.domElement;
   if (!locked && S.started) {
+    clearPlayerInput();
     S.paused = true;
     pauseEl.style.display = 'flex';
   } else if (locked) {
@@ -189,6 +192,7 @@ document.addEventListener('pointerlockchange', () => {
 // Pause physics; each input module separately releases its held controls.
 const suspendGame = () => {
   if (!S.started || S.debugShot) return;
+  clearPlayerInput();
   S.paused = true;
   pauseEl.style.display = 'flex';
 };
@@ -328,6 +332,54 @@ if (Q.has('shot')) {
   if (Q.has('lowq')) {
     // software-renderer verification: same scene, cheaper pixels - no
     // shadows, quarter grass, no PMREM rebakes (S.lowQ), 0.55 pixel ratio
+    S.lowQ = true;
+    renderer.setPixelRatio(0.55);
+    setSunShadows(false);
+    if (S.grassTufts) for (const t of S.grassTufts) t.count = Math.floor(S.grassTuftCount * 0.25);
+  }
+}
+
+// Browser E2E observability lives ONLY on a local host with ?qa=1.
+// The deployed public game cannot call these helpers; the tests still use
+// actual keyboard/touch inputs and real interaction callbacks for actions.
+const qaLocal = Q.has('qa') && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+if (qaLocal) {
+  window.__scurryQA = Object.freeze({
+    state: () => {
+      const p = S.player;
+      return {
+        started: S.started, paused: S.paused,
+        pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
+        velY: p.vel.y, yaw: p.yaw,
+        grounded: p.grounded, climbing: !!p.climbing,
+        inHollow: p.inHollow, inBurrow: p.inBurrow, inFenway: p.inFenway,
+        inGarden: p.inGarden, inCityHall: p.inCityHall, inEsplanade: p.inEsplanade,
+        prompt: currentE?.label || null, bury: currentF?.label || null,
+        touch: { ...S.touch },
+      };
+    },
+    interactions: () => S.interactables.map(it => ({
+      x: it.x, y: it.y, z: it.z, r: it.r, label: it.label(),
+    })).filter(it => typeof it.label === 'string'),
+    place: (x, y, z) => {
+      if (![x,y,z].every(Number.isFinite)) throw new TypeError('finite feet coordinates required');
+      const p = S.player;
+      clearPlayerInput();
+      p.pos.set(x,y,z); p.vel.set(0,0,0);
+      p.climbing = null; p.grounded = true; p.climbRegrab = 0;
+      syncPlayerCamera(camera);
+      scanInteractions();
+    },
+    suspend: () => {
+      // Simulates the same lifecycle method called by hidden/pagehide.
+      // The input-clear and resume behavior under test is not mocked.
+      clearPlayerInput();
+      S.paused = true;
+      pauseEl.style.display = 'flex';
+    },
+  });
+  // Low-cost software WebGL for the real play loop, not just screenshot mode.
+  if (Q.has('lowq') && !S.debugShot) {
     S.lowQ = true;
     renderer.setPixelRatio(0.55);
     setSunShadows(false);
