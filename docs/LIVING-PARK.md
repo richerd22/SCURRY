@@ -89,3 +89,8 @@ The new deterministic parkShift(hour) policy controls real moving passerby visib
 ## v0.6.83 — wildlife knows when to sleep
 
 Existing five dog profiles and their leash/walker visual groups now follow the common NPC shift policy: no roaming dogs at 3 AM, reduced numbers around dawn and evening. Off-duty hidden dogs cannot threaten rabbits or squirrels. Surface squirrels are daytime, cottontails are crepuscular, and surface rats active at night. Resident tunnel rats stay active independently of park shifts. Wildlife disables outside its own realm including MBTA. No new models or global collision shapes; pure threat-policy regression ensures hidden dog exclusion. Next: active network navigation for underground rats and companion squirrels.
+
+
+## v0.6.84 — food inventory regression correction
+
+The v0.6.82 visibility guard mistakenly interpreted mock item meshes without an explicit visible property as invisible. True Three.js meshes default visible=true; the correct predicate is visible !== false. Preserve invisible nighttime blankets while keeping ordinary collectible food and legacy test doubles pickable. Existing food pickup tests are the acceptance gate.

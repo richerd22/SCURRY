@@ -184,14 +184,14 @@ export function updateFood(dt) {
 const FOOD_REACH_Y = 1.5;
 const FOOD_REACH_XZ = 1.15;
 function canReachFood(f, pos) {
-  return S.foods.includes(f) && f.mesh.visible && Math.abs(f.mesh.position.y - pos.y) <= FOOD_REACH_Y
+  return S.foods.includes(f) && f.mesh.visible !== false && Math.abs(f.mesh.position.y - pos.y) <= FOOD_REACH_Y
     && Math.hypot(pos.x - f.x, pos.z - f.z) <= FOOD_REACH_XZ;
 }
 export function nearestFoodAction() {
   const P = S.player.pos;
   let best = null, bd = 1e9;
   for (const f of S.foods) {
-    if (!f.mesh.visible || Math.abs(f.mesh.position.y - P.y) > FOOD_REACH_Y) continue;
+    if (f.mesh.visible === false || Math.abs(f.mesh.position.y - P.y) > FOOD_REACH_Y) continue;
     const d = Math.hypot(P.x - f.x, P.z - f.z);
     if (d < bd) { bd = d; best = f; }
   }
