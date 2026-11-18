@@ -34,7 +34,7 @@ jobs:
           assert.match(html, /viewport-fit=cover/);
           assert.match(html, /id="touchui"/);
           assert.match(html, /id="lookzone"/);
-          const version = html.match(/name="scurry-version" content="(\\d+\\.\\d+\\.\\d+)"/);
+          const version = html.match(/name="scurry-version" content="(\d+\.\d+\.\d+)"/);
           assert.ok(version, 'the HTML exposes a semantic scurry-version');
           assert.ok(fs.readFileSync('README.md', 'utf8').includes('**Current version: v' + version[1] + '.**'), 'README matches HTML version');
           assert.match(main, /visibilitychange/);
