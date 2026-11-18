@@ -1261,3 +1261,8 @@ v0.6.43 introduced `createObstacleIndex` in collision.js, grouping nearby trunks
 ## Browser CI smoke harness (Nov 18 2026)
 
 A permanent `harness/browser-smoke.mjs` plus `.github/workflows/browser-smoke.yml` now verifies the real static site in headless Chromium with software WebGL (SwiftShader), not just pure JS syntax. Checks: spawn and Garden shot poses, mobile spawn + touch map, screenshot readiness, WebGL canvas, page/console errors, keyboard G atlas and mobile atlas toggling. GitHub Actions uploads PNGs + report.json even on test failure. CI alone installs Playwright; the game retains plain browser ES modules, pinned Three.js and no build step. Runtime validation depends on Playwright CDN install, Three CDN and network asset loads, so distinguish environmental/network CI failures from code errors; investigate with logs and screenshots. This is **not** a physical iPhone/perf benchmark.
+
+
+## v0.6.45 (Nov 18 2026) — map label readability corrected from screenshot evidence
+
+The first green permanent WebGL smoke (run 44254317541) rendered spawn, Public Garden and mobile spawn with no page/console errors. The captured mobile map image showed very obvious clipped text: long direct labels crowded the Garden's left edge and Frog Pond. Map pins are now numbered and paired with a static two-column HTML legend with accessible names; the Hollow Tree is H. Realm titles suppress the park legend. Common label moved south, mobile MAP toggle shortened, close note adaptive. No change in coordinate projection, gameplay, Three.js or build step. Follow-up browser smoke must verify legend DOM and updated screenshot, then physical iPhone usability remains open.

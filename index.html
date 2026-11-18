@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0c0f0a">
-<meta name="scurry-version" content="0.6.44">
+<meta name="scurry-version" content="0.6.45">
 <title>SCURRY - a Boston Common squirrel game</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0c0f0a;
@@ -105,6 +105,10 @@
     border-radius:4px; padding:4px 9px; cursor:pointer; font:700 13px ui-monospace,monospace; }
   #map-canvas { display:block; width:100%; background:#14241b; border:1px solid #71886d;
     box-sizing:border-box; border-radius:3px; }
+  #map-legend { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:5px 9px; margin-top:9px; font:700 10px/1.35 ui-monospace,monospace;
+    color:#e9d8a9; letter-spacing:.015em; }
+  #map-legend span { min-width:0; overflow-wrap:normal; white-space:nowrap; }
   #map-note { color:#a8be9e; font-size:10px; line-height:1.4; margin-top:9px; }
   body.touch #map-toggle { top: calc(63px + env(safe-area-inset-top)); }
 </style>
@@ -134,7 +138,8 @@ E interact / beg / snatch - F bury food - CLICK bite (boop) - G map - M mute</di
 <button type="button" id="map-toggle" aria-controls="map-panel" aria-expanded="false">MAP · G</button>
 <aside id="map-panel" role="dialog" aria-label="Park map" aria-hidden="true">
   <header><strong>BOSTON COMMON / PUBLIC GARDEN</strong><button type="button" id="map-close" aria-label="Close map">×</button></header>
-  <canvas id="map-canvas" aria-label="Illustrated park and current squirrel position"></canvas>
+  <canvas id="map-canvas" aria-label="Illustrated park with numbered landmark pins and current squirrel position"></canvas>
+  <div id="map-legend" aria-label="Landmark key"></div>
   <div id="map-note">YOU ARE THE GOLD ARROW · North is up</div>
 </aside>
 

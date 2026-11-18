@@ -5,14 +5,14 @@ import { S, MAP } from '../state.js';
 import { PATHS } from '../world/world.js';
 import { mapPoint, mapHeading, mapRealm } from './map-math.js';
 
-let panel, canvas, note, open = false, elapsed = 0;
+let panel, canvas, note, legend, open = false, elapsed = 0;
 const MARKERS = [
-  { x:-132, z:0, label:'GARDEN BRIDGE', dx:-13, dy:-11 },
-  { x:-132, z:74, label:'WASHINGTON', dx:8, dy:13 },
-  { x:-25, z:-58, label:'FOUNTAIN', dx:-12, dy:-11 },
-  { x:60, z:-45, label:'MONUMENT', dx:9, dy:-10 },
-  { x:95, z:12, label:'FROG POND', dx:10, dy:-8 },
-  { x:140, z:42, label:'BANDSTAND', dx:8, dy:13 },
+  { x:-132, z:0, label:'GARDEN BRIDGE' },
+  { x:-132, z:74, label:'WASHINGTON' },
+  { x:-25, z:-58, label:'FOUNTAIN' },
+  { x:60, z:-45, label:'MONUMENT' },
+  { x:95, z:12, label:'FROG POND' },
+  { x:140, z:42, label:'BANDSTAND' },
 ];
 const PADD = 12;
 
@@ -20,9 +20,21 @@ export function initParkMap() {
   panel = document.getElementById('map-panel');
   canvas = document.getElementById('map-canvas');
   note = document.getElementById('map-note');
+  legend = document.getElementById('map-legend');
   const toggle = document.getElementById('map-toggle');
   const close = document.getElementById('map-close');
-  if (!panel || !canvas || !toggle || !close) return;
+  if (!panel || !canvas || !toggle || !close || !legend) return;
+  // Build an accessible, stable legend once—not new DOM objects every 5Hz.
+  // Numbered pins replace the long inline labels that clipped on phones.
+  const entries = MARKERS.map((marker, i) => [String(i + 1), marker.label]);
+  if (S.hollowTreePos) entries.push(['H', 'HOLLOW TREE']);
+  for (const [number, label] of entries) {
+    const item = document.createElement('span');
+    item.textContent = number + '  ' + label;
+    item.setAttribute('aria-label', number + ': ' + label);
+    legend.appendChild(item);
+  }
+  if (S.isTouch) toggle.textContent = 'MAP';
 
   const toggleMap = () => {
     if (!S.started || S.paused) return;
@@ -77,6 +89,7 @@ function draw() {
 
   const realm = mapRealm(S.player);
   if (realm) {
+    if (legend) legend.style.display = 'none';
     ctx.fillStyle = '#c6dbbd'; ctx.textAlign = 'center';
     ctx.font = '700 17px ui-monospace, monospace';
     ctx.fillText(realm, w / 2, h / 2 - 28);
@@ -88,6 +101,7 @@ function draw() {
     return;
   }
 
+  if (legend) legend.style.display = 'grid';
   const p = (x, z) => mapPoint(x, z, MAP, w, h, PADD);
   function rect(x0, z0, x1, z1, color, border = null) {
     const a = p(x0,z0), b = p(x1,z1);
@@ -122,21 +136,22 @@ function draw() {
   pond(MAP.lagoon,'#39717a'); pond(MAP.frogPond,'#457782');
   ctx.textAlign = 'center'; ctx.fillStyle = '#9fbe9b';
   ctx.font = '700 '+Math.max(9,Math.min(13,w/48))+'px ui-monospace, monospace';
-  const garden = p(-138,-56), common = p(80,75);
+  const garden = p(-138,-56), common = p(70,85);
   ctx.fillText('PUBLIC GARDEN',garden.x,garden.y);
   ctx.fillText('BOSTON COMMON',common.x,common.y);
-  ctx.fillStyle = '#e7cc87'; ctx.font = '700 '+Math.max(9,Math.min(12,w/56))+'px ui-monospace, monospace';
-  for (const m of MARKERS) {
-    const q = p(m.x,m.z);
-    ctx.beginPath(); ctx.arc(q.x,q.y,3,0,Math.PI*2); ctx.fill();
-    ctx.textAlign = m.dx < 0 ? 'right':'left';
-    ctx.fillText(m.label, q.x + m.dx, q.y + m.dy);
+  // Compact numbered pins, read via the two-column legend below the map.
+  // This avoids unreadable overlapping or clipped landmark names on iPhone.
+  function pin(x, z, text, fill = '#e7cc87') {
+    const q = p(x,z);
+    ctx.beginPath();ctx.arc(q.x,q.y,7.5,0,Math.PI*2);
+    ctx.fillStyle = fill;ctx.fill();
+    ctx.strokeStyle = '#17231c';ctx.lineWidth = 1.5;ctx.stroke();
+    ctx.textAlign='center';ctx.fillStyle='#1a251b';
+    ctx.font='700 9px ui-monospace,monospace';
+    ctx.fillText(text,q.x,q.y+3);
   }
-  if (S.hollowTreePos) {
-    const q = p(S.hollowTreePos.x,S.hollowTreePos.z);
-    ctx.fillStyle = '#edb57d'; ctx.beginPath(); ctx.arc(q.x,q.y,4,0,Math.PI*2); ctx.fill();
-    ctx.textAlign='left'; ctx.fillText('HOLLOW',q.x+7,q.y-7);
-  }
+  MARKERS.forEach((marker,i) => pin(marker.x,marker.z,String(i+1)));
+  if (S.hollowTreePos) pin(S.hollowTreePos.x,S.hollowTreePos.z,'H','#edb57d');
   // Squirrel marker: camera forward is (-sin(yaw), -cos(yaw)).
   const q=p(S.player.pos.x,S.player.pos.z), dir=mapHeading(S.player.yaw);
   const side={x:-dir.z,z:dir.x}, r=8;
@@ -148,5 +163,7 @@ function draw() {
   ctx.closePath();ctx.fill();ctx.stroke();
   ctx.textAlign='left';ctx.fillStyle='#c8dab0';ctx.font='700 12px ui-monospace,monospace';
   ctx.fillText('N ↑', 14, 22);
-  note.textContent='YOU ARE THE GOLD ARROW · North is up · G / MAP to close';
+  note.textContent = S.isTouch
+    ? 'YOU ARE THE GOLD ARROW · North up · tap MAP to close'
+    : 'YOU ARE THE GOLD ARROW · North up · press G to close';
 }

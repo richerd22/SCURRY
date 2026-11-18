@@ -132,3 +132,8 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 ## Automated browser smoke evidence
 
 New [browser-smoke workflow](../.github/workflows/browser-smoke.yml) launches the real static site in headless Chromium + SwiftShader. Review the run's uploaded `scurry-webgl-smoke` artifact containing PNGs and `report.json` for spawn, Public Garden and mobile-touch spawn; verify no page/console error, live WebGL, screenshot readiness, G key and touch MAP. This is a basic runtime gate, **not** a replacement for longer playable physics checks or real-GPU/iPhone image and performance reviews.
+
+
+## Browser screenshot review — 18 November 2026, v0.6.44 → 0.6.45
+
+[Green WebGL smoke run](https://github.com/richerd22/SCURRY/actions/runs/44254317541) generated desktop spawn, Garden, mobile spawn, and mobile map PNGs, plus a clean JSON console/error report. Manual review of `mobile-spawn-atlas.png` at 390×844 found the *map labels* clamped into the left edge and overlapping nearby water/points; v0.6.45 fixes this using a static numbered legend. The software-lowq screenshots also showed dark flat foreground grass, but `lowq=1` intentionally suppresses grass/shadows, so **do not treat that as a measured real GPU lighting regression**. The map UI change needs rerun of headless smoke and a real iPhone readability check before closure.

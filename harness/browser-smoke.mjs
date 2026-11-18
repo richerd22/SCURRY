@@ -63,6 +63,8 @@ async function checkScene(pose, mobile = false) {
       await page.locator('#map-toggle').tap();
       assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'), 'true');
       assert.equal(await page.locator('#map-panel').getAttribute('aria-hidden'), 'false');
+      assert.ok(await page.locator('#map-legend span').count() >= 6,
+        'numbered landmark legend must be visible on the phone');
       await page.screenshot({ path: out + '/' + title + '-atlas.png' });
     } else {
       await page.keyboard.press('KeyG');

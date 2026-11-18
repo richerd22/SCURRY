@@ -144,3 +144,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Add a separate headless Chromium/SwiftShader GitHub Actions workflow, triggered on main updates and on demand, that serves the unchanged static site, checks three representative poses and keyboard/touch map controls, and archives screenshot/error evidence. Do not add a bundler or runtime npm dependency to the game.
 
 **Consequence:** Browser regressions become visible and reproducible, but the smoke run costs CI installation/render time and can be affected by upstream CDN outages. Physical Safari and real GPU fidelity remain distinct acceptance gates.
+
+
+## ADR-017 — numbered pins and accessible legend instead of tiny inline labels
+
+**Context:** The initial map was mathematically correct and browser-tested, but real 390px browser screenshots showed GARDEN BRIDGE text clipped against the left side and several landmark names crowding water and paths. Reflowing labels in Canvas 2D at every draw would consume CPU and still be fragile across small screens.
+
+**Decision:** Preserve source coordinates and draw concise numbered map pins with an accessible, static two-column HTML legend. Use a distinct H pin for Hollow Tree and hide the park legend when visiting a separate realm. Keep the map optional and its 5Hz redraw budget unchanged.
+
+**Consequence:** Better legibility and touch navigation without adding images, textures, layout computation per frame or build dependencies. Screenshot evidence remains part of the automated browser-smoke artifact.
