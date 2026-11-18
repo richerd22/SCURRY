@@ -210,3 +210,10 @@ The browser workflow now cancels older in-flight runs on the same branch when a 
 ## Ambient timer and saved MUTE (v0.6.56)
 
 Start with MUTE saved across reload, tap PLAY and verify silence. Unmute and listen for birds/crickets; pause/background for 30–60 seconds and confirm there are no ongoing chirps (and no ambient timeout rearmed in the browser perf profiler). Resume should restore exactly one ambience loop; repeated pause/resume cycles should not stack chirps. Node regression tests verify timer bookkeeping and gain; actual sound output and battery still need physical iPhone QA.
+
+
+## Catch fade and landing grace (v0.6.57)
+
+- Let the ranger net a squirrel with at least 12 stash. Exactly one 25% deduction should occur for one net; during the 650ms fade, input should not move the squirrel or trigger another catch. After the bandstand landing, allow a short ~1.5s escape grace before another ranger net is possible.
+- Trigger a Hawk Dua catch near the ranger if possible. No overlapping fade animations, double teleports, or duplicate dropped food. Hawk relocation must leave stash intact.
+- Background Safari mid-fade or shortly after landing. Catch grace must not evaporate during the inactive tab. Play resumes with no stuck movement keys or camera lag.

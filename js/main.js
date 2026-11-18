@@ -29,6 +29,7 @@ import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
 import { initParkMap, updateParkMap } from './ui/park-map.js';
 import { initDiscoveries, updateDiscoveries } from './systems/discoveries.js';
+import { beginRelocation, completeRelocation, advanceRelocation } from './systems/relocation.js';
 import { createMobileQualityState, advanceMobileQuality } from './systems/mobile-quality.js';
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
@@ -141,6 +142,10 @@ S.onBite = () => { biteDogs() || biteRanger() || biteHawk() || biteCrow(); };
 // canopy relocation with its own toast and the stash intact (lost = 0).
 // The ranger call passes no opts and keeps the original behaviour exactly.
 S.fadeCatch = (lost, opts) => {
+  if (!beginRelocation(S)) return false;
+  // Input and physics are frozen while the fade is pending; no second
+  // attacker can deduct more stash or queue another relocation.
+  clearPlayerInput();
   const fade = document.getElementById('fade');
   fade.style.opacity = 1;
   const dest = (opts && opts.pos) ? opts.pos : S.respawnPoint;
@@ -148,13 +153,17 @@ S.fadeCatch = (lost, opts) => {
     const P = S.player;
     P.pos.copy(dest);
     P.vel.set(0, 0, 0);
-    P.climbing = null;
+    P.climbing = null; P.climbRegrab = 0;
+    P.begging = 0; P.moving = false; P.sprinting = false;
     P.grounded = (opts && typeof opts.grounded === 'boolean') ? opts.grounded : false;
+    completeRelocation(S, 1.5);
+    syncPlayerCamera(camera);
     fade.style.opacity = 0;
     toast((opts && opts.message) ? opts.message : (lost > 0
       ? 'NETTED. relocated to the bandstand roof. the ranger took ' + lost + ' from your stash.'
       : 'NETTED. relocated to the bandstand roof. undignified, but free.'), 4.5);
   }, 650);
+  return true;
 };
 
 // ---------- title / pause ----------
@@ -364,6 +373,7 @@ if (qaLocal) {
       const p = S.player;
       return {
         started: S.started, paused: S.paused,
+        relocating: S.relocating, catchGrace: S.catchGrace,
         pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
         floor: p.inFenway ? S.realmGround.fenway?.(p.pos.x,p.pos.z) :
           p.inGarden ? S.realmGround.garden?.(p.pos.x,p.pos.z) :
@@ -474,13 +484,16 @@ function loop() {
   const dt = Math.min(0.05, rawFrameDt); // cap simulation step, NOT diagnostic FPS
   perfLadder(rawFrameDt);
   if (S.started && !S.paused) {
+    advanceRelocation(S,dt);
     if (S.spottedFlash > 0) S.spottedFlash -= dt;
     if (S.hawkFlash > 0) S.hawkFlash -= dt;
     updateDaycycle(dt);
-    updatePlayer(dt, camera);
+    if (!S.relocating) updatePlayer(dt, camera);
     updateHumans(dt);
     updateFood(dt);
-    if (!S.debugShot) { updateDogs(dt); updateRanger(dt); updateHawk(dt); } // frozen in shot mode so poses hold
+    if (!S.debugShot && !S.relocating) {
+      updateDogs(dt); updateRanger(dt); updateHawk(dt);
+    } // no second catch during fade; frozen in screenshot mode
     updateHollow(dt);
     updateBurrows(dt);
     updateFenway(dt);

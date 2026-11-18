@@ -518,6 +518,8 @@ function updateAmbients(dt, daylight) {
 
 // ------------------------------------------------------------------ catch
 function doCatch() {
+  // Don't drop carried food or launch a second teleport during net fading.
+  if (S.relocating || S.catchGrace > 0) return;
   const P = S.player;
   const catchPoint = P.pos.clone();
   // carried food drops at the catch point (trivial via food.js, dogs do it)
@@ -544,7 +546,7 @@ function doCatch() {
   // bandstand roof). Stash is INTACT: lost is 0 and S.stash is untouched.
   let handled = false;
   if (S.fadeCatch) {
-    try { S.fadeCatch(0, { pos: dest, message: CATCH_TOAST, grounded: true }); handled = true; } catch (e) { handled = false; }
+    try { handled = S.fadeCatch(0, { pos: dest, message: CATCH_TOAST, grounded: true }) !== false; } catch (e) { handled = false; }
   }
   if (!handled) {
     P.pos.copy(dest);

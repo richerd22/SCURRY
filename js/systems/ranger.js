@@ -115,6 +115,9 @@ function moveToward(target, speed, dt) {
 }
 
 function netCatch() {
+  // Multiple threats or close-range frame repeats cannot raid stash again
+  // while a relocation is fading or its landing grace is active.
+  if (S.relocating || S.catchGrace > 0) return;
   const P = S.player;
   sfx.caught();
   const lost = Math.floor(S.stash * 0.25);

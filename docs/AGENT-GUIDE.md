@@ -1328,3 +1328,8 @@ Added a pinned Playwright Chromium download cache and same-branch `cancel-in-pro
 ## v0.6.56 — no recurrent ambience work when muted/paused (Nov 18 2026)
 
 Audio now cancels its recurring birdsong/cricket timeout during pause and mute, restarting a single timer only on playable unmuted resume. AudioContext master gain honors mute loaded before any gesture; formerly it always started at .5 even if muted was already true. Enhanced pure WebAudio regressions cover timer lifecycle, one context, gain and pre-gesture behavior. No changes to the sound palette or loaded assets (everything remains procedural).
+
+
+## v0.6.57 — ranger/hawk catch relocation cannot overlap
+
+Added `systems/relocation.js` with pure single-flight begin/complete/advance transitions. Only one 650ms fade may be active, and another catch is blocked for 1.5s after landing (simulation dt freezes while paused). Ranger guard runs *before* stash deduction; hawk guard before carried-food drop. Fade clears keys and freezes player/threat movement, then zeroes vel and climb, resyncs camera and grants grace before un-fading. Three Node tests permanently cover duplicate calls, landing immunity and invalid/paused dt. No weapons, no fatal catches; animal boops and friendly relocation remain the game's approach.

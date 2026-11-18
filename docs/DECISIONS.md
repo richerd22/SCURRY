@@ -261,3 +261,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Give ambient scheduling one explicit timer owner, cancel it on pause and manual mute, and restart at most once only while playing and unmuted. Seed the initial gain from the current mute preference. Verify via fake clock/timer counts in Node, separately from audible iPhone acceptance.
 
 **Consequence:** Zero recurring ambient wakeups under pause/mute, correct persisted mute at the audio output gate, and no duplicate loops from repeated start/resume.
+
+
+## ADR-030 — catch relocations are transactions, not fire-and-forget timers
+
+**Context:** A ranger or hawk could initiate a second catch before the first 650ms fade finished. The ranger deducted stash before teleport scheduling, so duplicates could raid more than the intended 25%, and competing timers could re-relocate the squirrel unexpectedly.
+
+**Decision:** Use one shared pure relocation state machine with an in-flight flag, a short landing grace, and simulation-time advancement. All enemy callers check protection **before** side effects; the shared fade callback refuses duplicates, clears control input, freezes movement and completes one camera-synchronized teleport. No stun damage or harm is introduced.
+
+**Consequence:** No rapid catch cascades or competing teleport callbacks. Player can move again after relocation, and catch immunity does not decay while Safari is backgrounded. Browser encounter QA is still needed to test adversarial ranger/hawk proximity, separate from pure transition tests.

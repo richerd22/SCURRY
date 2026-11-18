@@ -56,6 +56,8 @@ export const S = {
   spottedFlash: 0,     // HUD warning timer (dogs)
   hawkFlash: 0,        // HUD warning timer (Hawk Dua - her own line, not the dog's)
   paused: false,
+  relocating: false,     // a single active fade/teleport at a time
+  catchGrace: 0,         // brief immunity after relocation so no chain netting
   started: false,
   muted: false,
   message: null,       // {text, until} big center toast
