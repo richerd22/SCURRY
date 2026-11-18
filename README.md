@@ -18,7 +18,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [Agent guide](docs/AGENT-GUIDE.md): the long-form implementation history, asset decisions and honest known state.
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 
-**Current version: v0.6.39.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
+**Current version: v0.6.40.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
 
 ## Controls
 
@@ -34,6 +34,7 @@ Desktop:
 | F | bury carried food on grass (stash +1) |
 | Left click | BITE - a comic boop; escapes dogs and the ranger |
 | M | mute |
+| G / MAP | toggle the hand-drawn park atlas (landmarks, paths, direction) |
 
 Mobile (touch devices get a full control layer - no pointer lock needed):
 
@@ -43,6 +44,7 @@ Mobile (touch devices get a full control layer - no pointer lock needed):
 | Drag right side | look |
 | SPRINT button | sprint toggle |
 | JUMP / BITE / ACT / BURY buttons | jump / bite / interact / bury |
+| MAP button | park map (home realm); remote destinations show their own title |
 
 No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash

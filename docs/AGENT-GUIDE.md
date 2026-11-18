@@ -1236,3 +1236,8 @@ Discovered a scaling bug: `updateFood` capped home-park ambient respawns by the 
 ## v0.6.39 (Nov 18 2026) — retained carried visual and live action dispatch
 
 The squirrel's camera-attached carried food visual used to allocate a fresh `SphereGeometry` and `MeshStandardMaterial` **on every pickup or swap**, without disposal, eventually leaking small GPU resources in long mobile sessions. `buildPawRig` now constructs a single hidden mesh once; `setCarriedVisual(type)` only recolors it. Supported colors now explicitly include croissant and popcorn, not a fallback grey. `main.js` E/F/ACT/BURY handlers now re-scan nearby interactions immediately on input, rather than blindly executing a last-frame prompt. `player.js` clears held keyboard/jump state on `pagehide` as well as blur/hidden; touch bite is correctly ignored while paused. No player speed, jump velocity, map geometry or UI layout changed.
+
+
+## v0.6.40 (Nov 18 2026) — schematic park atlas
+
+Added an optional map to improve wayfinding from squirrel height. `js/ui/park-map.js` paints a Canvas 2D atlas only while open (~5Hz, capped DPR2). It reads the same `MAP` footprints and `PATHS` geometry as world.js, water ellipses, major landmarks, runtime hollow-tree and squirrel XY/Z/yaw. Buttons: G desktop, MAP fixed button on touch. Separate coordinate realms display destination title and return instructions rather than a false dot over the Common; backgrounding closes it. `js/ui/map-math.js` provides pure projection, orientation and realm naming; three Node tests cover it. No extra Three scene, build step or generated imagery. Playtest mobile overlay touch targets, readable labels and pointer-lock interaction before calling UI acceptance.

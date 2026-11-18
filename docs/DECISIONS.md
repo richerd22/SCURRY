@@ -91,3 +91,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Keep one recolorable carried-food mesh for the entire session and one shared action path for keyboard/touch that recomputes the nearby interaction immediately before dispatch. Reset held keyboard state on pagehide and deny bite actions while paused.
 
 **Consequence:** No fresh GPU allocation per carry swap and fewer stale world actions; a small O(number-of-interactables) scan happens on user input in addition to each frame, negligible relative to rendering. Recoloring must use `color.setHex`, not reassign a per-item material.
+
+
+## ADR-011 — optional 2D atlas, never a second WebGL scene
+
+**Context:** A squirrel sees only 0.25m above ground. The Common and Garden are large, dense open spaces; new players need orientation without a conventional quest marker obscuring the world. iPhone performance is already a core constraint.
+
+**Decision:** Add a lightweight, user-opened Canvas 2D atlas using the game's actual `MAP` and `PATHS`, with one directional player marker. Render at 5 Hz only while visible, cap pixel density, and label other realms explicitly rather than rendering misleading out-of-bounds markers. Desktop G and a touch MAP button toggle it. No image generation, network assets, or build step.
+
+**Consequence:** More navigable park without ongoing GPU cost or changing gameplay physics. It is an authored schematic: individual building footprints and far-destination floor plans remain outside scope, and a future discovery system can extend the markers without modifying terrain.

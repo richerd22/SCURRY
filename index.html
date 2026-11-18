@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0c0f0a">
-<meta name="scurry-version" content="0.6.39">
+<meta name="scurry-version" content="0.6.40">
 <title>SCURRY - a Boston Common squirrel game</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0c0f0a;
@@ -89,6 +89,24 @@
   }
   body.touch #hud-help { display: none; }
   body.touch #hud-prompt { bottom: 36%; font-size: 15px; }
+  /* Native canvas park atlas: no image assets or extra render loop. */
+  #map-toggle { position: fixed; top: calc(55px + env(safe-area-inset-top)); right: calc(14px + env(safe-area-inset-right));
+    z-index: 7; border: 1px solid #a8b79a; background: #15231bcf; color: #efe3b8;
+    padding: 9px 12px; font: 700 12px ui-monospace, monospace; letter-spacing: .08em;
+    border-radius: 5px; cursor: pointer; touch-action: manipulation; }
+  #map-panel { display: none; position: fixed; z-index: 7; top: calc(103px + env(safe-area-inset-top));
+    right: calc(14px + env(safe-area-inset-right)); width: min(560px, calc(100vw - 28px));
+    padding: 11px; box-sizing: border-box; background: #102018f2; border: 1px solid #81947b;
+    border-radius: 8px; box-shadow: 0 12px 35px #000a; color: #f2ead2;
+    font: 12px ui-monospace, monospace; }
+  #map-panel header { display:flex; align-items:center; justify-content:space-between; margin:0 0 8px; }
+  #map-panel header strong { letter-spacing:.08em; font-size:13px; }
+  #map-close { background:transparent; color:#efe3b8; border:1px solid #879b83;
+    border-radius:4px; padding:4px 9px; cursor:pointer; font:700 13px ui-monospace,monospace; }
+  #map-canvas { display:block; width:100%; background:#14241b; border:1px solid #71886d;
+    box-sizing:border-box; border-radius:3px; }
+  #map-note { color:#a8be9e; font-size:10px; line-height:1.4; margin-top:9px; }
+  body.touch #map-toggle { top: calc(63px + env(safe-area-inset-top)); }
 </style>
 <script type="importmap">
 { "imports": {
@@ -111,8 +129,14 @@
 <div class="hud" id="hud-prompt"></div>
 <div class="hud" id="hud-gossip"></div>
 <div class="hud" id="hud-help">WASD move - SHIFT scurry - SPACE jump - push into a trunk to climb<br>
-E interact / beg / snatch - F bury food - CLICK bite (boop) - M mute</div>
+E interact / beg / snatch - F bury food - CLICK bite (boop) - G map - M mute</div>
 <div id="fade"></div>
+<button type="button" id="map-toggle" aria-controls="map-panel" aria-expanded="false">MAP · G</button>
+<aside id="map-panel" role="dialog" aria-label="Park map" aria-hidden="true">
+  <header><strong>BOSTON COMMON / PUBLIC GARDEN</strong><button type="button" id="map-close" aria-label="Close map">×</button></header>
+  <canvas id="map-canvas" aria-label="Illustrated park and current squirrel position"></canvas>
+  <div id="map-note">YOU ARE THE GOLD ARROW · North is up</div>
+</aside>
 
 <div id="touchui">
   <div id="lookzone"></div>
@@ -132,7 +156,7 @@ E interact / beg / snatch - F bury food - CLICK bite (boop) - M mute</div>
     <b>WASD</b> scurry &nbsp; <b>MOUSE</b> look &nbsp; <b>SHIFT</b> sprint &nbsp; <b>SPACE</b> big jump<br>
     <b>push into a trunk</b> to climb - canopy tops are walkable, leap tree to tree<br>
     <b>E</b> beg / take / snatch / slip through knot-holes and burrow mouths &nbsp; <b>F</b> bury food (stash +1)<br>
-    <b>CLICK</b> bite - a comic boop for dog noses, ranger ankles, and crow ambitions<br>
+    <b>CLICK</b> bite - a comic boop for dog noses, ranger ankles, and crow ambitions &nbsp; <b>G</b> map<br>
     the bridge geese accept patience, bribes, or altitude. the rats below accept bottle caps.<br>
     no fall damage. squirrels do not take fall damage. this is science.
   </div>

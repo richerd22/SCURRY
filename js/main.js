@@ -27,6 +27,7 @@ import { updateCanopy } from './systems/canopy.js';
 import { initAudio, setMuted, isMuted } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
+import { initParkMap, updateParkMap } from './ui/park-map.js';
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 
@@ -80,6 +81,7 @@ initEsplanade();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
+initParkMap();
 
 // ---------- interaction plumbing ----------
 let currentE = null;   // {label, action}
@@ -416,6 +418,7 @@ function loop() {
     scanInteractions();
     const prompt = currentE ? currentE.label : (currentF ? currentF.label : '');
     updateHUD(prompt, warnings());
+    updateParkMap(dt);
     updateDiagnostics(dt, rawFrameDt);
   }
   renderer.render(scene, camera);

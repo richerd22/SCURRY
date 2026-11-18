@@ -97,3 +97,11 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 - On an iPhone run a long forage session (20+ pickups). Inspect WebGL resources with available device tools when possible; carried food should no longer increase geometry/material allocations per pickup.
 - Walk to the edge of a burrow or food prompt, then quickly leave range and press ACT: the action must be recalculated from the current position.
 - Background Safari while holding jump on an attached keyboard; return and verify Space does not remain stuck. Touch BITE must not activate during the pause overlay.
+
+
+## Park atlas usability (v0.6.40)
+
+- While walking between Common and Garden, open MAP / press G. The player arrow must track position and point along camera forward (-sin yaw, -cos yaw). NORTH is top (negative Z), Charles Street separates the two parks.
+- Check crossing the bridge, bandstand, Monument, Fountain, Frog Pond, Washington and runtime Hollow Tree marker. Markers are schematic but should align in the right neighborhoods.
+- On iPhone, MAP button should be reachable with the right thumb but should not steal joystick/look pointers; opening/closing it should not alter movement state. Rotate the phone and check canvas fit / labels / safe areas.
+- Travel into the rat tunnels and a remote destination. The map must show the destination title instead of plotting thousands-of-metres-away coordinates onto the Common. Background Safari with map open; it should reset closed on return.
