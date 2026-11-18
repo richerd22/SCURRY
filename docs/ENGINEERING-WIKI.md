@@ -81,3 +81,8 @@ Touch uses a left virtual stick, right lookzone, jump and action buttons; **poin
 ## v0.6.34: support query optimization
 
 `js/systems/collision.js` now provides `createSurfaceIndex(platforms, boxes, segments, cellSize=8)`. The cache creates an 8m spatial lookup for walkable platforms, bridge stepping boxes, and narrow rail segments. A surface is indexed in each cell touched by its XZ bounds; footprints over 256 cells go into a small global test list. Every player support query sees only local candidates and the oversized list. When any registry array length changes, the index rebuilds on the next query; after *in-place* position edits call `index.invalidate()`. The optional index leaves the legacy full-scan function callable for other modules and exact-equivalence regression tests (3,000 seeded queries). This is a CPU optimization and does not imply any visual geometry change or physical mobile benchmark.
+
+
+## v0.6.35: save behavior and upgrade safety
+
+`js/systems/save.js` persists the *live* stash, caps, personal best day count, cumulative dawn crossings and mute state at `scurry-save-v1`. Saves are dirty-checked and guarded against private-browser storage exceptions. The new permanent Node suite uses the actual production source and tests nine operational invariants: no write unless changed, live balances, audio settings, corrupted storage recovery, quota/private-mode safety, integer count sanitization, forward schema safety, and the dawn-crossing day rule. A blob with numeric schema `v > 1` is intentionally left untouched by this older client; missing `v` remains legacy-compatible. No backend/cloud sync is provided; clearing browser storage loses local progress.

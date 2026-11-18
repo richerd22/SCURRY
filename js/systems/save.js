@@ -63,6 +63,7 @@ let bestDays = 0;          // longest currentRunDays ever, persisted
 // last successfully persisted snapshot (the dirty-check baseline)
 let snapStash = null, snapCaps = null, snapBestDays = null, snapDaysPlayed = null, snapMuted = null;
 let retryAfter = 0;        // Date.now() before which a failed write is not retried
+let futureSchema = false; // don't overwrite a save created by a newer build
 
 function getStore() {
   try {
@@ -86,6 +87,13 @@ function readStored() {
   let data;
   try { data = JSON.parse(raw); } catch (e) { return null; } // corrupt: no save
   if (!data || typeof data !== 'object') return null;
+  // Forward compatibility: an older game must not overwrite a newer
+  // save it doesn't know how to interpret. Leave it untouched until an
+  // updated game can read that version. Missing v is legacy-compatible.
+  if (typeof data.v === 'number' && Number.isFinite(data.v) && data.v > 1) {
+    futureSchema = true;
+    return null;
+  }
   return {
     stash: cleanCount(data.stash),
     caps: cleanCount(data.caps),
@@ -101,7 +109,7 @@ function writeStored() {
   if (!store) return false;
   const payload = {
     v: 1,
-    stash: S.stash,
+    stash: cleanCount(S.stash),
     caps: cleanCount(S.caps),
     bestDays,
     daysPlayed,
@@ -137,6 +145,7 @@ function writeStored() {
 // currentRunDays, savedAt }. Absent/corrupt storage -> exists:false and
 // the game's defaults are left untouched.
 export function loadSave() {
+  futureSchema = false;
   const stored = readStored();
   currentRunDays = 0;
   prevHours = null;
@@ -212,9 +221,10 @@ export function observeSave() {
   }
 
   // --- dirty-check: write only when a persisted value changed ---
-  if (S.stash === snapStash && cleanCount(S.caps) === snapCaps &&
+  if (cleanCount(S.stash) === snapStash && cleanCount(S.caps) === snapCaps &&
       bestDays === snapBestDays &&
       daysPlayed === snapDaysPlayed && m === snapMuted) return;
+  if (futureSchema) return; // preserve unknown newer save verbatim
   if (Date.now() < retryAfter) return; // last write failed; don't hammer it
   writeStored();
 }

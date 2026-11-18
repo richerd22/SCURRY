@@ -44,3 +44,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Keep the original unindexed `walkSurface` for reference and tests. Use an optional lazy 8m spatial bucket cache for player support, indexed by surface bounds with a fallback for huge footprints. Rebuild on append/remove, explicitly invalidate for in-place mutation. Keep all exact narrow-phase math and height gates; regression-compare 3,000 seeded queries.
 
 **Consequences:** Fewer unrelated canopy shapes are tested on each move. The cache uses modest memory and adds a cheap query-result allocation; this does not optimize the separate horizontal resolver. Do not claim a numeric FPS gain without measuring the actual phone.
+
+
+## ADR-006 — never overwrite future-format saves
+
+**Context:** An old static-game tab may be reopened after a later build has written an extended localStorage schema. An old client silently treating unknown fields as invalid zeroes could corrupt the player's progress.
+
+**Decision:** A numeric save version above 1 prevents writes in that session; use safe gameplay defaults instead of mutating an unknown document. Keep old/no-version blobs compatible. Persist sanitized nonnegative integer stash/caps counts; retain the same storage key and schema v1.
+
+**Consequence:** Forward format blobs stay intact until a compatible version runs; an older browser session will play without persistence for that incompatible slot. A permanent Node suite guards current semantics.

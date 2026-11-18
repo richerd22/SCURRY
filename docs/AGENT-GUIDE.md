@@ -1211,3 +1211,8 @@ This pass follows the v0.6.32 collision overhaul (height-aware solids, mesh-terr
 ## v0.6.34 (Nov 18 2026): cached 8m walk-surface broad phase
 
 Support queries used to scan every canopy disc, stepping box and rail *multiple times per 1/90s physics step*. `createSurfaceIndex` in collision.js now maps physical surfaces to 8m XZ cells at first use, with oversized shapes in an always-test list. The player passes the optional index into `walkSurface`. The old full-scan implementation remains as the reference; narrow-phase eligibility (height, jumpOnly rail, exact circle/box/segment math) is unchanged. The index rebuilds when registry array lengths change and exposes invalidate() for same-length/in-place edits. Added 3,000 deterministic indexed-versus-full-scan samples plus dynamic-add/removal and negative/large footprint checks. This improves CPU scaling; physical iOS FPS must be measured separately.
+
+
+## v0.6.35 (Nov 18 2026) — durable save regression gate
+
+The original save tests were in a temporary harness and were not part of the repo's CI. Added `tests/save-regressions.mjs`, which runs the actual `save.js` source with only state/audio imports stubbed and verifies no-write when clean, live stash/caps persistence, audio sync, sanitization, corrupt/private storage recovery, forward schema safety, and midnight-vs-dawn day rules. Fixes in `save.js`: count sanitization on writes and dirty checks; future-version `v > 1` blobs remain byte-identical instead of being overwritten by an older client. This changes no save key or current schema version. Distinguish this from complete browser localStorage testing; CI covers these pure behaviors.
