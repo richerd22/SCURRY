@@ -162,3 +162,8 @@ Before this pass, civilian wanderers occasionally stopped only for squirrels whi
 ## v0.6.96 — public T entrances on the park atlas, preserved 14 Field Notes
 
 The park map previously had no indication where the newly playable subway stations were. It now draws three small T pins at the exact same Arlington, Boylston and Park Street surface E triggers used by gameplay. Their buttons join existing waypoint navigation, preserving all six original numbered landmarks plus Hollow Tree, and are **not** discoveries: no save key, Field Notes item, or schema migration. Opening the map while in the subway now reports THE T SUBWAY STATIONS and routes you back to public station stairs or the fictional rat tunnel rather than drawing a squirrel marker 8,000m off-map. Pure tests check station pin map bounds, isolation from Field Notes, and correct realm label. Existing mobile browser map smoke requires all three T controls.
+
+
+## v0.6.97 — remove impossible Frog Pond pedestrian and ranger shortcuts
+
+The old civilian wanderer selector included PATHS[6], the literal Frog Pond straight-line feeder at Z=12 from X=60 to X=112, right through the water ellipse (center X=95,Z=12). The ranger's route likewise connected (112,12) to (60,12), wading straight through the pond. Both now follow nearby actual dry paths: civilians use the bandstand-side PATHS[7]; ranger takes the southern dry approach via X=112,Z=42 and X=60,Z=42. A new Node regression extracts the **actual shared world PATHS and MAP data**, samples every segment INCLUDING loop closure every ≤35cm, and rejects actual world water/Charles Street intersections. This is a source-verified map/AI correction, not a new feature or weaker check. Player terrain/colliders untouched.

@@ -10,9 +10,10 @@ import { makeHuman, setActorRole } from './humans.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { isOnGroundLow } from './player.js';
+import { RANGER_PATROL } from './civilian-patrol-rules.js';
 
 let ranger;
-const PATROL = [[-30, -18], [60, -18], [112, -18], [160, 20], [140, 42], [112, 12], [60, 12], [10, 30], [-20, 40]];
+const PATROL = RANGER_PATROL;
 
 export function buildRanger(scene) {
   const mesh = makeHuman(1.04);

@@ -13,6 +13,7 @@ import { toast } from '../ui/hud.js';
 import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
 import { parkShift, actorVisible } from './park-shifts.js';
 import { civilianWildlifeReaction, civilianReactionSeconds } from './civilian-wildlife-rules.js';
+import { CIVILIAN_PATH_INDICES } from './civilian-patrol-rules.js';
 
 const SKIN = [0xe8b98f, 0xc98a5e, 0x8a5a34, 0xf0cba8, 0x6e4525];
 const SHIRT = [0xb84a4a, 0x4a6eb8, 0x4a9a5e, 0xd9c84a, 0x7a4a9a, 0xe8e4da, 0x3a8a9a, 0xd97f3b];
@@ -142,7 +143,7 @@ export function buildHumans(scene) {
     });
   }
   // wanderers on the path network
-  const loopIdx = [0, 1, 4, 6, 8, 11]; // land paths only (10 is the bridge line - feet would get wet)
+  const loopIdx = CIVILIAN_PATH_INDICES; // proven dry at every 35cm; never cross Frog Pond
   for (let i = 0; i < 9; i++) {
     const h = makeHuman(0.93 + Math.random() * 0.15);
     setActorRole(h, 'walk');
