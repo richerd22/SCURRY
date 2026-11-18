@@ -1363,3 +1363,8 @@ Every model, glTF external BIN and texture in the provenance ledger now includes
 ## v0.6.64 — stable seeded grass/flower/stars across visual QA reloads
 
 Static ground canvas grass grain and decorative Garden flower patches (formerly fresh Math.random) now use a fixed local PRNG, and the 700 stars use a separately seeded stream. This prevents a baseline image changing every reload without moving paths/terrain, models or the collision registry. Four pure tests cover deterministic sequences, independent layers, value range and invalid seed handling. This is reusable in other no-bundler games. Screenshots still need physical GPU and atmospheric/time consistency checks.
+
+
+## Portable model source-quality inspector
+
+`tools/model-stats.mjs` parses the actual GLB/glTF2 JSON for every registered model and outputs source triangles, primitives, vertices, materials, textures, skins and animation counts to `.ci/model-stats.json`, archived on GitHub Actions. Five Node tests cover counts and malformed assets. This is for objective candidate triage across future projects, not GPU performance or license proof.

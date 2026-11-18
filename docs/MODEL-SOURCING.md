@@ -56,3 +56,8 @@ The validator is a technical guardrail, not a legal opinion or retroactive permi
 Each listed model file now has a `gitBlobs[path]` entry holding its **Git blob SHA-1**, matching `git hash-object path` for the exact committed file. CI recalculates this identity and fails on any untracked model replacement, missing hash, unsafe file/symlink or unregistered texture/buffer. Updating model geometry requires intentionally updating its hash and recording the related provenance review—not silently overwriting a legacy same-named model. This is reproducible file integrity, **not** proof that its author/license is valid. For an actually cleared new model, register its own ID, original source link and per-model license evidence; legacy unresolved-rights IDs must not be copied to another game.
 
 See [specific screened model candidates](MODEL-CANDIDATES.md) before committing a new model. A public-domain licence does not guarantee the model is architecturally accurate or worth its mobile GPU/texture budget.
+
+
+## Model triangle/texture report (18 Nov 2026)
+
+`node tools/model-stats.mjs` now parses every public GLB and glTF source with no npm modules and produces `.ci/model-stats.json` (also archived in CI). It records meshes, primitive counts, estimated source triangles and vertices, mesh node references, materials, images/textures, animations/skins and binary size. It warns on >250k source triangles / >48 materials / >16 images in one file, and rejects malformed GLB/glTF source geometry. Source metrics do **not** measure runtime GPU draws, shader time, memory or FPS; confirm those on physical iPhone Safari. Copy the inspector and its tests alongside the provenance/audit system for future projects.

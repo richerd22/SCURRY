@@ -21,6 +21,16 @@ jobs:
           find js tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
       - name: Audit published model inventory, glTF integrity and new source evidence
         run: node tools/audit-assets.mjs
+      - name: Inspect model geometry and collect a portable source-metrics report
+        run: node tools/model-stats.mjs
+      - name: Archive model source metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scurry-model-stats
+          path: .ci/model-stats.json
+          retention-days: 14
+          if-no-files-found: ignore
       - name: Pure physics and input regressions
         run: node --test tests/*.mjs
       - name: No-build, custom-domain, touch and Safari contracts

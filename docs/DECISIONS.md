@@ -324,3 +324,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Use small standalone pure seeded-random streams with fixed values for each static visual layer. Retain source geometry/world physics intact, and do not share the deterministic PRNG with stochastic NPC actions or future network-security uses. Add numerical sequence/independence tests.
 
 **Consequence:** Stable art composition across comparable QA builds and a portable reproducible screenshot practice. It does not stabilize day/night animation timing, third-party model loading or physical GPU differences, so human visual acceptance still matters.
+
+
+## ADR-037 — model source budgets need a separate glTF inspector
+
+**Context:** Compressed GLB file size cannot tell whether a licensed asset has too many triangles, materials or textures to justify on mobile.
+
+**Decision:** Parse GLB/glTF2 metadata offline with Node built-ins, archive a per-model machine-readable source complexity report in CI, and warn on potentially expensive source assets. Keep renderer/GPU FPS testing as a separate real-browser/phone gate and rights clearance separate again.
+
+**Consequence:** Asset candidates can be compared on repeatable structural costs rather than just appearance or file MB. No production bundler or imported model is added.

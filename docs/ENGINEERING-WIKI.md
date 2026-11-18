@@ -283,3 +283,8 @@ Added `docs/MODEL-CANDIDATES.md` with exact original CC0 source pages (Kay Lousb
 ## v0.6.64 — deterministic screenshot scenery (no randomized baseline drift)
 
 The painted 2048x1170 ground texture used `Math.random()` for 26,000 tiny grass flecks and 26 Garden flower-bed clusters, while the 700 sky stars independently re-rolled on every page refresh. That meant the *same* camera/reference height and code revision could create different before/after images, making visual regression comparison unreliable and sometimes making park location features appear to change. A portable pure `world/seeded-random.js` now supplies independent fixed-seed streams for grass/flower placement and for stars. The first render chooses a reproducible arrangement without altering terrain, paths, collisions, City 3D placement, gameplay RNG or the player's save. Four Node tests verify 20,000 equivalent samples, independent streams, range safety, and rejection of invalid seeds. Screenshots will still vary under ambient animation, asynchronous sourced-model loading and software GPU timing; this is a **necessary improvement, not a claim of pixel-perfect determinism**.
+
+
+## Model-source complexity reporting (18 Nov 2026)
+
+CI now runs an independent Node-only GLB/glTF inspector (tools/model-stats.mjs) and archives model-stats.json with estimated source triangles/vertices/meshes/materials/textures/animations per model. Five fixture tests cover indexed/nonindexed, strip/fan, invalid headers/accessors and mixed valid/invalid models. The source geometry report is **not a runtime frame-time or draw-call benchmark**; it is a reproducible preflight for deciding whether a licensed model needs LOD/texture/material optimization before SCURRY or future games can ship it.
