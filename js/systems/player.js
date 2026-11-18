@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { S } from '../state.js';
 import { visibleGroundHeight, inWater } from '../world/world.js';
-import { walkSurface, resolveHorizontal } from './collision.js';
+import { walkSurface, resolveHorizontal, createSurfaceIndex } from './collision.js';
 import { advanceJumpIntent, resetJumpIntent } from './jump.js';
 import { sfx } from './audio.js';
 
@@ -14,6 +14,7 @@ const RADIUS = 0.22;
 const keys = {};
 // Jump is a fresh press (never repeated on landing), with brief grace at edges.
 const jumpIntent = { held: false, buffer: 0, coyote: 0 };
+const surfaceIndex = createSurfaceIndex(S.platforms, S.platformBoxes, S.platformSegments);
 let paws, belly, bellyMat, hindMat, pawL, pawR, carriedMesh;
 let tailGroup, tailMat, tailTipMat;
 let runPhase = 0;
@@ -215,7 +216,7 @@ function baseHeight(x, z) {
 
 function surfaceAt(x, z, refY, stepTol = 0.55) {
   return walkSurface(x, z, refY, stepTol, baseHeight(x, z),
-    S.platforms, S.platformBoxes, S.platformSegments);
+    S.platforms, S.platformBoxes, S.platformSegments, surfaceIndex);
 }
 
 function collideWalls(pos) {

@@ -76,3 +76,8 @@ Touch uses a left virtual stick, right lookzone, jump and action buttons; **poin
 - The TD Garden interior model remains permission-gated in the game code; do not flip its release flag without provenance. Its absence is intentional, not a missing-file defect.
 - Visual comparison against Saltline has not established parity or superiority; real-device golden-hour grading, foliage readability, collision feel, water quality and high/low-end phone FPS still need manual acceptance.
 - No AI-generated imagery: authored code-rendered graphics and cleared CC0/CC-BY or explicitly licensed source models are the design pipeline. Attribution and reuse rules in the agent guide remain binding.
+
+
+## v0.6.34: support query optimization
+
+`js/systems/collision.js` now provides `createSurfaceIndex(platforms, boxes, segments, cellSize=8)`. The cache creates an 8m spatial lookup for walkable platforms, bridge stepping boxes, and narrow rail segments. A surface is indexed in each cell touched by its XZ bounds; footprints over 256 cells go into a small global test list. Every player support query sees only local candidates and the oversized list. When any registry array length changes, the index rebuilds on the next query; after *in-place* position edits call `index.invalidate()`. The optional index leaves the legacy full-scan function callable for other modules and exact-equivalence regression tests (3,000 seeded queries). This is a CPU optimization and does not imply any visual geometry change or physical mobile benchmark.

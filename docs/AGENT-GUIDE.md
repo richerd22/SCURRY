@@ -1206,3 +1206,8 @@ This pass follows the v0.6.32 collision overhaul (height-aware solids, mesh-terr
 - Added `docs/ENGINEERING-WIKI.md`, `docs/QA-PLAYTEST.md`, and `docs/DECISIONS.md`. Notion SCURRY hub should link them rather than copy and fork the architecture.
 
 **Known limits still open:** The continuous world is visually detailed but colliders are still a *purpose-built registry*, not an automatically generated mesh collider. Roof facades, complex branch joins and realm-specific geometry need targeted playtesting. The lowq software harness can't establish frame-rate or color grading on a physical iPhone or real GPU. The unreleased TD Garden licensed interior is still gated. A passing unit test proves pure math, not 3D gameplay feel. Do not claim full 3D collision, device verification, or that the quality bar is met.
+
+
+## v0.6.34 (Nov 18 2026): cached 8m walk-surface broad phase
+
+Support queries used to scan every canopy disc, stepping box and rail *multiple times per 1/90s physics step*. `createSurfaceIndex` in collision.js now maps physical surfaces to 8m XZ cells at first use, with oversized shapes in an always-test list. The player passes the optional index into `walkSurface`. The old full-scan implementation remains as the reference; narrow-phase eligibility (height, jumpOnly rail, exact circle/box/segment math) is unchanged. The index rebuilds when registry array lengths change and exposes invalidate() for same-length/in-place edits. Added 3,000 deterministic indexed-versus-full-scan samples plus dynamic-add/removal and negative/large footprint checks. This improves CPU scaling; physical iOS FPS must be measured separately.

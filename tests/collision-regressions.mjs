@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 // Data URL works even in Node releases that assume .js is CommonJS without package.json.
 const src = readFileSync(new URL('../js/systems/collision.js', import.meta.url), 'utf8');
-const { meshTerrainHeight, walkSurface, resolveHorizontal } =
-  await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
+const collision = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
+const { meshTerrainHeight, walkSurface, resolveHorizontal } = collision;
 
 test('the ground matches the two triangles of the rendered PlaneGeometry', () => {
   const g = new Float32Array([0, 0, 0, 2]);
@@ -64,4 +64,50 @@ test('spawn inside a trunk deterministically recovers, even at zero distance', (
 });
 test('remote realm surface tables are honored over the home park floor', () => {
   assert.equal(walkSurface(3000, 3000, 5.3, 0.1, 5.2, [], [], []), 5.2);
+});
+
+test('indexed walk surfaces match legacy full scan for 3000 seeded positions', () => {
+  const discs = [], boxes = [], segments = [];
+  let seed = 731;
+  const rnd = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < 75; i++) {
+    const x = -90 + rnd() * 180, z = -90 + rnd() * 180;
+    discs.push({ x, z, y: rnd() * 16, r: .2 + rnd() * 5 });
+    boxes.push({ minX: x - rnd() * 2, maxX: x + rnd() * 3,
+      minZ: z - rnd() * 3, maxZ: z + rnd() * 2, y: rnd() * 16 });
+    segments.push({ x0: x, z0: z, x1: x + rnd() * 14 - 7,
+      z1: z + rnd() * 14 - 7, r: .1 + rnd(), y: rnd() * 16, jumpOnly: i % 7 === 0 });
+  }
+  const idx = collision.createSurfaceIndex(discs, boxes, segments);
+  for (let i = 0; i < 3000; i++) {
+    const x = -110 + rnd() * 220, z = -110 + rnd() * 220;
+    const y = rnd() * 18, tol = rnd() * 1.5;
+    assert.equal(walkSurface(x, z, y, tol, -1, discs, boxes, segments, idx),
+      walkSurface(x, z, y, tol, -1, discs, boxes, segments), 'sample ' + i);
+  }
+});
+
+test('late registrations and removals rebuild the support index', () => {
+  const discs = [], boxes = [], segments = [];
+  const idx = collision.createSurfaceIndex(discs, boxes, segments);
+  assert.equal(walkSurface(1, 1, 2, 0, 0, discs, boxes, segments, idx), 0);
+  const generation = idx.generation;
+  discs.push({ x: 1, z: 1, r: 2, y: 1 });
+  assert.equal(walkSurface(1, 1, 2, 0, 0, discs, boxes, segments, idx), 1);
+  assert.ok(idx.generation > generation);
+  discs.pop();
+  assert.equal(walkSurface(1, 1, 2, 0, 0, discs, boxes, segments, idx), 0);
+});
+
+test('index respects negative cell edges, rail jump gates and giant surfaces', () => {
+  const discs = [{ x: -8, z: -8, r: .2, y: 9 }];
+  const boxes = [{ minX: -500, maxX: 500, minZ: 500, maxZ: 550, y: 4 }];
+  const segments = [{ x0: -8, z0: -16, x1: 8, z1: 0,
+    r: .25, y: 10, jumpOnly: true }];
+  const idx = collision.createSurfaceIndex(discs, boxes, segments);
+  for (const [x, z, y] of [[-8, -8, 10], [-7.9, -8.1, 10], [0, 530, 6],
+    [-8, -8, 0], [-500, 500, 5], [500, 550, 5], [8, 0, 10]]) {
+    assert.equal(walkSurface(x, z, y, .1, 0, discs, boxes, segments, idx),
+      walkSurface(x, z, y, .1, 0, discs, boxes, segments));
+  }
 });
