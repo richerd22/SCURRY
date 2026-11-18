@@ -1123,3 +1123,66 @@ Git protocol is blocked in the sandbox. Use the Git Data API:
   interpolation, no physics sync; the Hollow is the social hub; keep it
   friendly-only (no PvP - bite stays a boop). Build the single-player
   world to reference level first.
+
+
+## v0.6.32 — playtest solidity pass (Nov 18, 2026)
+
+Owner report: "clipping through the world most of the time" — stability outranks
+art additions. This is a cross-system controller/geometry update, not more
+visual dressing. The no-build ESM structure, Three.js 0.160.0, iOS Safari
+touch UI, and performance ladder remain in place. No imagery was added.
+
+### What changed
+- `js/systems/collision.js` is dependency-free ESM math: actual triangle
+  interpolation from the 150x86 rendered terrain grid, height-aware finite
+  cylinders/boxes, continuous line-segment fence walls, narrow walkable
+  rail tops. No per-frame Three.js Raycaster allocation.
+- `world.js` stores the rendered ground vertices and exposes
+  `visibleGroundHeight()`. This also accounts for wet gravel ribbons
+  (+0.04 m), their shoulders (+0.022 m), the Mall apron (+0.058 m),
+  and raised plaza discs. The analytic `groundHeight()` remains the
+  AUTHORING equation; do not confuse it with the player's mesh support.
+- `player.js` moves in ≤1/90 s physics substeps; walks step up at most
+  1.3 m, snap DOWN only 0.25 m, and uses the previous foot Y to catch
+  falling crossings of branch/roof/bridge top. Walls resolve AFTER a
+  provisional landing and the controller resamples its final support.
+  Trunk climbing and jump controls remain intact.
+- World colliders stop at the physical top: park trunks, hollow/snags,
+  lamps, benches, trash cans, carts, monument, statue, fountain, parked
+  cars, headhouse and State House. Canopy movement no longer collides
+  with infinitely tall trunks or boxes below.
+- Park perimeter fence now uses continuous thin segments rather than
+  giant widely spaced push-out circles. Its rail, lagoon suspension
+  bridge side rails and selected prop tops are walkable when jumped on.
+  Additional roof support: State House main-block roof, Park St
+  headhouse curved roof strips, Charles St storefront roofs, Washington
+  pedestal, raised Tremont and Charles Street sidewalks.
+- Fenway, TD Garden, City Hall and Esplanade register height samplers
+  with the player controller BEFORE it runs; no more conflicting park
+  ground and destination ground within the same frame. The destination
+  zone clamps are still authoritative. Camera transforms are synced
+  again AFTER zone/canopy systems move the player.
+- Interactables check vertical as well as horizontal distance (no talking
+  through the canopy floor); key states clear on window blur; park-threat
+  HUD no longer warns from the City Hall/Esplanade remote realms.
+- `tests/collision-regressions.mjs` tests pure contact math on Node with
+  `node --test tests/collision-regressions.mjs`.
+
+### Must-test gameplay sequence / remaining caveats
+1. Spawn and sprint over Mall and plaza; walk across real bridge, its
+   ramps and side rails. Move against a fence at walking height; leap
+   onto it and step off.
+2. Climb a hollow trunk, transition onto canopy, run the 51 canopy
+   bridges, leap between heights, fall without damage; stand on a bench,
+   trash can, Park St headhouse, State House roof.
+3. Use all four rat-market exits: walk the Fenway Monster route, TD
+   Garden tiered bowl, City Hall plaza, Esplanade shore/stepping stones;
+   enter and exit the original burrow and Hollow.
+4. Test real iPhone Safari touch start, drag look, analog movement,
+   jump/climb, route transitions and adaptive perf ladder. This coding
+   pass does NOT constitute real-device sign-off. The existing
+   headless /tmp/shottools paths are not in this repository.
+
+Regression warning: avoid allocating new arrays in `visibleGroundHeight`,
+which is called multiple times per substep. The floor can be accurate
+without raycasting the entire scene each frame.
