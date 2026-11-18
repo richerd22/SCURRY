@@ -4,6 +4,8 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundHeight, terrainDisc } from './world.js';
+import { ETHER, etherColliders } from './ether-layout.js';
+import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
@@ -49,6 +51,7 @@ export function buildLandmarks(scene) {
   buildSwanBoats(scene);
   buildDucklings(scene);
   buildWashington(scene);
+  buildEtherMonument(scene);
   buildGamewellBoxes(scene);
 }
 
@@ -1102,6 +1105,73 @@ function buildWashington(scene) {
   S.platformBoxes.push({ minX: x - 2.2, maxX: x + 2.2, minZ: z - 1.6, maxZ: z + 1.6, y: gy + 2.2 });
   S.platformBoxes.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 1.3, maxZ: z + 1.3, y: gy + 2.9 });
   S.solids.push({ x, z, r: 0.95, minY: gy + 2.9, maxY: gy + 7.0 });
+}
+
+
+// Northwest Garden — 1868 Ether Monument fountain.
+// This is illustrative, authored geometry. The visible basin and pedestal
+// register finite player collision; no external model or image used.
+function buildEtherMonument(scene) {
+  const {x,z,side}=ETHER,gy=groundHeight(x,z),g=new THREE.Group();
+  const rose=new THREE.MeshStandardMaterial({color:0x986e63,roughness:.75});
+  const carved=new THREE.MeshStandardMaterial({color:0xb6afa2,roughness:1});
+  const marble=new THREE.MeshStandardMaterial({color:0xcdc6b7,roughness:.9});
+  const water=new THREE.MeshStandardMaterial({color:0x508398,roughness:.2,metalness:.25,
+    transparent:true,opacity:.7,side:THREE.DoubleSide});
+  for(const s of [-1,1]){
+    box(.48,.36,side,granite,s*(side/2-.24),.18,0,g);
+    box(side-.96,.36,.48,granite,0,.18,s*(side/2-.24),g);
+  }
+  const waterPlane=new THREE.Mesh(new THREE.PlaneGeometry(side-.9,side-.9),water);
+  waterPlane.rotation.x=-Math.PI/2;waterPlane.position.y=.11;g.add(waterPlane);
+  box(3.65,.55,3.65,granite,0,.45,0,g);
+  box(3.5,.2,3.5,stone,0,.81,0,g);
+  box(3.1,2.5,3.1,granite,0,2.08,0,g);
+  box(3.4,.4,3.4,stone,0,3.47,0,g);
+  for(let i=0;i<4;i++){
+    const face=new THREE.Group();face.rotation.y=i*Math.PI/2;
+    face.position.y=2.1;
+    const arch=new THREE.Mesh(new THREE.TorusGeometry(.7,.06,7,16,Math.PI),carved);
+    arch.rotation.z=Math.PI;arch.position.set(0,.3,1.59);face.add(arch);
+    box(1.3,1.25,.055,carved,0,-.35,1.6,face,false);
+    const cameo=new THREE.Mesh(new THREE.SphereGeometry(.35,9,7),marble);
+    cameo.scale.set(.7,1,.18);cameo.position.set(0,-.35,1.67);face.add(cameo);
+    for(const k of [-1,1])cyl(.115,.14,2.0,rose,k*1.15,-.16,1.6,face,8);
+    g.add(face);
+  }
+  for(const sx of [-.76,.76])for(const sz of [-.76,.76]){
+    cyl(.2,.22,5.1,rose,sx,6.35,sz,g,10);
+    cyl(.3,.32,.26,stone,sx,9.05,sz,g,10);
+  }
+  box(2.85,.65,2.85,granite,0,9.19,0,g);
+  box(3.1,.18,3.1,stone,0,9.6,0,g);
+  const sph=(sx,sy,sz,px,py,pz)=>{
+    const m=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),marble);
+    m.scale.set(sx,sy,sz);m.position.set(px,py,pz);
+    m.castShadow=true;g.add(m);return m;
+  };
+  // Good Samaritan supporting a reclining man: distinct kneeling/bent poses.
+  sph(.43,.68,.4,-.37,10.55,.05);
+  sph(.24,.26,.23,-.43,11.29,-.05);
+  const patient=sph(.3,.3,.75,.32,10.18,.15);patient.rotation.z=.4;
+  sph(.19,.2,.21,.38,10.4,-.4);
+  const arm=cyl(.10,.13,.9,marble,-.01,10.55,.1,g,7);arm.rotation.z=.8;
+  for(const zz of [-.29,.36]){
+    const knee=cyl(.14,.16,.7,marble,-.36,10.01,zz,g,7);knee.rotation.x=.9;
+  }
+  g.position.set(x,gy,z);scene.add(g);
+  const collision=etherColliders(gy);
+  S.solidBoxes.push(...collision.walls,collision.center);
+  S.interactables.push({
+    x,z,y:gy,r:5.2,
+    label:()=>!S.player.inHollow&&!S.player.inBurrow&&!S.player.inFenway&&
+      !S.player.inGarden&&!S.player.inCityHall&&!S.player.inEsplanade&&
+      !S.player.onSwanBoat?'E - inspect Ether Monument':null,
+    action:()=>{
+      if(Math.hypot(S.player.pos.x-x,S.player.pos.z-z)>5.3)return;
+      toast('Ether Monument (1868): Boston honors the relief of human suffering.',3.3);
+    }
+  });
 }
 
 // --- Gamewell alarm boxes: little red sentinels (Alarm Club canon) ---

@@ -63,3 +63,8 @@ The boats were visually empty, despite the official Swan Boat operator guidance 
 ## v0.6.79 — animal shoreline sanity
 
 A grounded path audit revealed the former Garden dog loop explicitly entered the lagoon and the former Common loop approached Frog Pond at water level. Both patrols are authored around their *existing* real park water-body bounds; new pure tests sample every patrol leg and reject water/Charles Street intersections. Pursuit movement also sidesteps along a safe shoreline tangent rather than dragging a dog across water. These are visual NPCs, not extra player collisions. A live AI/chase path recording remains necessary to verify that every dog turns naturally at water edges.
+
+
+## v0.6.80 — Ether Fountain and interactive historic landmark
+
+Added missing 1868 Ether Monument near in-game northwest Garden (-186,-73), based on Friends of the Public Garden + Smithsonian photos. Code-authored square granite basin with water, relief/arched faces, four rose columns, tall granite crown and sculptural Good Samaritan silhouette. Actual four-part basin rim and finite-height central plinth register physical solidity, not an infinite blocker; approach from all four sides requires a live walktest. Real E history interaction and pure layout/collider regression, no Field Notes count or save migration. No model licenses or AI images. This is an architectural approximation, not a survey/photogrammetry claim. Refs: https://friendsofthepublicgarden.org/our-parks/the-garden/ and https://www.si.edu/object/ether-monument-good-samaritan-sculpture:siris_ari_14517.
