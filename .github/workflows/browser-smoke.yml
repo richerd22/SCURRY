@@ -3,16 +3,26 @@ name: SCURRY browser smoke
 on:
   push:
     branches: [main]
+    # Browser boot/play belongs to runtime changes, not documentation-only
+    # or model-audit-script-only commits (those have fast quality gates).
+    paths:
+      - 'js/**'
+      - 'index.html'
+      - 'assets/models/**'
+      - 'harness/**'
+      - '.github/workflows/browser-smoke.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# Rapid feature commits should not leave several old 15-minute WebGL jobs
-# competing for the same runner/network resources. Only newest main matters.
+# Let the *running* browser suite finish. GitHub keeps one running and
+# at most one queued run per branch (newer pending replaces older pending).
+# Previous cancel-in-progress=true caused every rapid main push to abort
+# before real walk tests ran, leaving no browser evidence for releases.
 concurrency:
   group: scurry-browser-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   chromium-webgl:
