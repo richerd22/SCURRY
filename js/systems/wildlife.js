@@ -10,9 +10,14 @@ import { setCarriedVisual } from './player.js';
 import { toast } from '../ui/hud.js';
 import { WILDLIFE_SPAWNS, wildlifeResponse, nearestThreatDistance } from './wildlife-rules.js';
 import { parkShift } from './park-shifts.js';
+import { createObstacleIndex, resolveHorizontal } from './collision.js';
+import { wildlifeStep } from './wildlife-step-rules.js';
 import { BURROW_PATROLS } from './burrow-patrols.js';
 
 const actors=[];
+let wildlifeObstacleIndex=null,moveActor=null;
+const obstacleProbe={x:0,y:0,z:0};
+const moveScratch={x:0,z:0};
 const geo=new THREE.SphereGeometry(1,10,7);
 const geoEar=new THREE.ConeGeometry(1,1,7);
 const tailTube=new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
@@ -76,6 +81,27 @@ function isRemote() {
 function usable(x,z) {
   return insideParkLawn(x,z,MAP)&&!inWater(x,z)&&!onRoad(x,z);
 }
+// Player-grade obstacle predicate, using the very same static indexed
+// circles, boxes and terrain-following perimeter segments. Dynamic animals
+// do not become new solids, preventing player and NPC solver feedback loops.
+function freeSurfaceStep(nx,nz) {
+  if(!usable(nx,nz))return false;
+  const a=moveActor;
+  const radius=a.kind==='rabbit'?.19:a.kind==='squirrel'?.15:.12;
+  obstacleProbe.x=nx;obstacleProbe.z=nz;
+  obstacleProbe.y=visibleGroundHeight(nx,nz);
+  resolveHorizontal(obstacleProbe,S.solids,S.solidBoxes,S.walls,
+    radius,null,wildlifeObstacleIndex);
+  if(Math.hypot(obstacleProbe.x-nx,obstacleProbe.z-nz)>.003)return false;
+  // Two visible critters should sidestep instead of walking through one
+  // another; checking only the nearby active group stays cheap.
+  for(const b of actors){
+    if(b===a||b.underground||!b.mesh.visible)continue;
+    const gap=radius+(b.kind==='rabbit'?.18:b.kind==='squirrel'?.14:.11)+.08;
+    if((b.x-nx)**2+(b.z-nz)**2<gap*gap)return false;
+  }
+  return true;
+}
 function act(a) {
   const P=S.player,dist=Math.hypot(P.pos.x-a.x,P.pos.z-a.z);
   if(!a.mesh.visible||dist>1.8||Math.abs(P.pos.y-a.y)>1.3||a.cooldown>0)return;
@@ -137,6 +163,8 @@ export function buildWildlife(scene) {
 export function updateWildlife(dt) {
   if(!S.player.pos)return;
   const P=S.player,burrow=!!P.inBurrow,remote=isRemote();
+  if(!wildlifeObstacleIndex)wildlifeObstacleIndex=
+    createObstacleIndex(S.solids,S.solidBoxes,S.walls,.3,8);
   const shift=parkShift(S.timeHours);
   for(const a of actors){
     const sameRealm=a.underground?burrow:!remote&&!burrow;
@@ -192,12 +220,15 @@ export function updateWildlife(dt) {
     if(a.underground&&dist>10)speed=0; // stays in authored chamber, never walks through solid earth
     const dx=tx-a.x,dz=tz-a.z,d=Math.hypot(dx,dz);
     if(d>.1&&speed>0){
-      const stride=Math.min(d,speed*dt),nx=a.x+dx/d*stride,nz=a.z+dz/d*stride;
-      if(a.underground||usable(nx,nz)){
-        a.x=nx;a.z=nz;a.heading=Math.atan2(-dx,-dz);
+      moveActor=a;
+      const next=wildlifeStep(a.x,a.z,tx,tz,speed*dt,
+        freeSurfaceStep,a.index%2?1:-1,moveScratch);
+      const moveX=next.x-a.x,moveZ=next.z-a.z;
+      if(Math.hypot(moveX,moveZ)>.0001){
+        a.x=next.x;a.z=next.z;a.heading=Math.atan2(-moveX,-moveZ);
       }
     }
-    a.y=a.underground?0:visibleGroundHeight(a.x,a.z);
+    a.y=visibleGroundHeight(a.x,a.z);
     a.mesh.position.set(a.x,a.y+(speed>0&&d>.12?Math.abs(Math.sin(a.clock*11+a.phase))*.035:0),a.z);
     a.mesh.rotation.y=a.heading;
     if(a.mesh.userData.tail)
