@@ -39,3 +39,12 @@ Five distinct dogs: golden curious dog, Shiba, small terrier, black lab, dachshu
 Nine moving passersby now provide actual proximity-validated E beg interactions; the existing food-toss pipeline and its 26s per-person cooldown are reused, with movement coordinates updated every frame. Passersby can pause briefly to observe nearby squirrels. An old one-frame path discontinuity on waypoint transitions is corrected by recalculating endpoints after changing the segment. Wildlife now queries the actual dog-record Vector3 positions (not nonexistent top-level x/z fields); pure tests prove dog-to-rabbit threat propagation.
 
 **Acceptance**: these features are source-integrated and pure CI-tested, but new live interactivity remains a browser/phone walktest gate. Each interactive target must remain physically near its prompt and must not be reachable from a distant realm or an airborne rooftop. Keep the route traversals mandatory.
+
+
+## v0.6.76 — geographic correction, no terrain reauthoring
+
+Boston anchors corrected against Friends of the Public Garden and the City historic study: George Washington equestrian statue now near the west Arlington Street entrance opposite Commonwealth Avenue Mall (was incorrectly at the Garden south shore); Make Way for Ducklings now near the Beacon/Charles northeast corner (was incorrectly on the southeast lagoon side). Washington's atlas Field Note and one west-Garden promenade path were adjusted together. Collider and walkable pedestal positions are already generated from the same authored statue position, so there is no invisible previous sculpture at the old location.
+
+Still essential and NOT silently changed: the model's suspension bridge runs north/south with insufficient deck-to-Swan-Boat clearance, while the historic real bridge is on the Garden east/west axis. Changing it also affects the goose-deck jurisdiction, dock, boat routes, path navigation and collision tests, so requires a measured geometry rebuild with independent raycast collision-parity acceptance, rather than moving props and hoping. Likewise the Common's basin/hill/path placements need a map survey before touching the shared terrain. Keep this as an explicit fidelity debt.
+
+References: https://friendsofthepublicgarden.org/our-parks/the-garden/ ; https://www.boston.gov/sites/default/files/embed/b/boston-public-garden-study-report.pdf ; https://www.cityofboston.gov/images_documents/boston%20Common%20History%20%26%20Map_tcm3-30691.pdf

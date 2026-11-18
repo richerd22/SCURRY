@@ -86,8 +86,8 @@ export const PATHS = [
   [[-182, -34], [-132, -40], [-82, -34], [-76, 0], [-82, 34], [-132, 40], [-182, 34], [-188, 0], [-182, -34]],
   // Garden: bridge crossing (over the deck, endpoints on the loop)
   [[-132, -38], [-132, 38]],
-  // Garden: south mall to Washington statue
-  [[-132, 40], [-132, 74]],
+  // Garden: western perimeter promenade to Washington at Arlington St
+  [[-182, -34], [-193, 0], [-182, 34]],
   // Garden north path + Charles St crossings
   [[-196, -70], [-100, -70], [-60, -70]],
   [[-36, -70], [-44, -70], [-60, -70]],

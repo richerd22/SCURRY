@@ -965,7 +965,8 @@ function buildDucklings(scene) {
     d.rotation.y = -0.2 * Math.cos(i * 0.55);
     g.add(d);
   }
-  const x = -78, z = 34, gy = groundHeight(x, z);
+  // Beacon/Charles corner of the Garden (not the south lagoon shore).
+  const x = -78, z = -80, gy = groundHeight(x, z);
   g.position.set(x, gy, z);
   g.rotation.y = 0.8;
   scene.add(g);
@@ -984,7 +985,8 @@ function buildDucklings(scene) {
 // reins arm and a tricorn. All bronze, all procedural.
 function buildWashington(scene) {
   const g = new THREE.Group();
-  const x = -132, z = 76, gy = groundHeight(x, z);
+  // Arlington Street entrance opposite Commonwealth Avenue Mall.
+  const x = -193, z = 0, gy = groundHeight(x, z);
   box(4.4, 2.2, 3.2, granite, 0, 1.1, 0, g);
   box(3.6, 0.7, 2.6, stone, 0, 2.55, 0, g);
   const TOP = 2.9; // pedestal cap surface; hooves stand here

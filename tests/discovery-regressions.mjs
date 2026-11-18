@@ -35,3 +35,9 @@ test('invalid or absent player positions are rejected without exceptions',()=>{
   assert.deepEqual(discoverAt({},0,null),[]);
   assert.deepEqual(discoverAt(at(NaN,0,0),0,null),[]);
 });
+
+test('Washington marker is near Arlington entrance, not the Garden south shore',()=>{
+  const w=LANDMARKS.find(x=>x.id==='washington');
+  assert.ok(w.x < -180 && Math.abs(w.z)<15,
+    'Washington is in the west-entrance sector of Public Garden');
+});
