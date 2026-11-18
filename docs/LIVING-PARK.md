@@ -94,3 +94,8 @@ Existing five dog profiles and their leash/walker visual groups now follow the c
 ## v0.6.84 — food inventory regression correction
 
 The v0.6.82 visibility guard mistakenly interpreted mock item meshes without an explicit visible property as invisible. True Three.js meshes default visible=true; the correct predicate is visible !== false. Preserve invisible nighttime blankets while keeping ordinary collectible food and legacy test doubles pickable. Existing food pickup tests are the acceptance gate.
+
+
+## v0.6.85 — true shared underground NPC topology
+
+Extracted the previously embedded ROOMS/CORRIDORS geometry into one **pure burrow-layout.js** used unchanged by existing player support/clamps. The prior six entrance chambers, storage and market are identical. Four rat couriers now traverse authored multi-room routes: hub↔market, eastern storage, western storage and lagoon entrance. Three new squirrel residents also follow the same connected passage graph, including the Garden and Frog Pond approaches. All seven actual 3D actors keep their moving E interaction prompts and never require off-grid wall penetration. A pure test samples every **20cm of every edge including the return-to-start leg** to prove it stays inside the exact world collision-room union. No new surface entrances, infinite currency, save migration, third-party models or AI images.

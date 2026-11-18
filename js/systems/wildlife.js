@@ -10,6 +10,7 @@ import { setCarriedVisual } from './player.js';
 import { toast } from '../ui/hud.js';
 import { WILDLIFE_SPAWNS, wildlifeResponse, nearestThreatDistance } from './wildlife-rules.js';
 import { parkShift } from './park-shifts.js';
+import { BURROW_PATROLS } from './burrow-patrols.js';
 
 const actors=[];
 const geo=new THREE.SphereGeometry(1,10,7);
@@ -105,16 +106,20 @@ function act(a) {
 }
 export function buildWildlife(scene) {
   if(actors.length)return;
+  let undergroundIndex=0;
   WILDLIFE_SPAWNS.forEach(([kind,x,z],index)=>{
-    const underground=kind==='burrow-rat';
-    const role=underground?'rat':kind;
+    const underground=kind==='burrow-rat'||kind==='burrow-squirrel';
+    const role=kind==='burrow-rat'?'rat':kind==='burrow-squirrel'?'squirrel':kind;
+    const patrol=underground?BURROW_PATROLS[undergroundIndex++]:null;
+    if(patrol){x=TUN.x+patrol.points[0][0];z=TUN.z+patrol.points[0][1];}
     const g=makeCritter(role,index);
     const y=underground?0:visibleGroundHeight(x,z);
     g.position.set(x,y,z);
     scene.add(g);
     const a={kind:role,underground,mesh:g,x,z,y,homeX:x,homeZ:z,
       index,phase:index*2.399,clock:0,heading:index*1.79,roam:1+index%4,
-      cooldown:0,flee:0,calm:0,friendly:0,exposed:false};
+      cooldown:0,flee:0,calm:0,friendly:0,exposed:false,
+      patrol,routeStep:patrol?1:0};
     actors.push(a);
     S.interactables.push({
       x,z,y,r:1.65,
@@ -154,6 +159,27 @@ export function updateWildlife(dt) {
     const response=wildlifeResponse(a.underground?'burrow-rat':a.kind,
       dist,pace,a.underground?100:nearestThreatDistance(a.x,a.z,S.dogPositions),!!S.carried);
     if(response==='flee'&&a.flee<=0&&a.calm<=0)a.flee=2.8;
+    // Underground actors navigate the EXACT player room/corridor union;
+    // no more wandering through walls between their home chambers.
+    if(a.patrol){
+      const route=a.patrol.points;
+      let dest=route[a.routeStep],tx=TUN.x+dest[0],tz=TUN.z+dest[1];
+      let dx=tx-a.x,dz=tz-a.z,len=Math.hypot(dx,dz);
+      if(len<.10){a.routeStep=(a.routeStep+1)%route.length;
+        dest=route[a.routeStep];tx=TUN.x+dest[0];tz=TUN.z+dest[1];
+        dx=tx-a.x;dz=tz-a.z;len=Math.hypot(dx,dz);}
+      if(len>.001){
+        const step=Math.min(len,a.patrol.speed*dt);
+        a.x+=dx/len*step;a.z+=dz/len*step;
+        a.heading=Math.atan2(-dx,-dz);
+      }
+      a.y=0;a.mesh.position.set(a.x,Math.abs(Math.sin(a.clock*8+a.phase))*.018,a.z);
+      a.mesh.rotation.y=a.heading;
+      if(a.mesh.userData.tail)
+        a.mesh.userData.tail.rotation.z=Math.sin(a.clock*5+a.phase)*.1;
+      a.interactable.x=a.x;a.interactable.z=a.z;a.interactable.y=0;
+      continue;
+    }
     let tx=a.homeX+Math.cos(a.clock*.31+a.phase)*a.roam,
       tz=a.homeZ+Math.sin(a.clock*.29+a.phase)*a.roam;
     let speed=a.kind==='rabbit'?.72:.55;

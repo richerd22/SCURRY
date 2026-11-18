@@ -16,45 +16,13 @@ import { groundHeight, visibleGroundHeight } from '../world/world.js';
 import { sfx } from './audio.js';
 import { toast, setGossip } from '../ui/hud.js';
 import { spawnFood } from './food.js';
+import { ROOMS, CORRIDORS, RECTS } from './burrow-layout.js';
 
 // ---------------------------------------------------------------- layout
 export const TUN = new THREE.Vector3(3000, 0, 3000);
 const CEIL = 2.3; // tunnel ceiling height, metres. tall for a squirrel, fine.
 
-// Rooms: { id, minX, maxX, minZ, maxZ } in local coords (x east, z south).
-const ROOMS = [
-  { id: 'hub',       minX: -6,  maxX: 6,  minZ: -6,  maxZ: 6  },   // central chamber
-  { id: 'entry_hollow',   minX: -3,  maxX: 3,  minZ: -26, maxZ: -20 }, // N
-  { id: 'entry_frog',     minX: -26, maxX: -20, minZ: -3,  maxZ: 3  }, // W
-  { id: 'entry_monument', minX: -19, maxX: -13, minZ: 17,  maxZ: 23 }, // SW
-  { id: 'entry_garden',   minX: -3,  maxX: 3,  minZ: 20,  maxZ: 26  }, // S
-  { id: 'entry_mall',     minX: 13,  maxX: 19, minZ: 17,  maxZ: 23  }, // SE
-  { id: 'entry_lagoon',   minX: 13,  maxX: 19, minZ: -26, maxZ: -20 }, // NE
-  { id: 'storage_a', minX: -36, maxX: -28, minZ: -14, maxZ: -6 },  // west, off the ring
-  { id: 'storage_b', minX: 28,  maxX: 36, minZ: 6,   maxZ: 14 },   // east, off the ring
-  { id: 'market',    minX: 38,  maxX: 52, minZ: -6,  maxZ: 6  },   // deep east end
-];
-// Corridors: same rect shape. The ring + four spokes join everything to
-// the hub; the market run is the longest corridor in the network.
-const CORRIDORS = [
-  { id: 'spoke_n',    minX: -1.5, maxX: 1.5,  minZ: -14, maxZ: -6 },
-  { id: 'spoke_s',    minX: -1.5, maxX: 1.5,  minZ: 6,   maxZ: 14 },
-  { id: 'spoke_w',    minX: -14,  maxX: -6,   minZ: -1.5, maxZ: 1.5 },
-  { id: 'market_run', minX: 6,    maxX: 38,   minZ: -1.5, maxZ: 1.5 }, // the long one
-  { id: 'ring_n',     minX: -20,  maxX: 20,   minZ: -14, maxZ: -11 },
-  { id: 'ring_s',     minX: -20,  maxX: 20,   minZ: 11,  maxZ: 14 },
-  { id: 'ring_w',     minX: -20,  maxX: -17,  minZ: -14, maxZ: 14 },
-  { id: 'ring_e',     minX: 17,   maxX: 20,   minZ: -14, maxZ: 14 },
-  { id: 'br_hollow',   minX: -1.5,  maxX: 1.5,  minZ: -20, maxZ: -11 },
-  { id: 'br_frog',     minX: -26,   maxX: -17,  minZ: -1.5, maxZ: 1.5 },
-  { id: 'br_monument', minX: -17.5, maxX: -14.5, minZ: 11, maxZ: 20 },
-  { id: 'br_garden',   minX: -1.5,  maxX: 1.5,  minZ: 11,  maxZ: 20 },
-  { id: 'br_mall',     minX: 14.5,  maxX: 17.5, minZ: 11,  maxZ: 20 },
-  { id: 'br_lagoon',   minX: 14.5,  maxX: 17.5, minZ: -20, maxZ: -11 },
-  { id: 'br_storage_a', minX: -28,  maxX: -17,  minZ: -11.5, maxZ: -8.5 },
-  { id: 'br_storage_b', minX: 17,   maxX: 28,   minZ: 8.5,  maxZ: 11.5 },
-];
-const RECTS = ROOMS.concat(CORRIDORS);
+// Single shared layout: player clamp and NPC patrols use identical rooms.
 const WALK_PAD = 0.22; // rooms (and corridors) count as slightly padded
 
 // Entry chambers: centre + the yaw you face on arrival (toward the way in).

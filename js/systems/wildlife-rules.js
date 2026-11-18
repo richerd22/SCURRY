@@ -8,6 +8,8 @@ export const WILDLIFE_SPAWNS=Object.freeze([
   ['rat',110,-28],
   ['burrow-rat',3000,3000],['burrow-rat',3033,3010],
   ['burrow-rat',2968,2990],['burrow-rat',3044,3003],
+  ['burrow-squirrel',3000,3000],['burrow-squirrel',3000,3020],
+  ['burrow-squirrel',2977,3000],
 ]);
 // Dogs expose either {pos:Vector3} records or bare position vectors.
 export function nearestThreatDistance(x,z,dogs=[]) {

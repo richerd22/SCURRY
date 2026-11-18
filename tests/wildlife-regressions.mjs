@@ -5,14 +5,14 @@ const src=readFileSync(new URL('../js/systems/wildlife-rules.js',import.meta.url
 const {WILDLIFE_SPAWNS,wildlifeResponse,nearestThreatDistance}=await import(
   'data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 test('authored urban wildlife is bounded, diverse, and includes the burrow network',()=>{
-  assert.equal(WILDLIFE_SPAWNS.length,18);
+  assert.equal(WILDLIFE_SPAWNS.length,21);
   const species=new Set(WILDLIFE_SPAWNS.map(a=>a[0]));
-  assert.deepEqual([...species].sort(),['burrow-rat','rabbit','rat','squirrel']);
+  assert.deepEqual([...species].sort(),['burrow-rat','burrow-squirrel','rabbit','rat','squirrel']);
   for(const [species,x,z] of WILDLIFE_SPAWNS){
     assert.ok(Number.isFinite(x)&&Number.isFinite(z));
-    if(species==='burrow-rat')assert.ok(Math.abs(x-3000)<55&&Math.abs(z-3000)<35);
+    if(species.startsWith('burrow-'))assert.ok(Math.abs(x-3000)<55&&Math.abs(z-3000)<35);
     else assert.ok(x>-205&&x<205&&z>-98&&z<98);
-    if(species!=='burrow-rat') assert.ok(x<-60||x>-40,'no wildlife spawned on Charles Street');
+    if(!species.startsWith('burrow-')) assert.ok(x<-60||x>-40,'no wildlife spawned on Charles Street');
   }
 });
 test('rabbit is skittish, squirrel takes interest in food, tunnel rats are peaceful',()=>{
