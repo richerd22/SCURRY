@@ -107,4 +107,11 @@ export function initTouch({ onInteract, onBury }) {
     setTouchKey('ShiftLeft', S.touch.sprint);
     el.classList.toggle('on', S.touch.sprint);
   });
+  // The shared keyboard state also clears on focus loss. Reset the toggle
+  // badge with it or iOS can display SPRINT ON while actually walking.
+  window.addEventListener('blur', () => {
+    S.touch.sprint = false;
+    setTouchKey('ShiftLeft', false);
+    document.getElementById('btn-sprint')?.classList.remove('on');
+  });
 }
