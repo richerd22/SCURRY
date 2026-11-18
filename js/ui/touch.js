@@ -43,6 +43,11 @@ export function initTouch({ onInteract, onBury }) {
   };
   window.addEventListener('pointerup', stickEnd);
   window.addEventListener('pointercancel', stickEnd);
+  window.addEventListener('blur', () => {
+    stickId = null;
+    nub.style.transform = 'translate(0px,0px)';
+    S.touch.x = 0; S.touch.y = 0;
+  });
 
   // ---- look drag (right side of the screen) ----
   const look = document.getElementById('lookzone');
@@ -62,18 +67,36 @@ export function initTouch({ onInteract, onBury }) {
   const lookEnd = (e) => { if (e.pointerId === lookId) lookId = null; };
   window.addEventListener('pointerup', lookEnd);
   window.addEventListener('pointercancel', lookEnd);
+  window.addEventListener('blur', () => { lookId = null; });
 
   // ---- buttons ----
   function holdButton(id, down, up) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); down(el); });
-    if (up) {
-      const end = (e) => { up(el); };
-      el.addEventListener('pointerup', end);
-      el.addEventListener('pointercancel', end);
-      el.addEventListener('pointerleave', end);
-    }
+    let activePointer = null;
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (activePointer !== null) return;
+      activePointer = e.pointerId;
+      // iOS Safari supports pointer capture; keep a jump held even when a
+      // thumb slides a little outside the button during a big leap.
+      if (el.setPointerCapture) {
+        try { el.setPointerCapture(e.pointerId); } catch (_) { /* older iOS */ }
+      }
+      down(el);
+    });
+    const release = (e) => {
+      if (activePointer === null || (e && e.pointerId !== activePointer)) return;
+      activePointer = null;
+      if (up) up(el);
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+    el.addEventListener('lostpointercapture', release);
+    el.addEventListener('pointerleave', (e) => {
+      if (!el.hasPointerCapture || !el.hasPointerCapture(e.pointerId)) release(e);
+    });
+    window.addEventListener('blur', () => release(null));
   }
   holdButton('btn-jump', () => setTouchKey('Space', true), () => setTouchKey('Space', false));
   holdButton('btn-bite', () => pressBite());
