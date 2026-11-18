@@ -80,6 +80,16 @@ export function segmentHeight(shape, t, a = 'y0', b = 'y1', fallback = 'y') {
     ? shape[a] + (shape[b] - shape[a]) * t : shape[fallback];
 }
 
+// Sidewalk ramps optionally give platform boxes a top plane sloping in X.
+// Legacy flat rectangular platforms still return their original constant Y.
+export function boxSurfaceHeight(box, x) {
+  if(Number.isFinite(box.y0)&&Number.isFinite(box.y1)&&box.maxX>box.minX){
+    const t=Math.max(0,Math.min(1,(x-box.minX)/(box.maxX-box.minX)));
+    return box.y0+(box.y1-box.y0)*t;
+  }
+  return box.y;
+}
+
 // The same predicates as walkSurface's unindexed reference implementation.
 function indexedSurfaceCandidate(entry, x, z, refY, ceiling, best) {
   const s = entry.shape;
@@ -89,8 +99,9 @@ function indexedSurfaceCandidate(entry, x, z, refY, ceiling, best) {
     return dx * dx + dz * dz <= s.r * s.r ? s.y : best;
   }
   if (entry.type === 1) {
-    if (s.y > ceiling || s.y <= best) return best;
-    return x >= s.minX && x <= s.maxX && z >= s.minZ && z <= s.maxZ ? s.y : best;
+    if (x < s.minX || x > s.maxX || z < s.minZ || z > s.maxZ) return best;
+    const y=boxSurfaceHeight(s,x);
+    return y <= ceiling && y > best ? y : best;
   }
   const dx = s.x1 - s.x0, dz = s.z1 - s.z0;
   const t = Math.max(0, Math.min(1, ((x - s.x0) * dx + (z - s.z0) * dz) /
@@ -117,8 +128,10 @@ export function walkSurface(x, z, refY, stepTol, base, platforms, boxes, segment
     if (dx * dx + dz * dz <= p.r * p.r && p.y <= ceiling && p.y > best) best = p.y;
   }
   for (const b of boxes) {
-    if (x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
-        && b.y <= ceiling && b.y > best) best = b.y;
+    if (x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ) {
+      const y=boxSurfaceHeight(b,x);
+      if(y <= ceiling && y > best)best=y;
+    }
   }
   for (const s of segments) {
     const dx = s.x1 - s.x0, dz = s.z1 - s.z0;

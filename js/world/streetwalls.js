@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { S } from '../state.js';
 import { brownstoneFacade, storefrontFacade, tremontFacade } from './textures.js';
+import { makeCharlesSidewalkLayout } from './sidewalk-layout.js';
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -450,16 +451,34 @@ export function buildCharlesStreet(scene, groundHeight) {
   });
   if (S.cityMats) S.cityMats.push(glassLitC);
 
-  // sidewalks: segmented slabs hugging the terrain on both curbs
-  const walks = [];
-  for (let z = -96; z < 96; z += 16) {
-    for (const cx of [-59.9, -40.1]) {
-      const curbY = groundHeight(cx, z + 8);
-      walks.push({ p: [cx, curbY + 0.06, z + 8], s: [2.7, 0.14, 16.4] });
-      S.platformBoxes.push({ minX: cx - 1.35, maxX: cx + 1.35, minZ: z - 0.2, maxZ: z + 16.2, y: curbY + 0.13 });
+  // Terrain-fitted sidewalks: 1.2m raised paving flanked by two 0.75m
+  // graded shoulders. The prior hard-edged 0.13m slab made the squirrel
+  // instantly pop 13cm at 90Hz (captured in the Charles Street walk trace).
+  // Geometry and physical support are generated from the same profile.
+  const sidewalks = makeCharlesSidewalkLayout(groundHeight);
+  scene.add(instanced(boxGeo(),concrete,sidewalks.cores));
+  for(const core of sidewalks.cores)S.platformBoxes.push(core.collision);
+
+  // Unit wedge has top .07 above its instance centre at the high end
+  // and -.045 at the street/grass edge; bottom is always -.07.
+  // Shared per-side geometry preserves two instanced draw calls.
+  function curbWedge(highAtRight){
+    const geo=boxGeo(),pos=geo.attributes.position;
+    for(let i=0;i<pos.count;i++){
+      const x=pos.getX(i),y=pos.getY(i);
+      pos.setY(i,y>0
+        ? ((x>0)===highAtRight ? .07 : -.045)
+        : -.07);
     }
+    pos.needsUpdate=true;
+    geo.computeVertexNormals();
+    return geo;
   }
-  scene.add(instanced(boxGeo(), concrete, walks));
+  for(const highAtRight of [true,false]){
+    const rows=sidewalks.ramps.filter(r=>r.highAtRight===highAtRight);
+    scene.add(instanced(curbWedge(highAtRight),concrete,rows));
+  }
+  for(const ramp of sidewalks.ramps)S.platformBoxes.push(ramp.collision);
 
   // crosswalk zebras at the three path crossings
   const stripes = [];

@@ -240,10 +240,13 @@ async function checkGameplay() {
       assert.ok(walk.minMeshClear>=-.03,name+' feet under rendered mesh '+walk.minMeshClear);
       assert.ok(walk.penetrations===0,name+' had terrain penetrations');
       assert.ok(walk.nonGround<steps*.02,name+' left terrain while walking: '+walk.nonGround);
+      if(name==='Charles St Garden gate')
+        assert.ok(walk.maxStepY<.05,
+          'curb transition snapped vertically in one 90Hz frame: '+walk.maxStepY);
       assert.equal(walk.climbs,0,name+' unintentionally grabbed a tree');
       console.log('TERRAIN '+name+' '+JSON.stringify({metres:+walk.horizontalDistance.toFixed(1),
         minClear:+walk.minClear.toFixed(4),minMeshClear:+walk.minMeshClear.toFixed(4),
-        airborne:walk.nonGround,meshSamples:walk.meshSamples}));
+        maxStepY:+walk.maxStepY.toFixed(4),airborne:walk.nonGround,meshSamples:walk.meshSamples}));
     }
     // Elevated topology is part of the same ground-clipping complaint:
     // check real canopy/bridge/fence registries with the same solver.
