@@ -234,3 +234,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Reuse six atlas landmark locations as a pure Field Notes data source, plus eight additional world/realm discoveries; check them at 0.45s intervals in real play only, and save valid IDs under an independent localStorage v1 key. Show a compact optional checklist inside the existing MAP panel, not an always-visible HUD. Keep arrival and canopy checks spatially honest.
 
 **Consequence:** Exploration persists over sessions without save-schema migrations, extra textures or heavy per-frame work. The feature is deliberately a field notebook, not a quest/pathfinding engine; iPhone interface readability and persistence after reload still require device acceptance.
+
+
+## ADR-027 — persistence acceptance requires a full reload
+
+**Context:** A Field Notes module could appear to record observations through its in-memory Set even if storage writes failed, or readback after startup failed. Checking only the key after a visit is incomplete coverage.
+
+**Decision:** Revisit the site from the same browser profile, reopen FIELD NOTES after a full page reload, and assert the previous burrow observation is still checked. Archive screenshots of the guide before and after the reload in the existing browser CI artifact. Tighten mobile header flex layout without adding a new separate overlay.
+
+**Consequence:** The browser suite now validates the entire write/reload/read/UI path for discoveries. It still cannot guarantee native iOS Safari persistence policy, which depends on private browsing and platform storage limits.

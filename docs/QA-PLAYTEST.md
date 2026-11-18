@@ -195,3 +195,8 @@ The browser workflow's `mobile-live-play` scenario now exercises a virtual joyst
 - Approach Frog Pond, Bandstand, Washington, the Garden Bridge, Hollow Tree and a canopy above 4.5m; each observation should unlock exactly once and raise the count, with no artificial discoveries when teleporting into remote realms.
 - Enter burrows with ACT; note should unlock and persist across a browser reload. Save is independent of stash/caps/mute. Private browsing with blocked localStorage must remain playable and preserve current-session discoveries even if durable persistence is unavailable.
 - The screenshot-only poses must NOT mark places visited or mutate the Field Notes key. Mobile map/Notes controls must remain reachable with thumbs and safe areas.
+
+
+## Field Notes persistence/readability (v0.6.55)
+
+Review `mobile-spawn-field-notes.png` and `mobile-live-play-saved-notes.png` from the browser smoke artifact. The first proves all fourteen notes fit inside a scrollable mobile panel; the second must show a checked Rat Burrows note after a full page reload, not just the immediate in-memory unlock. On physical iPhone verify map/notes/close targets do not overlap or hide under safe-area insets, and test reload/restoration in both regular and private browsing (private storage can deliberately be ephemeral).

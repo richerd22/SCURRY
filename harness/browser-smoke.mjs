@@ -69,6 +69,7 @@ async function checkScene(pose, mobile = false) {
       assert.equal(await page.locator('#map-guide').isVisible(),true,
         'Field Notes must open in map panel');
       assert.equal(await page.locator('#map-guide [role="listitem"]').count(),14);
+      await page.screenshot({path:out+'/'+title+'-field-notes.png'});
       await page.locator('#map-guide-toggle').tap();
       assert.equal(await page.locator('#map-canvas').isVisible(),true,
         'Field Notes must return to the atlas');
@@ -312,8 +313,19 @@ async function checkTouchGameplay() {
       catch{return false;}
     },null,{timeout:15000});
     await page.screenshot({path:out+'/'+title+'.png'});
+    // Reload is essential: a passed in-memory Set alone does not prove
+    // persistence. The same browser context must restore discovered ids.
+    await page.reload({waitUntil:'domcontentloaded',timeout:60000});
+    await page.waitForFunction(()=>!!window.__scurryQA,null,{timeout:120000});
+    await page.locator('#title').tap();
+    await page.locator('#map-toggle').tap();
+    await page.locator('#map-guide-toggle').tap();
+    const saved=page.locator('#map-guide [data-note-id="burrows"]');
+    assert.equal(await saved.getAttribute('data-found'),'true',
+      'Field Notes burrow discovery must survive a full reload');
+    await page.screenshot({path:out+'/'+title+'-saved-notes.png'});
     results.push({title,status:'PASS',
-      routes:'live joystick + simultaneous jump + look + sprint + ACT burrow'});
+      routes:'live joystick + simultaneous jump + look + sprint + ACT burrow + persisted notes'});
     console.log(title+': PASS joystick, dual-touch jump, look, sprint, ACT portal');
   } catch(e) {
     faults.push(title+': '+(e.stack||e));

@@ -17,9 +17,9 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [Engineering decisions](docs/DECISIONS.md): why the controller and mobile lifecycle work the way they do.
 - [Agent guide](docs/AGENT-GUIDE.md): the long-form implementation history, asset decisions and honest known state.
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
-- [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, screenshot poses and map keyboard/touch checks, with screenshots/console artifacts on pushes to main.
+- [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, still screenshots, real desktop PLAY/WALK/JUMP/PORTAL round trips, simulated mobile dual-touch controls, optional map/notes checks, and screenshots/console artifacts on pushes to main.
 
-**Current version: v0.6.54.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
+**Current version: v0.6.55.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. Native iPhone Safari and real-GPU/performance playtesting remain required.
 
 ## Controls
 
@@ -36,6 +36,8 @@ Desktop:
 | Left click | BITE - a comic boop; escapes dogs and the ranger |
 | M | mute |
 | G / MAP | toggle the hand-drawn park atlas (landmarks, paths, direction) |
+| FIELD NOTES inside MAP | view the 14 optional discoveries you've visited (saved locally) |
+| Map landmark number | select/clear an optional compass waypoint with metre distance |
 
 Mobile (touch devices get a full control layer - no pointer lock needed):
 
@@ -46,10 +48,20 @@ Mobile (touch devices get a full control layer - no pointer lock needed):
 | SPRINT button | sprint toggle |
 | JUMP / BITE / ACT / BURY buttons | jump / bite / interact / bury |
 | MAP button | park map (home realm); remote destinations show their own title |
+| FIELD NOTES inside MAP | open the exploration checklist; discoveries save separately from stash |
 
 No fall damage. Squirrels do not take fall damage. This is science.
 If the ranger nets you, you wake up on the bandstand roof and your stash
 loses 25%. Relocated, never harmed.
+
+## What's new in v0.6.46–v0.6.55
+
+- **Doors that land properly.** Hollow and all four burrow destinations restore grounded player state on their real physics floors, not 40cm above them.
+- **Desktop fallback that actually works.** When pointer lock is denied, drag the scene to look and click the scene to BITE. Map/HUD clicks cannot trigger attacks. Pausing, tab switching and resuming release stuck keys.
+- **More dependable phone performance.** A reversible graphics-quality ladder uses real frame time, not capped physics time; the static 3D background renders less while paused, and procedural birdsong/crickets suspend with gameplay.
+- **Field Notes.** Open MAP → FIELD NOTES for fourteen places and experiences to discover around the Common, Garden, canopy and hidden realms. Notes save locally and independently of your stash.
+- **A compass, not a quest.** Select an atlas landmark to see a small optional direction and metre-distance guide. Tap it to clear. No permanent HUD clutter or pretend pathfinding through fences.
+- **Real browser tests.** Permanent WebGL smoke now clicks PLAY, walks, jumps, exercises mouse fallback, visits every realm through real E prompts, and tests simulated simultaneous mobile stick + jump + ACT controls. The suite keeps screenshots and diagnostic evidence on failure. It's not a substitute for a physical iPhone.
 
 ## What's in v0.6.31
 

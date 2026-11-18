@@ -1313,3 +1313,8 @@ The browser workflow now starts a live 390×844 simulated touch game and tests: 
 ## v0.6.54 — Field Notes discovery record (Nov 18 2026)
 
 Optional map-panel FIELD NOTES now shows 14 exploration entries, updated on live play and stored in a separate `scurry-field-notes-v1` localStorage key, never modifying the v1 stash save. Pure `discovery-rules.js` owns shared atlas landmark positions and filters off-map coordinates; `discoveries.js` samples at 0.45s cadence. The Notes tab, its count and its checklist are only active when the map is opened, no extra primary HUD badges. New pure tests verify all keys/locations, remote realms, Hollow exterior and canopy height; browser simulated touch smoke tests toggling the Notes tab and checks the burrow observation persisted after ACT. Avoid adding a tutorial or massive quest HUD; discoveries are low-pressure world appreciation, not XP grind. Screenshot mode must never unlock notes.
+
+
+## v0.6.55 — persistence must survive a browser process reload (Nov 18 2026)
+
+The mobile live test checks Field Notes after a full `page.reload()`, not merely after `setItem`. It reopens the map/notes and verifies the rat-burrow item is still marked complete; captures both the fresh Field Notes panel screenshot and reloaded-note evidence. Responsive map header CSS leaves enough room for MAP / NOTES / × controls on 390px and narrow devices. README feature summary updated. Gameplay logic unchanged from v0.6.54; this release adds quality evidence and small responsive styling.
