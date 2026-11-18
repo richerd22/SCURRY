@@ -167,3 +167,8 @@ The park map previously had no indication where the newly playable subway statio
 ## v0.6.97 — remove impossible Frog Pond pedestrian and ranger shortcuts
 
 The old civilian wanderer selector included PATHS[6], the literal Frog Pond straight-line feeder at Z=12 from X=60 to X=112, right through the water ellipse (center X=95,Z=12). The ranger's route likewise connected (112,12) to (60,12), wading straight through the pond. Both now follow nearby actual dry paths: civilians use the bandstand-side PATHS[7]; ranger takes the southern dry approach via X=112,Z=42 and X=60,Z=42. A new Node regression extracts the **actual shared world PATHS and MAP data**, samples every segment INCLUDING loop closure every ≤35cm, and rejects actual world water/Charles Street intersections. This is a source-verified map/AI correction, not a new feature or weaker check. Player terrain/colliders untouched.
+
+
+## v0.6.98 — CI caught an NPC waypoint misindex before release acceptance
+
+The v0.6.97 pure 35cm path sampler failed (154/155 tests passed): our index change had mistakenly replaced the safe northeast Park Street entry route at PATHS[6] with the actual underwater Frog Pond feeder at PATHS[7]. The canonical world.js PATHS list includes an extra Park Street connector added in v0.6.90, shifting later entries. Restored CIVILIAN_PATH_INDICES to [0,1,4,6,8,11], precisely the safe original selection; retained the new ranger dry shoreline route and KEEP the strict sampling test. The regression now explicitly asserts index 7 is excluded. Lesson: array-index assumptions must be proven against the current world map, not stale comments. No reduction in collision or walkable requirements.

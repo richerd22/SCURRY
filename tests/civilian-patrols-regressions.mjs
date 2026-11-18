@@ -47,7 +47,7 @@ test('ranger stays out of Frog Pond and Charles Street through every leg',()=>{
  assert.ok(RANGER_PATROL.some(p=>p[0]>=140&&p[1]>=40),
    'ranger still visits actual bandstand neighborhood');
 });
-test('the dry-path selector excludes the original underwater feeder',()=>{
- assert.ok(!CIVILIAN_PATH_INDICES.includes(6));
- assert.ok(CIVILIAN_PATH_INDICES.includes(7));
+test('the dry-path selector excludes the real Frog Pond feeder at index seven',()=>{
+ assert.ok(!CIVILIAN_PATH_INDICES.includes(7));
+ assert.ok(CIVILIAN_PATH_INDICES.includes(6));
 });
