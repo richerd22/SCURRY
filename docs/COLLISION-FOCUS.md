@@ -17,3 +17,7 @@ The localhost-only QA runner now starts five real park routes, holds browser key
 ## v0.6.65 elevated real-support traversal
 
 The browser integration test now discovers an actual canopy platform, the Garden bridge deck, and a graded perimeter rail from the in-game collision registries. It positions the squirrel at each real support then drives W across that geometry with actual player movement substeps. It asserts continuous grounded state, height continuity, no involuntary climbing, no mesh penetration, and records the exact positions in the same JSON artifact. These are short carefully bounded traversal probes, not a declaration that all roofs/branches were manually accepted. The previous five continuous Common/Garden walking paths remain mandatory.
+
+## v0.6.66 user-facing clipping reproduction
+
+Open https://scurry.cold.fyi/?diag=1 in a normal browser and play through a suspicious contact. The optional diagnostics panel now holds a bounded recent 180-sample movement trace (roughly 30 seconds at 6Hz), including feet X/Y/Z, actual floor, contact state, vertical velocity, frame FPS and realm. Tap COPY WALK TRACE to copy JSON for a GitHub issue/ChatGPT. The copy is **manual, on-device only**: no upload, analytics, background recording or trace allocation during normal non-diag play. It tracks minimum grounded-floor gap and negative penetration samples without pretending that a clean trace proves the whole world collision is fixed. Four pure Node tests validate bounded storage, event counts, bad data and snapshot immutability.

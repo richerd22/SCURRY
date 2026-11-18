@@ -29,6 +29,7 @@ import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
 import { initParkMap, updateParkMap } from './ui/park-map.js';
 import { initDiscoveries, updateDiscoveries } from './systems/discoveries.js';
+import { createContactRecorder } from './systems/contact-recorder.js';
 import { beginRelocation, completeRelocation, advanceRelocation } from './systems/relocation.js';
 import { createMobileQualityState, advanceMobileQuality } from './systems/mobile-quality.js';
 import { whenModelsSettled } from './systems/models.js';
@@ -504,12 +505,32 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Opt-in field telemetry: ?diag=1. Ordinary play pays no overlay cost.
+// Opt-in field telemetry: ?diag=1. Ordinary play pays no history cost.
 const diagHud = Q.has('diag') ? document.createElement('pre') : null;
+const diagRecorder = diagHud ? createContactRecorder(180) : null;
 if (diagHud) {
   diagHud.id = 'scurry-diag';
   diagHud.style.cssText = 'position:fixed;z-index:9;left:calc(8px + env(safe-area-inset-left));top:calc(95px + env(safe-area-inset-top));margin:0;padding:8px 10px;border:1px solid #ffffff60;border-radius:6px;background:#09100ce8;color:#eaffca;font:11px/1.4 ui-monospace,monospace;pointer-events:none;white-space:pre;max-width:80vw';
   document.body.appendChild(diagHud);
+  const copy=document.createElement('button');
+  copy.type='button'; copy.id='scurry-diag-copy';
+  copy.textContent='COPY WALK TRACE';
+  copy.setAttribute('aria-label','Copy recent squirrel collision coordinates');
+  copy.style.cssText='position:fixed;z-index:10;left:calc(8px + env(safe-area-inset-left));top:calc(225px + env(safe-area-inset-top));border:1px solid #a4c790;background:#183022;color:#eaffca;border-radius:5px;padding:8px 10px;font:700 11px ui-monospace,monospace;cursor:pointer;touch-action:manipulation';
+  copy.addEventListener('click',async()=>{
+    const report={game:'SCURRY',build:document.querySelector('meta[name="scurry-version"]')?.content,
+      captured:new Date().toISOString(),device:navigator.userAgent,...diagRecorder.snapshot()};
+    const content=JSON.stringify(report,null,2);
+    try{
+      if(!navigator.clipboard?.writeText)throw new Error('clipboard not permitted');
+      await navigator.clipboard.writeText(content);
+      copy.textContent='COPIED ✓';
+    }catch(_){
+      window.prompt('Copy your recent SCURRY collision trace:',content);
+      copy.textContent='COPY WALK TRACE';
+    }
+  });
+  document.body.appendChild(copy);
 }
 let diagElapsed = 0;
 function updateDiagnostics(dt, rawFrameDt) {
@@ -523,7 +544,11 @@ function updateDiagnostics(dt, rawFrameDt) {
   const sample = S.realmGround[realm];
   const ground = realm === 'park' ? visibleGroundHeight(pos.x, pos.z) :
     (sample ? sample(pos.x, pos.z) : 0);
-  diagHud.textContent = `SCURRY DIAG | ${realm}\nfeet: ${pos.x.toFixed(2)} / ${pos.y.toFixed(2)} / ${pos.z.toFixed(2)}\nground: ${ground.toFixed(2)} | gap: ${(pos.y-ground).toFixed(2)}\n${P.climbing ? 'CLIMBING' : P.grounded ? 'GROUNDED' : 'AIRBORNE'} | vy: ${v.y.toFixed(2)}\nFPS: ${Math.round(1/Math.max(rawFrameDt,.001))} | EMA: ${Math.round(mobileQuality.fpsEma)} | quality: ${mobileQuality.tier} | touch: ${S.isTouch}`;
+  diagRecorder.record({t:performance.now(),x:pos.x,y:pos.y,z:pos.z,
+    ground,grounded:P.grounded,climbing:!!P.climbing,realm,vy:v.y,
+    fps:1/Math.max(rawFrameDt,.001)});
+  const summary=diagRecorder.snapshot();
+  diagHud.textContent = `SCURRY DIAG | ${realm}\nfeet: ${pos.x.toFixed(2)} / ${pos.y.toFixed(2)} / ${pos.z.toFixed(2)}\nground: ${ground.toFixed(2)} | gap: ${(pos.y-ground).toFixed(2)}\n${P.climbing ? 'CLIMBING' : P.grounded ? 'GROUNDED' : 'AIRBORNE'} | vy: ${v.y.toFixed(2)}\nFPS: ${Math.round(1/Math.max(rawFrameDt,.001))} | EMA: ${Math.round(mobileQuality.fpsEma)} | quality: ${mobileQuality.tier} | touch: ${S.isTouch}\nTRACE ${summary.total} | min gap ${summary.minimumGap ?? '—'}m | penetration samples ${summary.penetrations}`;
 }
 
 // ---------- the loop ----------
