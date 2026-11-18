@@ -19,7 +19,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 - [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, screenshot poses and map keyboard/touch checks, with screenshots/console artifacts on pushes to main.
 
-**Current version: v0.6.50.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
+**Current version: v0.6.51.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
 
 ## Controls
 

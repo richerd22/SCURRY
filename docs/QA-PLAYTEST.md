@@ -172,3 +172,8 @@ The headless WebGL workflow now runs `?qa=1&lowq=1` on a local HTTP server, clic
 - Pause/background SCURRY during daytime chirps or night crickets. Audio should become silent and resume only after an intentional PLAY/RESUME gesture.
 - Mute before pause, then resume: mute should remain on and survive reload. Repeated resume must reuse one AudioContext, not allocate another.
 - An iOS Safari WebAudio permission rejection must never trap the player. Browser CI asserts internal audio pause state; real audible output requires physical-device QA.
+
+
+## Destination grounding (v0.6.51)
+
+In a normal non-shot play session enter each of Fenway, TD Garden, City Hall and Esplanade through the rat-market doors using E/ACT. The squirrel must appear standing on visible level with no 40cm pop/fall and no unwanted lingering climbing mode. Immediately walk, jump, and return to the burrows. The headless browser regression asserts `grounded` and a <0.1m sampled-floor gap at each entrance; a failure of this route gate is a release blocker, not a reason to weaken snap tolerances or mask with a fake grounded flag.

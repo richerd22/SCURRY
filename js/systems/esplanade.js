@@ -592,12 +592,13 @@ export function buildEsplanade(scene) {
 // ------------------------------------------------------------------ init
 function enterEsplanade() {
   const P = S.player;
-  P.pos.set(ESP.x + HOLE_L.x + 2.6, LAND_Y + 0.4, ESP.z + HOLE_L.z - 1.2);
+  P.pos.set(ESP.x + HOLE_L.x + 2.6,
+    espGround(HOLE_L.x + 2.6, HOLE_L.z - 1.2), ESP.z + HOLE_L.z - 1.2);
   P.vel.set(0, 0, 0);
   // face the shell and the river beyond it
   P.yaw = Math.atan2(-(0 - (HOLE_L.x + 2.6)), -(-20 - (HOLE_L.z - 1.2)));
   P.pitch = 0.04;
-  P.climbing = null; P.grounded = true;
+  P.climbing = null; P.climbRegrab = 0; P.grounded = true;
   P.inHollow = false; P.inBurrow = false; P.inFenway = false; P.inGarden = false; P.inCityHall = false; P.inEsplanade = true;
   if (sfx.dig) sfx.dig();
   if (!discovered) {
@@ -650,7 +651,8 @@ export function updateEsplanade(dt) {
   const lx = P.pos.x - ESP.x, lz = P.pos.z - ESP.z;
   if (Math.abs(lx) > 500 || Math.abs(lz) > 500) {
     // paranoia clamp, same spirit as the other realms' grounds crews
-    P.pos.set(ESP.x + HOLE_L.x + 2.6, LAND_Y + 0.4, ESP.z + HOLE_L.z - 1.2);
+    P.pos.set(ESP.x + HOLE_L.x + 2.6,
+    espGround(HOLE_L.x + 2.6, HOLE_L.z - 1.2), ESP.z + HOLE_L.z - 1.2);
     P.vel.set(0, 0, 0);
     toast('a goose with a badge deposits you back by the tree bed. jurisdiction unclear.', 3);
     return;

@@ -178,6 +178,8 @@ async function checkGameplay() {
       await page.waitForFunction(flag => window.__scurryQA.state()[flag],flag,{timeout:10000});
       const destination=await get();
       assert.ok(destination.grounded,'arrival at '+flag+' must be grounded');
+      assert.ok(Math.abs(destination.pos.y-destination.floor)<.1,
+        'portal feet must meet sampled floor in '+flag+': '+JSON.stringify(destination));
       assert.ok(!destination.inBurrow,'portal must leave burrow');
       assert.match(await choose('dive back to the burrows'), /burrow/i);
       await page.keyboard.press('e');

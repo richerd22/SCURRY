@@ -191,3 +191,10 @@ Unlike a full pathfinding GPS, this is a simple heading/ground-distance beacon a
 ## v0.6.50 — paused game now pauses WebAudio too
 
 The visual and physics loops stopped while paused, but WebAudio could still generate birdsong and crickets. `audio.js` now exposes `setGameAudioPaused` and `isGameAudioPaused`: on pointer-lock loss, hidden/pagehide and QA pause, sound generation is gated immediately and the shared AudioContext is suspended when possible. Resuming from PLAY/RESUME restores the existing context with guarded promises, keeping the separately persisted MUTE preference unchanged. Two production-module Node tests verify suspend/resume, one context across repeated starts, mute retention and pre-gesture safety; browser live-play CI checks the audio pause flag around resume. Real iOS sound/battery still requires hardware acceptance.
+
+
+## v0.6.51 — portal arrivals obey actual remote floor heights
+
+The new live WebGL/keyboard E browser route test passed the Common/burrow loop and reached Fenway, then failed because `grounded` was false upon arrival. Root cause: four destination portals had hard-coded `y=0.4` (Esplanade `LAND_Y+0.4`) while simultaneously setting `grounded=true`. On the next 90Hz substep, the 0.4m gap exceeds the 0.25m snap-down tolerance, so the player is immediately put into airborne state and falls into the venue floor despite a supposedly grounded portal. This is a gameplay bug, not a screenshot-mode discrepancy.
+
+**Fix:** Fenway portal and paranoia reset now use `fenGround` at the exact entrance XZ; TD Garden uses `gridGround`; City Hall uses `cityGround`; Esplanade uses `espGround`. The portal still clears velocity, climbing state and now stale regrab delay, and has feet exactly on the realm's physics height at spawn. The localhost-only QA snapshot exposes the *same* per-realm sampler as `floor`, so the browser route test requires both `grounded=true` and |feet-floor|<0.1m for **all four** destination transitions. No changes to decorative meshes or camera eye height. The live browser workflow is the acceptance gate; passing static Node checks alone does not prove the route fixed.

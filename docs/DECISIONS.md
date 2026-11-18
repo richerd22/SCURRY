@@ -198,3 +198,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Gate procedural effects/ambience on a separate gameplay audio pause flag and suspend/resume the existing AudioContext during input/visibility lifecycle changes. Preserve saved user MUTE independently and swallow expected autoplay-policy promise rejections.
 
 **Consequence:** Paused scenes are also silent and reduce audio CPU usage, without creating new contexts or changing the audio asset pipeline. Physical iOS audio and power must still be observed.
+
+
+## ADR-023 — portal spawn position must come from the physics floor
+
+**Context:** Four off-map portals spawned the squirrel 0.4m above their real surfaces while setting grounded, so on the next physics substep the 0.25m snap limit converted the transit into a fall. The live browser test caught Fenway immediately.
+
+**Decision:** At each portal and out-of-bounds recovery, compute Y directly from the destination realm's actual ground sampler at the selected spawn XZ. Retain grounded and zero velocity, and assert both status and feet-floor closeness in browser CI for every remote realm.
+
+**Consequence:** No artificial fall on transit, no visual geometry change and no longer any divergence between transit bookkeeping and terrain. Future new realms should share their physics sampler for spawn placement instead of choosing a cosmetic Y offset.

@@ -1293,3 +1293,8 @@ Six map legend entries and the runtime Hollow Tree pin are now accessible button
 ## v0.6.50 (Nov 18 2026) — audio respects gameplay suspension
 
 The same browser lifecycle that freezes physics now silences synthesized birdsong/crickets and suspends the single WebAudio context via a guarded pause flag. On a real PLAY/RESUME gesture it resumes the context without overwriting user MUTE. Tests exercise a fake AudioContext with no browser timers and the actual browser QA snapshot. This reduces hidden audio work without adding sound assets or dependencies. Real iPhone volume/autoplay policy needs manual verification.
+
+
+## v0.6.51 — consistent feet at all four destinations (Nov 18 2026)
+
+Live browser E2E revealed a real transit bug at Fenway: portal feet were hard-coded 40cm above ground with P.grounded=true, greater than the controller's normal 25cm snap. Now Fenway, TD Garden, City Hall and Esplanade entry/paranoia placements sample their actual realm ground functions at entrance XZ, rather than starting airborne. QA test asserts arrival feet equal sampled floor within 10cm, P.grounded and !P.inBurrow after each true E portal. Regrab delay resets at entry. Source of truth: the same S.realmGround terrain callback used by player physics. Browser route test (not just Node math) is required for acceptance.

@@ -333,12 +333,13 @@ function sampleHeights(park) {
 // ------------------------------------------------------------------ init
 function enterGarden() {
   const P = S.player;
-  P.pos.set(GDN.x + HOLE_L.x + 2.2, 0.4, GDN.z + HOLE_L.z - 1.0);
+  P.pos.set(GDN.x + HOLE_L.x + 2.2,
+    gridGround(HOLE_L.x + 2.2, HOLE_L.z - 1.0), GDN.z + HOLE_L.z - 1.0);
   P.vel.set(0, 0, 0);
   // face centre court: the logo, the far basket, the big screen
   P.yaw = Math.atan2(-(COURT_C.x - (HOLE_L.x + 2.2)), -(COURT_C.z - (HOLE_L.z - 1.0)));
   P.pitch = 0.06;
-  P.climbing = null; P.grounded = true;
+  P.climbing = null; P.climbRegrab = 0; P.grounded = true;
   P.inHollow = false; P.inBurrow = false; P.inFenway = false; P.inGarden = true;
   if (sfx.dig) sfx.dig();
   if (!discovered) {
@@ -383,7 +384,8 @@ export function updateGarden(dt) {
   const lx = P.pos.x - GDN.x, lz = P.pos.z - GDN.z;
   if (Math.abs(lx) > 500 || Math.abs(lz) > 500) {
     // paranoia clamp, same spirit as Fenway's grounds crew
-    P.pos.set(GDN.x + HOLE_L.x + 2.2, 0.4, GDN.z + HOLE_L.z - 1.0);
+    P.pos.set(GDN.x + HOLE_L.x + 2.2,
+    gridGround(HOLE_L.x + 2.2, HOLE_L.z - 1.0), GDN.z + HOLE_L.z - 1.0);
     P.vel.set(0, 0, 0);
     toast('an usher deposits you at centre court. no questions.', 3);
     return;

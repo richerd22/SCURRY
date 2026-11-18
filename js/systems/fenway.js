@@ -494,10 +494,11 @@ function buildOverlay(scene, park) {
 // ------------------------------------------------------------------ init
 function enterFenway() {
   const P = S.player;
-  P.pos.set(FEN.x + HOLE_L.x + 2.6, 0.4, FEN.z + HOLE_L.z - 1.2);
+  P.pos.set(FEN.x + HOLE_L.x + 2.6,
+    fenGround(HOLE_L.x + 2.6, HOLE_L.z - 1.2), FEN.z + HOLE_L.z - 1.2);
   P.vel.set(0, 0, 0);
   P.yaw = -1.33; P.pitch = 0; // facing the field axis: home, grass, wall
-  P.climbing = null; P.grounded = true;
+  P.climbing = null; P.climbRegrab = 0; P.grounded = true;
   P.inHollow = false; P.inBurrow = false; P.inFenway = true;
   if (sfx.dig) sfx.dig();
   if (!discovered) {
@@ -547,7 +548,8 @@ export function updateFenway(dt) {
   const lx = P.pos.x - FEN.x, lz = P.pos.z - FEN.z;
   if (Math.abs(lx) > 500 || Math.abs(lz) > 500) {
     // paranoia clamp, same spirit as the burrows hub deposit
-    P.pos.set(FEN.x + HOLE_L.x + 2.6, 0.4, FEN.z + HOLE_L.z - 1.2);
+    P.pos.set(FEN.x + HOLE_L.x + 2.6,
+    fenGround(HOLE_L.x + 2.6, HOLE_L.z - 1.2), FEN.z + HOLE_L.z - 1.2);
     P.vel.set(0, 0, 0);
     toast('the grounds crew deposits you behind home plate. no questions.', 3);
     return;

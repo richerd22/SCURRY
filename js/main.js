@@ -363,6 +363,11 @@ if (qaLocal) {
       return {
         started: S.started, paused: S.paused,
         pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
+        floor: p.inFenway ? S.realmGround.fenway?.(p.pos.x,p.pos.z) :
+          p.inGarden ? S.realmGround.garden?.(p.pos.x,p.pos.z) :
+          p.inCityHall ? S.realmGround.cityhall?.(p.pos.x,p.pos.z) :
+          p.inEsplanade ? S.realmGround.esplanade?.(p.pos.x,p.pos.z) :
+          p.inHollow || p.inBurrow ? 0 : visibleGroundHeight(p.pos.x,p.pos.z),
         velY: p.vel.y, yaw: p.yaw,
         grounded: p.grounded, climbing: !!p.climbing,
         inHollow: p.inHollow, inBurrow: p.inBurrow, inFenway: p.inFenway,

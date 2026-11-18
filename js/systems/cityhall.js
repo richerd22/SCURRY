@@ -540,12 +540,13 @@ export function buildCityHall(scene) {
 // ------------------------------------------------------------------ init
 function enterCityHall() {
   const P = S.player;
-  P.pos.set(CH.x + HOLE_L.x + 2.6, 0.4, CH.z + HOLE_L.z - 1.2);
+  P.pos.set(CH.x + HOLE_L.x + 2.6,
+    cityGround(HOLE_L.x + 2.6, HOLE_L.z - 1.2), CH.z + HOLE_L.z - 1.2);
   P.vel.set(0, 0, 0);
   // face the building: podium, steps, and 56 m of concrete manners
   P.yaw = Math.atan2(-(0 - (HOLE_L.x + 2.6)), -(-20 - (HOLE_L.z - 1.2)));
   P.pitch = 0.05;
-  P.climbing = null; P.grounded = true;
+  P.climbing = null; P.climbRegrab = 0; P.grounded = true;
   P.inHollow = false; P.inBurrow = false; P.inFenway = false; P.inGarden = false; P.inCityHall = true;
   if (sfx.dig) sfx.dig();
   if (!discovered) {
@@ -601,7 +602,8 @@ export function updateCityHall(dt) {
   const lx = P.pos.x - CH.x, lz = P.pos.z - CH.z;
   if (Math.abs(lx) > 500 || Math.abs(lz) > 500) {
     // paranoia clamp, same spirit as the other realms' grounds crews
-    P.pos.set(CH.x + HOLE_L.x + 2.6, 0.4, CH.z + HOLE_L.z - 1.2);
+    P.pos.set(CH.x + HOLE_L.x + 2.6,
+    cityGround(HOLE_L.x + 2.6, HOLE_L.z - 1.2), CH.z + HOLE_L.z - 1.2);
     P.vel.set(0, 0, 0);
     toast('a city worker deposits you back on the plaza. no permit, no entry.', 3);
     return;
