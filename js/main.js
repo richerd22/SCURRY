@@ -439,6 +439,26 @@ if (qaLocal) {
         horizontalDistance:Math.hypot(p.pos.x-start.x,p.pos.z-start.z),
         minClear,minMeshClear,maxStepY,nonGround,climbs,penetrations,meshSamples,samples};
     },
+    // Representative *actual registered* supports, not synthetic boxes.
+    // Used to walk along canopy, Garden bridge and sloped fence rail tops.
+    supportTargets: () => {
+      const canopy=S.platforms.find(s=>s.y>5 && s.r>2 && S.trees.some(t=>
+        Math.abs(t.x-s.x)<.001 && Math.abs(t.z-s.z)<.001));
+      const bridge=S.platformBoxes.find(s=>Math.abs(s.y-1.15)<.001 &&
+        s.maxZ-s.minZ>25 && s.maxX-s.minX>4);
+      const fence=S.platformSegments.find(s=>Number.isFinite(s.y0) &&
+        Number.isFinite(s.y1) && Math.hypot(s.x1-s.x0,s.z1-s.z0)>1.4);
+      if (!canopy || !bridge || !fence)throw new Error('missing real support registries');
+      const dx=fence.x1-fence.x0,dz=fence.z1-fence.z0;
+      return [
+        {name:'registered canopy',x:canopy.x,y:canopy.y,z:canopy.z,yaw:0,steps:30},
+        {name:'Garden bridge',x:(bridge.minX+bridge.maxX)/2,y:bridge.y,
+          z:(bridge.minZ+bridge.maxZ)/2,yaw:0,steps:55},
+        {name:'graded iron top',x:(fence.x0+fence.x1)/2,
+          z:(fence.z0+fence.z1)/2,y:(fence.y0+fence.y1)/2,
+          yaw:Math.atan2(-dx,-dz),steps:15},
+      ];
+    },
     // Diagnostic control is localhost-only. No public QA API is exposed.
     tryRelocation: () => S.fadeCatch(0, {
       pos: new THREE.Vector3(0, visibleGroundHeight(0, 0), 0),
@@ -447,11 +467,14 @@ if (qaLocal) {
     interactions: () => S.interactables.map(it => ({
       x: it.x, y: it.y, z: it.z, r: it.r, label: it.label(),
     })).filter(it => typeof it.label === 'string'),
-    place: (x, y, z) => {
-      if (![x,y,z].every(Number.isFinite)) throw new TypeError('finite feet coordinates required');
+    place: (x, y, z, yaw = undefined) => {
+      if (![x,y,z].every(Number.isFinite) ||
+          (yaw !== undefined && !Number.isFinite(yaw)))
+        throw new TypeError('finite feet coordinates required');
       const p = S.player;
       clearPlayerInput();
       p.pos.set(x,y,z); p.vel.set(0,0,0);
+      if (yaw !== undefined) p.yaw=yaw;
       p.climbing = null; p.grounded = true; p.climbRegrab = 0;
       syncPlayerCamera(camera);
       scanInteractions();

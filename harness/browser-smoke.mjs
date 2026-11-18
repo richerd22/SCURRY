@@ -232,6 +232,25 @@ async function checkGameplay() {
         minClear:+walk.minClear.toFixed(4),minMeshClear:+walk.minMeshClear.toFixed(4),
         airborne:walk.nonGround,meshSamples:walk.meshSamples}));
     }
+    // Elevated topology is part of the same ground-clipping complaint:
+    // check real canopy/bridge/fence registries with the same solver.
+    const targets=await page.evaluate(()=>window.__scurryQA.supportTargets());
+    for(const target of targets){
+      await page.evaluate(t=>window.__scurryQA.place(t.x,t.y,t.z,t.yaw),target);
+      await page.keyboard.down('w');
+      const walk=await page.evaluate(n=>window.__scurryQA.traceTerrainWalk(n),target.steps);
+      await page.keyboard.up('w');
+      traversals.push({name:target.name,kind:'elevated',...walk});
+      assert.ok(walk.horizontalDistance>.1,target.name+' was stuck');
+      assert.ok(walk.minMeshClear>=-.03,target.name+' clipped below terrain mesh');
+      assert.equal(walk.penetrations,0,target.name+' penetrated ground');
+      assert.equal(walk.nonGround,0,target.name+' lost its registered walk surface');
+      assert.equal(walk.climbs,0,target.name+' unexpectedly reentered climbing');
+      assert.ok(Math.abs(walk.end.y-target.y)<.25,
+        target.name+' height popped off its registered support: '+walk.end.y);
+      console.log('ELEVATED '+target.name+' '+JSON.stringify({metres:+walk.horizontalDistance.toFixed(2),
+        minMeshClear:+walk.minMeshClear.toFixed(3),ungrounded:walk.nonGround}));
+    }
     writeFileSync(out+'/terrain-traversal.json',JSON.stringify(traversals,null,2));
     // Actual shared fade code, not just relocation.js pure state tests.
     const transitions = await page.evaluate(() => [
@@ -247,7 +266,7 @@ async function checkGameplay() {
     assert.ok(landing.catchGrace>0, 'landing must grant catch immunity');
     assert.equal(await page.evaluate(() => window.__scurryQA.tryRelocation()),false,
       'landing grace must refuse immediate catch');
-    results.push({title,status:'PASS',routes:'walk/jump/pause + four destinations + five continuous terrain traces + relocation'});
+    results.push({title,status:'PASS',routes:'walk/jump/pause + four destinations + five lawn paths + three elevated supports + relocation'});
     await page.screenshot({path:out+'/'+title+'.png'});
     console.log(title+': PASS walk, jump, pause, burrow and destination return routes');
   } catch(e) {
