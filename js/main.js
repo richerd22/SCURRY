@@ -516,6 +516,30 @@ if (qaLocal) {
           yaw:Math.atan2(-dx,-dz),steps:15},
       ];
     },
+    // Probe the *real* player controller at a synthetic isolated trunk:
+    // an empty support registry here used to drop climbers to lawn level.
+    // State is restored before releasing the JavaScript event loop.
+    probeMissingCanopy: () => {
+      const p=S.player;
+      const saved={pos:p.pos.clone(),vel:p.vel.clone(),climbing:p.climbing,
+        grounded:p.grounded,yaw:p.yaw,pitch:p.pitch,climbAngle:p.climbAngle,
+        climbRegrab:p.climbRegrab,moving:p.moving,sprinting:p.sprinting};
+      clearPlayerInput();
+      const tree={x:3000,z:3000,r:.4,gy:0,canopyY:8,trunkTop:8.3};
+      try {
+        p.pos.set(tree.x,7.4,tree.z+.7);
+        p.vel.set(0,0,0);
+        p.climbing=tree;p.climbAngle=0;p.grounded=false;
+        updatePlayer(1/90,camera);
+        return {feetY:p.pos.y,climbing:!!p.climbing,grounded:p.grounded};
+      } finally {
+        p.pos.copy(saved.pos);p.vel.copy(saved.vel);
+        p.climbing=saved.climbing;p.grounded=saved.grounded;
+        p.yaw=saved.yaw;p.pitch=saved.pitch;p.climbAngle=saved.climbAngle;
+        p.climbRegrab=saved.climbRegrab;p.moving=saved.moving;
+        p.sprinting=saved.sprinting;syncPlayerCamera(camera);
+      }
+    },
     // Diagnostic control is localhost-only. No public QA API is exposed.
     tryRelocation: () => S.fadeCatch(0, {
       pos: new THREE.Vector3(0, visibleGroundHeight(0, 0), 0),

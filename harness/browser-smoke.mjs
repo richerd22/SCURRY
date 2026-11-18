@@ -232,6 +232,15 @@ async function checkGameplay() {
       ['Frog Pond south path',66,42,-Math.PI/2,620],
       ['Charles St Garden gate',-48,-66,Math.PI/2,470],
       ['State House grade',170,-85,Math.PI/2,680],
+      // Reverse-direction travel catches path-side and slope contact cases
+      // that a single west/east route cannot exercise.
+      ['Mall reverse',156,-18,Math.PI/2,500],
+      ['Common north fence run',-24,-94,-Math.PI/2,580],
+      ['Common south fence run',-14,94,-Math.PI/2,580],
+      ['Common east spine',158,76,0,560],
+      ['Common central spine',60,72,0,560],
+      ['Garden bridge south approach',-132,72,0,330],
+      ['Garden south lagoon loop',-180,34,0,310],
     ];
     const traversals=[];
     for(const [name,x,z,yaw,steps] of routes){
@@ -277,6 +286,13 @@ async function checkGameplay() {
         minMeshClear:+walk.minMeshClear.toFixed(3),ungrounded:walk.nonGround}));
     }
     writeFileSync(out+'/terrain-traversal.json',JSON.stringify(traversals,null,2));
+    // Actual climb-controller adversarial case: with no elevated support,
+    // reaching canopy height must NOT snap all the way down to the lawn.
+    const missingCanopy=await page.evaluate(()=>window.__scurryQA.probeMissingCanopy());
+    assert.ok(missingCanopy.climbing&&!missingCanopy.grounded,
+      'missing canopy must leave squirrel attached, not falsely grounded');
+    assert.ok(missingCanopy.feetY>7,
+      'missing canopy must never teleport a 7m climber to 0m lawn');
     // Actual shared fade code, not just relocation.js pure state tests.
     const transitions = await page.evaluate(() => [
       window.__scurryQA.tryRelocation(), window.__scurryQA.tryRelocation()

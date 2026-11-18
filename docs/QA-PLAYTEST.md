@@ -258,3 +258,8 @@ Reload identical `?shot=spawn&t=17.6&lowq=1` and Garden/Charles Street screensho
 - Climb to the lip of a tall elm and hold forward while rotating around it. The squirrel must only leave climbing when a **registered elevated canopy platform** is reachable; an absent platform may hold the squirrel at the top, but must never teleport its feet down to the lawn.
 - Jump sideways off a tree near a missing/small canopy platform; expect normal ballistic descent, never a one-frame snap to a much lower surface.
 - Repeat under a heavy mobile frame (physics substeps), then real iPhone Safari. This targeted guard has pure tests but real canopy movement still requires manual signoff.
+
+
+## v0.6.70 — independent wide-route stress and no-canopy runtime probe
+
+Browser CI now does 12 authored path/slope traversals (previously five), including reverses, perimeter, Common spines and Garden approaches, and saves a per-route terrain trace **before asserting**. Each 90Hz step checks contact against the real terrain-height function; periodic independent raycasts compare against rendered mesh triangles. It also runs the actual player controller at an isolated synthetic canopy-top state to prove a missing platform cannot instant-teleport the squirrel to lawn level. These probes are localhost-only and restore player state. The physical walktest remains required for uncontrolled branches, jumping sequences, tight corners, arbitrary directions and real iPhone controls.
