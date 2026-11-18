@@ -111,9 +111,12 @@ async function checkGameplay() {
     await page.keyboard.up('w');
     const afterWalk=await get();
     assert.ok(afterWalk.started&&!afterWalk.paused,'must remain in live play');
-    await page.keyboard.press('Space');
+    // On a low-FPS software renderer a press-and-release in one browser
+    // event task could be over before the next physics frame sees Space.
+    await page.keyboard.down('Space');
     await page.waitForFunction(initialY => window.__scurryQA.state().pos.y>initialY+.04,
       afterWalk.pos.y,{timeout:10000,polling:100});
+    await page.keyboard.up('Space');
 
     // A held movement key must be discarded on pause/resume even when its
     // physical keyup was never delivered to the game.
