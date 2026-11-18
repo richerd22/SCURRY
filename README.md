@@ -13,13 +13,15 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 ## Engineering & quality gates
 
 - [Engineering wiki](docs/ENGINEERING-WIKI.md): architecture, simulation invariants, collision contracts, world expansion, assets and mobile performance.
+- [Public 3D model pipeline](docs/MODEL-SOURCING.md): provenance and licensing, scale/LOD budgets, world quality and reusable intake process.
+- [Model provenance inventory](assets/model-provenance.json): all 24 3D model and dependency files, including honest open review status.
 - [Playtest & troubleshooting](docs/QA-PLAYTEST.md): repeatable desktop/iPhone collision routes, telemetry (`?diag=1`), evidence template and limitations.
 - [Engineering decisions](docs/DECISIONS.md): why the controller and mobile lifecycle work the way they do.
 - [Agent guide](docs/AGENT-GUIDE.md): the long-form implementation history, asset decisions and honest known state.
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 - [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, still screenshots, real desktop PLAY/WALK/JUMP/PORTAL round trips, simulated mobile dual-touch controls, optional map/notes checks, and screenshots/console artifacts on pushes to main.
 
-**Current version: v0.6.58.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. Native iPhone Safari and real-GPU/performance playtesting remain required.
+**Current version: v0.6.59.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. Native iPhone Safari and real-GPU/performance playtesting remain required.
 
 ## Controls
 
@@ -451,31 +453,14 @@ audio), plus:
   quality down if a phone GPU can't hold ~40fps (pixel ratio, shadow
   resolution, then shadows + grass density).
 
-## Credits - sourced models
+## Credits — third-party models and source evidence
 
-All CC0 1.0 (no credit legally required; credit given anyway). Originals
-and the full ledger live in the project asset library
-(`assets-library/ATTRIBUTION.md` in the workspace; source pages on
-poly.pizza):
+The verified **model file inventory** is [model-provenance.json](assets/model-provenance.json); [public model sourcing / quality standards](docs/MODEL-SOURCING.md). Sources credited by the project include Quaternius (dogs/humans), Kay Lousberg/KayKit (lamps), Garner/King/Thrall (Fenway 3D Warehouse), and BPDA/City of Boston 3D data (City Hall/Hatch Shell/Fenway neighborhood).
 
-- Dogs + Shiba Inu, Man (all humans) - **Quaternius**
-- Post Lantern (lamp posts) - **Kay Lousberg (KayKit)**
-- Fenway Park - **Bruce Garner, Nathan King, and Mason Thrall**
-  (3D Warehouse; used under the 3D Warehouse Terms of Use, not CC0 -
-  this line is the exception to the "all CC0" note above)
-- TD Garden interior - author and license **not recorded** (model
-  haul): the converted model was held in the project asset library
-  through v0.6.25 and **released with the game in v0.6.26 on the
-  project owner's explicit decision** (Nov 17, 2026); it ships at
-  `assets/models/garden.glb` and `garden.js` loads it best-effort
-- Boston City Hall + Hatch Memorial Shell + the Fenway
-  neighborhood shells - **BPDA / City of Boston** "Boston 3D"
-  open data (PDDL, public domain): `assets/models/cityhall.glb`,
-  `assets/models/hatchshell.glb`,
-  `assets/models/fenway-neighborhood.glb`
+These credits are **not blanket CC0 clearance**. Exact per-model evidence is incomplete in the public repo. The BPDA city-data *source family* is PDDL; individual Poly Pizza models may be CC0 or CC BY; 3D Warehouse has separate terms. The **TD Garden interior GLB is already publicly shipped** on the owner's documented decision despite its original author and rights being unknown. That is an open rights/provenance issue, not permission. Existing review warnings are preserved in the new asset gate; new models require item-level source and license evidence before entry.
 
-Everything else is procedural: canvas textures, code-built landmarks, and
-synthesized WebAudio. No AI-generated imagery anywhere, ever.
+Everything else is code-authored/procedural, including canvas textures and synthesized sound. No AI-generated imagery or models are introduced.
+
 
 ## Structure
 

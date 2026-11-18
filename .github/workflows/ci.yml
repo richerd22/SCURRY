@@ -19,6 +19,8 @@ jobs:
       - name: Parse every browser module and test (no npm install)
         run: |
           find js tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Audit published model inventory, glTF integrity and new source evidence
+        run: node tools/audit-assets.mjs
       - name: Pure physics and input regressions
         run: node --test tests/*.mjs
       - name: No-build, custom-domain, touch and Safari contracts

@@ -222,3 +222,8 @@ Start with MUTE saved across reload, tap PLAY and verify silence. Unmute and lis
 ## Visited atlas feedback / catch fade (v0.6.58)
 
 Discover Bandstand or Frog Pond, open MAP, and confirm green numbered pin plus a ✓ in the corresponding legend row. Selecting the waypoint should still visibly highlight it. The browser suite exercises two attempted simultaneous relocations and asserts exactly one proceeds, but the separate physical playtest must confirm actual ranger stash loss only once and Hawk Dua does not chain teleports.
+
+
+## Public model acceptance and future asset intake (v0.6.59)
+
+For a new 3D asset: record the exact original item URL, author, license version and visible license evidence; list every texture/binary; run node tools/audit-assets.mjs, Node regression tests and browser smoke. New assets with review/unknown rights must FAIL the gate. Existing review warning records are technical debt, not clearance. Reconcile TD Garden and Fenway distribution rights with original source terms; inspect BPDA-derived tile IDs and tree texture origins. For quality, test real-world 0.25m squirrel and 1.7m human eye heights, 90Hz collision, shadow/UV/LOD and iPhone Safari memory and FPS. See docs/MODEL-SOURCING.md.

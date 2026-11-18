@@ -279,3 +279,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Use the existing Field Notes ID set to tint atlas pins and mark legend entries visited. Test the real shared fade twice in one frame through localhost-only QA, including grounded landing and post-catch grace.
 
 **Consequence:** Optional exploration feedback and better catch test evidence without additional persistent state or an always-on quest system. Physical iPhone and adversarial ranger/hawk encounters remain open.
+
+
+## ADR-032 — model asset intake should fail closed and be reusable
+
+**Context:** SCURRY's sourced models have inconsistent item-specific rights evidence; several credits are stored only in a separate workspace library. README incorrectly described all assets as CC0, despite Fenway's 3D Warehouse terms and a public TD Garden GLB with unknown original rights.
+
+**Decision:** Maintain a complete public manifest, portable Node-only audit and CI gate for all binary/dependency paths, formats, file budgets and actual per-model license evidence. New models require verified source URLs and authors. Freeze pre-existing review exemptions as explicit warnings, not permission or approval. Document separate mobile, visual, collision and provenance acceptance rules for SCURRY and future projects.
+
+**Consequence:** Future assets cannot silently appear without a recorded model page and rights; existing provenance gaps remain visible. This is not legal clearance for the current legacy set or a replacement for real-device quality testing.

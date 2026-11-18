@@ -250,3 +250,10 @@ The grace runs in simulation time, not wall-clock time: paused/backgrounded game
 Numbered map pins now turn subtle green after their shared Field Notes discovery; the legend gains a ✓ and an accessible "Visited, track" name. The Hollow Tree uses the same ID as the notebook, and brighter selected-waypoint highlights still take priority. No additional progress storage or HUD clutter.
 
 The permanent desktop WebGL playtest now calls the game's actual shared `S.fadeCatch` twice via a **localhost-only** test hook, checking exactly one fade starts, the squirrel lands grounded on visible terrain, landing grace begins, and an immediate second catch is rejected. The mobile playtest additionally records the Bandstand and verifies the updated atlas pin/legend reflect that discovery. These are integration checks, not real ranger/hawk encounter choreography or native iPhone signoff.
+
+
+## v0.6.59 — reusable licensed public-model intake gate
+
+Added a source-control inventory for 12 asset packages and 24 model/texture/buffer files, portable Node-only validator, six fixture tests and a CI gate for new asset additions. The audit detects unregistered files, unsafe paths, invalid GLB v2 headers, missing glTF buffers/images and file sizes above 8MiB. Any NEW model package requires a verified exact source item, author and licence-evidence URL; an unverified new asset causes CI failure. The frozen legacy review list allows historical files to keep shipping with explicit WARNINGs only. This is *not proof of their rights*.
+
+README credits corrected: not all models are CC0. TD Garden's GLB was publicly released on a prior owner decision despite source and license being unknown; Fenway's Warehouse model also needs exact term review. Do not silently erase that decision, but do not represent it as permission. Detailed candidate research, lawful sourcing, mobile budgets, collision/LOD and both 0.25m/1.7m eye-height visual signoff live in [MODEL-SOURCING.md](MODEL-SOURCING.md). For future no-build games, reuse the validator with an EMPTY legacy review list.

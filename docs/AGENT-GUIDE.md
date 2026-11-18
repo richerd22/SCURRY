@@ -1338,3 +1338,8 @@ Added `systems/relocation.js` with pure single-flight begin/complete/advance tra
 ## v0.6.58 (Nov 18 2026) — visited map markers and single-flight fade in live browser
 
 Field Notes tint visited atlas markers green and show a check mark/accessible visited state on legend buttons, including the Hollow Tree. Waypoint focus retains its brighter highlight. Browser E2E invokes real relocation twice through localhost-only QA and asserts one fade, grounded landing and grace; mobile E2E checks new Bandstand discovery changes the map state. No asset creation, geometry changes, new dependencies, build step or public QA hooks.
+
+
+## v0.6.59 (Nov 18 2026) — public model quality and provenance system
+
+All 12 model packages / 24 committed binary+texture files are now enumerated in assets/model-provenance.json. A self-contained tools/audit-assets.mjs and six test fixtures enforce complete inventory, GLB/glTF checks, dependency closure, an 8MiB file ceiling and verified author/asset-page/license-evidence for any NEW model ID. CI runs the audit; the 12 existing packages remain warnings pending documented rights. A detailed docs/MODEL-SOURCING.md covers BPDA PDDL city models, Poly Pizza per-model CC0/CC BY, 3D Warehouse separate terms, no AI imagery, scale and mobile GPU budgets, terrain/collision fit, both inspection eye heights, review rejections and portability to future projects. README's blanket CC0 statement was corrected. TD Garden is in public assets on a prior owner decision with unknown original rights, and must not be misrepresented as cleared. This patch adds no new imagery or assets and preserves existing rendering.
