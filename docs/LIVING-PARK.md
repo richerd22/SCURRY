@@ -104,3 +104,8 @@ Extracted the previously embedded ROOMS/CORRIDORS geometry into one **pure burro
 ## v0.6.86 — close a real disconnected burrow corridor
 
 The new every-20cm NPC navigation gate correctly caught a **3-metre hole in the original player walkable topology**: ring_w ended at X=-17, but spoke_w began at X=-14, with no walkable rect connecting them. This was an actual map defect, not an invalid NPC test. Added a short 3.6×3m joining corridor with overlaps at both ends, automatically rendered by the existing world-wall/collision generator. Route regression is kept strict; no arbitrary skip or tolerance inflation.
+
+
+## v0.6.87 — end-to-end park shifts and underground transit portal gate
+
+The browser gameplay smoke now uses only actual E key actions, while localhost-only QA positions the player and sets game hour. It asserts zero picnic/benched/dog actors at 03:00 with one night-shift worker, the same actors restored at noon, Park Street station ground support, E hide/unhide, a full staff shoo back to park, a functioning burrow→MBTA rat passage, and reciprocal return to market/park. NPC population is accessed through a localhost-only read-only QA snapshot; no public/debug API is exposed in production. This is an additive acceptance gate alongside the original 12 real traversal routes and canopy/bridge/fence contact parity. Node pure unit tests alone are insufficient evidence of gameplay.

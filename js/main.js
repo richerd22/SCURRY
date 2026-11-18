@@ -388,7 +388,7 @@ if (qaLocal) {
           p.inGarden ? S.realmGround.garden?.(p.pos.x,p.pos.z) :
           p.inCityHall ? S.realmGround.cityhall?.(p.pos.x,p.pos.z) :
           p.inEsplanade ? S.realmGround.esplanade?.(p.pos.x,p.pos.z) :
-          p.inHollow || p.inBurrow ? 0 : visibleGroundHeight(p.pos.x,p.pos.z),
+          p.inHollow || p.inBurrow || p.inMBTA ? 0 : visibleGroundHeight(p.pos.x,p.pos.z),
         velY: p.vel.y, yaw: p.yaw, biteCooldown:p.biteCooldown,
         grounded: p.grounded, climbing: !!p.climbing, onSwanBoat:!!p.onSwanBoat,
         swan: swanRideStatus(),
@@ -556,6 +556,18 @@ if (qaLocal) {
     finishSwanRide: qaFinishSwanRide,
     wildlife: () => (S.wildlifeActors||[]).map(a=>({kind:a.kind,x:a.x,y:a.y,z:a.z,visible:a.mesh.visible})),
     mbta: mbtaDebugState,
+    // Simulation time only, local-only test hook. Never present on live URL.
+    setTime: (hour) => {
+      if(!Number.isFinite(hour)||hour<0||hour>=24)throw new RangeError('0..24 hour');
+      S.timeHours=hour;return hour;
+    },
+    population: () => ({
+      bench: S.benchSitters.filter(x=>x.mesh?.visible).length,
+      picnics: S.blankets.filter(x=>x.mesh?.visible).length,
+      dogs: (S.dogPositions||[]).filter(x=>x.mesh?.visible).length,
+      nightWorker: !!S.nightWorker?.visible,
+      burrowResidents:(S.wildlifeActors||[]).filter(x=>x.underground&&x.mesh.visible).length,
+    }),
     interactions: () => S.interactables.map(it => ({
       x: it.x, y: it.y, z: it.z, r: it.r, label: it.label(),
     })).filter(it => typeof it.label === 'string'),

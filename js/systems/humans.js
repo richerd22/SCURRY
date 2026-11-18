@@ -202,6 +202,7 @@ export function buildHumans(scene) {
   // One late-shift park worker, not nine tourists picnicking at 3 AM.
   const nw=makeHuman(1.02);setActorRole(nw,'walk');scene.add(nw);
   nightWorker={mesh:nw,baseX:-27,baseZ:-88};
+  S.nightWorker=nw;
   S.interactables.push({
     x:-27,z:-88,y:groundHeight(-27,-88),r:1.8,
     label:()=>nw.visible&&!S.player.inMBTA?'E - greet night-shift worker':null,

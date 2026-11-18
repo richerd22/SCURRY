@@ -205,6 +205,75 @@ async function checkGameplay() {
       await page.keyboard.press('e');
       await page.waitForFunction(() => !window.__scurryQA.state().inBurrow,null,{timeout:10000});
     }
+
+    // Park crowd truth: night workers exist, but picnics/bench crowds/dogs
+    // vanish in the middle of the night; noon restores the same pooled
+    // actors without allocating new models or breaking E-prompt lifecycles.
+    await page.evaluate(()=>window.__scurryQA.setTime(3));
+    await page.waitForTimeout(300);
+    const night=await page.evaluate(()=>window.__scurryQA.population());
+    assert.equal(night.picnics,0,'3 AM must not have six unattended picnics');
+    assert.equal(night.bench,0,'3 AM park benches must not be full of beg targets');
+    assert.equal(night.dogs,0,'3 AM off-leash dog pack should be sleeping');
+    assert.equal(night.nightWorker,true,'night-shift staff should be nearby');
+    await page.evaluate(()=>window.__scurryQA.setTime(12));
+    await page.waitForTimeout(300);
+    const noon=await page.evaluate(()=>window.__scurryQA.population());
+    assert.ok(noon.picnics>=4 && noon.bench>=9 && noon.dogs>=4,
+      'daytime must restore real park actors: '+JSON.stringify(noon));
+    assert.equal(noon.nightWorker,false);
+
+    // Real-keyboard MBTA flow: enter Park Street from the Common, inspect
+    // separate subway realm, hide under bench and meet a harmless staff
+    // shooing. Check the alternate burrow-market connection both ways.
+    assert.match(await choose('enter PARK STREET station'),/PARK STREET/i);
+    await page.keyboard.press('e');
+    await page.waitForFunction(()=>window.__scurryQA.state().inMBTA,null,{timeout:8000});
+    let transit=await get();
+    assert.equal(transit.inBurrow,false,'street entrance is not a rat hole');
+    assert.ok(Math.abs(transit.pos.y-transit.floor)<.1,'MBTA floor must be supported');
+    assert.equal(await page.evaluate(()=>window.__scurryQA.mbta().inMBTA),true);
+    assert.match(await choose('hide beneath the station bench'),/hide beneath/i);
+    await page.keyboard.press('e');
+    assert.equal(await page.evaluate(()=>window.__scurryQA.mbta().hidden),true);
+    assert.match(await choose('come out from under the bench'),/come out/i);
+    await page.keyboard.press('e');
+    assert.equal(await page.evaluate(()=>window.__scurryQA.mbta().hidden),false);
+    // The staff warning timer starts only after arrival cooldown; use
+    // actual frames and real shoo consequence, not an internal teleport.
+    await page.evaluate(()=>window.__scurryQA.place(8000+76,0,-8000+0));
+    await page.waitForFunction(()=>!window.__scurryQA.state().inMBTA,
+      null,{timeout:15000,polling:120});
+    const escorted=await get();
+    assert.ok(escorted.grounded&&!escorted.inBurrow);
+    assert.ok(Math.abs(escorted.pos.y-escorted.floor)<.1);
+    // At the moment of dismissal the portal cooldown prevents immediately
+    // re-entering. Exercise the old burrow entry first while it expires.
+    assert.match(await choose('dive into the burrow'),/burrow/i);
+    await page.keyboard.press('e');
+    await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
+      null,{timeout:8000});
+    await page.waitForTimeout(3800);
+    const beforeResidents=await page.evaluate(()=>window.__scurryQA.wildlife()
+      .filter(a=>a.visible&&(a.kind==='rat'||a.kind==='squirrel')));
+    assert.ok(beforeResidents.length>2,'shared underground must have living NPCs');
+    assert.match(await choose('take the rat passage'),/rat passage/i);
+    await page.keyboard.press('e');
+    await page.waitForFunction(()=>window.__scurryQA.state().inMBTA,
+      null,{timeout:8000});
+    assert.equal((await get()).inBurrow,false);
+    await page.waitForTimeout(3800);
+    assert.match(await choose('return to the rat market'),/rat market/i);
+    await page.keyboard.press('e');
+    await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
+      null,{timeout:8000});
+    assert.ok(Math.abs((await get()).pos.y)<.05,
+      'MBTA to rat market must land precisely on the tunnel floor');
+    assert.match(await choose('pop back up'),/pop back up/i);
+    await page.keyboard.press('e');
+    await page.waitForFunction(()=>!window.__scurryQA.state().inBurrow,
+      null,{timeout:8000});
+
     // The real dock and real E prompt must mount the actual moving boat;
     // peeking/hiding and safe landing also run through E, not direct
     // internal action calls. Local QA only fast-forwards the tour clock.
