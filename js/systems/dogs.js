@@ -12,16 +12,17 @@ import { toast } from '../ui/hud.js';
 import { dropCarried } from './food.js';
 import { isOnGroundLow } from './player.js';
 import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
+import { makeHuman, setActorRole } from './humans.js';
+import { DOG_PROFILES, dogMayChase } from './dog-rules.js';
 
-const COATS = [0x8a5a34, 0x3a3a3a, 0xc8b088, 0x6e4525];
 const dogs = [];
 
-function makeDog(coat) {
+function makeDog(coat, profile) {
   const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: coat, roughness: 1 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1 });
   const body = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), mat);
-  body.scale.set(1, 0.85, 1.55); body.position.y = 0.52; body.castShadow = true; g.add(body);
+  body.scale.set(1, profile.long ? 0.64 : 0.85, profile.long ? 2.3 : 1.55); body.position.y = 0.52; body.castShadow = true; g.add(body);
   const head = new THREE.Group();
   const skull = new THREE.Mesh(new THREE.SphereGeometry(0.19, 9, 7), mat);
   skull.castShadow = true; head.add(skull);
@@ -40,7 +41,9 @@ function makeDog(coat) {
   const legs = [];
   for (const [lx, lz] of [[-0.15, 0.28], [0.15, 0.28], [-0.15, -0.3], [0.15, -0.3]]) {
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.45, 5), mat);
-    leg.position.set(lx, 0.24, lz); g.add(leg); legs.push(leg);
+    if(profile.long){leg.scale.y=.55;leg.position.y=.16;}
+    else leg.position.set(lx, 0.24, lz);
+    g.add(leg); legs.push(leg);
   }
   g.userData = { head, tail, legs };
   return g;
@@ -50,20 +53,43 @@ const PATROLS = [
   [[20, 20], [70, 60], [110, 20], [60, -10]],
   [[150, -30], [185, 20], [150, 70], [120, 10]],
   [[-90, -40], [-150, -20], [-170, 30], [-110, 45]],
+  [[90, 30], [45, 60], [80, 85], [124, 48]],
+  [[-20, -70], [25, -90], [70, -80], [90, -45]],
 ];
 export function buildDogs(scene) {
-  for (let i = 0; i < 3; i++) {
+  S.dogPositions=dogs;
+  for (let i = 0; i < DOG_PROFILES.length; i++) {
+    const profile=DOG_PROFILES[i];
     const outer = new THREE.Group();
-    const proc = makeDog(COATS[i]);
+    const proc = makeDog(profile.coat,profile);
+    proc.scale.setScalar(profile.scale);
     outer.add(proc);
     scene.add(outer);
     const d = {
       mesh: outer, proc, wp: PATROLS[i], wi: 0, state: 'patrol', timer: 0,
       pos: new THREE.Vector3(PATROLS[i][0][0], 0, PATROLS[i][0][1]),
-      speed: 2.2, phase: Math.random() * 9, barkCd: 0,
-      mixer: null, actions: null, currentAction: null,
+      profile,speed:profile.cruise,phase:i*1.7, barkCd:0,petCooldown:0,
+      mixer:null,actions:null,currentAction:null,walker:null,leash:null,
     };
     dogs.push(d);
+    if(profile.leashed){
+      const walker=makeHuman(.97);
+      setActorRole(walker,'walk');
+      scene.add(walker);d.walker=walker;
+      const leash=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(),new THREE.Vector3()]),
+        new THREE.LineBasicMaterial({color:0x6e6255,transparent:true,opacity:.82}));
+      leash.frustumCulled=false;scene.add(leash);d.leash=leash;
+      const it={x:d.pos.x,z:d.pos.z,y:0,r:1.55,
+        label:()=>d.petCooldown>0||S.player.onSwanBoat||S.player.inBurrow||S.player.inHollow?
+          null:'E - say hello to '+profile.name,
+        action:()=>{
+          if(d.petCooldown>0||S.player.onSwanBoat||d.pos.distanceTo(S.player.pos)>1.7)return;
+          d.petCooldown=12;d.state='proud';d.timer=2.5;
+          toast('a '+profile.name+' wags hello. the walker smiles.',2.3);
+        }};
+      S.interactables.push(it);d.petInteractable=it;
+    }
     attachDogModel(d, i);
   }
 }
@@ -72,10 +98,11 @@ export function buildDogs(scene) {
 // standard Dog. Clips: patrol=Walk, chase/flee=Run|Gallop, proud=Idle.
 function attachDogModel(d, i) {
   const isShiba = i === 1;
+  if(d.profile.procOnly)return;
   loadModel(isShiba ? 'assets/models/ShibaInu.glb' : 'assets/models/Dog.glb').then((tpl) => {
     if (!tpl) return;
     const m = cloneModel(tpl);
-    fitHeight(m, isShiba ? 0.58 : 0.72);
+    fitHeight(m, isShiba ? 0.58 : 0.72 * d.profile.scale);
     shadowify(m);
     d.mesh.add(m);
     d.proc.visible = false;
@@ -112,6 +139,7 @@ export function updateDogs(dt) {
   for (const d of dogs) {
     const dist = d.pos.distanceTo(P.pos);
     if (d.barkCd > 0) d.barkCd -= dt;
+    if (d.petCooldown > 0) d.petCooldown -= dt;
     if (d.timer > 0) d.timer -= dt;
 
     if (d.state === 'flee') {
@@ -120,13 +148,17 @@ export function updateDogs(dt) {
     } else if (d.state === 'proud') {
       // sits, tail wagging, extremely pleased with itself
       if (d.timer <= 0) d.state = 'patrol';
-    } else if (dist < 13 && isOnGroundLow() && !P.inHollow) {
+    } else if (dist < d.profile.alert && dogMayChase(d.profile,{
+      grounded:isOnGroundLow(),onSwanBoat:!!P.onSwanBoat,
+      remote:P.inHollow||P.inBurrow||P.inFenway||P.inGarden||P.inCityHall||P.inEsplanade,
+      sprinting:P.sprinting,
+    })) {
       if (d.state !== 'chase') {
         d.state = 'chase';
         if (d.barkCd <= 0) { sfx.bark(); d.barkCd = 6; }
         S.spottedFlash = Math.max(S.spottedFlash, 1.2);
       }
-      moveToward(d, P.pos, 1, 5.4, dt);
+      moveToward(d, P.pos, 1, d.profile.chase, dt);
       if (dist < 0.85) {
         // GOTCHA (gentle): food knocked loose, squirrel scrambled
         d.state = 'proud'; d.timer = 3.5;
@@ -141,11 +173,23 @@ export function updateDogs(dt) {
       d.state = 'patrol';
       const wp = d.wp[d.wi];
       if (Math.hypot(d.pos.x - wp[0], d.pos.z - wp[1]) < 2.5) d.wi = (d.wi + 1) % d.wp.length;
-      moveToward(d, { x: wp[0], z: wp[1] }, 1, 2.1, dt);
+      moveToward(d, { x: wp[0], z: wp[1] }, 1, d.profile.cruise, dt);
     }
 
     d.pos.y = groundHeight(d.pos.x, d.pos.z);
     d.mesh.position.copy(d.pos);
+    if(d.petInteractable){
+      d.petInteractable.x=d.pos.x;d.petInteractable.z=d.pos.z;d.petInteractable.y=d.pos.y;
+    }
+    if(d.walker){
+      const angle=d.mesh.rotation.y;
+      const wx=d.pos.x-Math.sin(angle)*1.6,wz=d.pos.z-Math.cos(angle)*1.6;
+      const wy=groundHeight(wx,wz);
+      d.walker.position.set(wx,wy,wz);d.walker.rotation.y=angle;
+      const attr=d.leash.geometry.getAttribute('position');
+      attr.setXYZ(0,d.pos.x,d.pos.y+.35*d.profile.scale,d.pos.z);
+      attr.setXYZ(1,wx,wy+1.0,wz);attr.needsUpdate=true;
+    }
     if (d.mixer) {
       // rigged model: state drives the clip
       if (d.state === 'chase' || d.state === 'flee') playDogClip(d, d.actions.Gallop ? 'Gallop' : 'Run');
@@ -183,7 +227,7 @@ function moveToward(d, target, dirSign, speed, dt) {
 export function biteDogs() {
   const P = S.player.pos;
   for (const d of dogs) {
-    if (d.pos.distanceTo(P) < 1.5 && d.state !== 'flee') {
+    if (!d.profile.leashed && d.pos.distanceTo(P) < 1.5 && d.state !== 'flee') {
       d.state = 'flee'; d.timer = 3.5; d.fleeFrom = P.clone();
       sfx.yelp();
       toast('nose booped. the dog reconsiders everything.', 2.2);
