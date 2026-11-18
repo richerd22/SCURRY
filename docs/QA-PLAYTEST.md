@@ -112,3 +112,10 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 - Collect food, stand on grassy ground inside each of the Common and Public Garden, and verify BURY is available when away from a wet path, Charles Street, water and objects.
 - Approach a sidewalk just beyond the park footprint; BURY must not appear even if the underlay texture is green. Try corners and Charles Street crossings.
 - Accept a tossed snack from a human or trash can. The arc should stay in view, settle without diving through the lawn near touchdown, and create exactly one pickup.
+
+
+## Mobile quality and battery (v0.6.42)
+
+- On iPhone Safari open `?diag=1`, observe instantaneous FPS and EMA while walking around the dense canopy and Charles Street. A sustained slow GPU should degrade quality gradually; returning to lighter scenes at fast FPS should restore it slowly, not bounce between levels.
+- Open PAUSE / background Safari for 30s. The view should not degrade further on return due to the hidden-time gap. Paused/title scenes render the static park at about 4fps to save battery, not full-rate WebGL.
+- If performance or visual quality regresses, report hardware model, iOS version, time-of-day, quality tier, observed EMA, shadow state and whether the app was warm or throttled.

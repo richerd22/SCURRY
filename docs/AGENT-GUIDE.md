@@ -1246,3 +1246,8 @@ Added an optional map to improve wayfinding from squirrel height. `js/ui/park-ma
 ## v0.6.41 (Nov 18 2026): soil membership and toss-arc correction
 
 `isGrass()` incorrectly accepted sidewalk/city apron outside the park because its only logic was exclusion of water, paths and Charles Street. New pure `world/ground-rules.js` limits candidate burial to the actual Common/Garden footprints before those exclusions, with two Node tests for boundary and invalid coordinates. `food.js` tosses previously interpolated to a target Y of zero and then applied the ground elevation correction again on each tick, visibly sinking into terrain near touchdown; now a launch-time ground endpoint is used with one sine arc. An additional regression checks the trajectory and spawned landing collectible. No changes to spawn probabilities, world geometry or material art.
+
+
+## v0.6.42 (Nov 18 2026) — mobile performance lifecycle
+
+Replaced the one-way mobile quality ladder in `main.js` with `systems/mobile-quality.js`: uses raw frame duration rather than the physics-clamped dt; time-weighted FPS EMA, 3s under 39fps downgrade and 12s over 54fps recovery, ignoring >1s Safari resume gaps; shadows/grass/pixel ratio restore when tiers improve. `?diag=1` reports real instantaneous FPS and EMA. Title/pause GPU render throttled to ~4fps while CSS remains responsive, instead of burning full GPU every browser frame. Six unit tests cover slow/fast frames, hysteresis and resume. Test on real iOS hardware before claiming a specific battery or FPS gain.

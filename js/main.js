@@ -28,6 +28,7 @@ import { initAudio, setMuted, isMuted } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
 import { initParkMap, updateParkMap } from './ui/park-map.js';
+import { createMobileQualityState, advanceMobileQuality } from './systems/mobile-quality.js';
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 
@@ -358,27 +359,28 @@ function updateDiagnostics(dt, rawFrameDt) {
   const sample = S.realmGround[realm];
   const ground = realm === 'park' ? visibleGroundHeight(pos.x, pos.z) :
     (sample ? sample(pos.x, pos.z) : 0);
-  diagHud.textContent = `SCURRY DIAG | ${realm}\nfeet: ${pos.x.toFixed(2)} / ${pos.y.toFixed(2)} / ${pos.z.toFixed(2)}\nground: ${ground.toFixed(2)} | gap: ${(pos.y-ground).toFixed(2)}\n${P.climbing ? 'CLIMBING' : P.grounded ? 'GROUNDED' : 'AIRBORNE'} | vy: ${v.y.toFixed(2)}\nFPS: ${Math.round(1/Math.max(rawFrameDt,.001))} | quality: ${perfTier} | touch: ${S.isTouch}`;
+  diagHud.textContent = `SCURRY DIAG | ${realm}\nfeet: ${pos.x.toFixed(2)} / ${pos.y.toFixed(2)} / ${pos.z.toFixed(2)}\nground: ${ground.toFixed(2)} | gap: ${(pos.y-ground).toFixed(2)}\n${P.climbing ? 'CLIMBING' : P.grounded ? 'GROUNDED' : 'AIRBORNE'} | vy: ${v.y.toFixed(2)}\nFPS: ${Math.round(1/Math.max(rawFrameDt,.001))} | EMA: ${Math.round(mobileQuality.fpsEma)} | quality: ${mobileQuality.tier} | touch: ${S.isTouch}`;
 }
 
 // ---------- the loop ----------
 const clock = new THREE.Clock();
-// mobile perf ladder: if a phone GPU can't hold ~40fps, step quality down
-// (pixel ratio, then shadow resolution, then shadows + grass density)
-let fpsEma = 60, perfTimer = 0, perfTier = 0;
-function perfLadder(dt) {
+// Sustained real-device FPS determines quality, not the physics-capped dt.
+// Independent downgrade/recovery windows avoid permanent visual degradation.
+const mobileQuality = createMobileQualityState();
+let appliedQualityTier = 0;
+function perfLadder(rawFrameDt) {
   if (!S.isTouch || S.debugShot || !S.started || S.paused) return;
-  fpsEma = fpsEma * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
-  perfTimer += dt;
-  if (perfTimer > 3 && fpsEma < 40 && perfTier < 3) {
-    perfTimer = 0; perfTier++;
-    if (perfTier === 1) renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
-    if (perfTier === 2) { renderer.setPixelRatio(1.1); setShadowSize(1024); }
-    if (perfTier === 3) {
-      setSunShadows(false);
-      if (S.grassTufts) for (const t of S.grassTufts) t.count = Math.floor(S.grassTuftCount * 0.45);
-    }
-  }
+  const tier = advanceMobileQuality(mobileQuality, rawFrameDt);
+  if (tier === appliedQualityTier) return;
+  appliedQualityTier = tier;
+  const pixelRatio = tier === 0 ? Math.min(window.devicePixelRatio, 1.5)
+    : tier === 1 ? Math.min(window.devicePixelRatio, 1.25) : 1.1;
+  renderer.setPixelRatio(pixelRatio);
+  // Restore shadows and foliage as sustained performance recovers.
+  setSunShadows(tier < 3);
+  setShadowSize(1024); // native touch shadow resolution is 1024
+  if (S.grassTufts) for (const t of S.grassTufts)
+    t.count = tier === 3 ? Math.floor(S.grassTuftCount * 0.45) : S.grassTuftCount;
 }
 function warnings() {
   if (S.player.inHollow || S.player.inBurrow || S.player.inFenway || S.player.inGarden || S.player.inCityHall || S.player.inEsplanade) return '';
@@ -390,11 +392,12 @@ function warnings() {
   return '';
 }
 
+let lastIdleRender = -Infinity;
 function loop() {
   requestAnimationFrame(loop);
   const rawFrameDt = clock.getDelta();
   const dt = Math.min(0.05, rawFrameDt); // cap simulation step, NOT diagnostic FPS
-  perfLadder(dt);
+  perfLadder(rawFrameDt);
   if (S.started && !S.paused) {
     if (S.spottedFlash > 0) S.spottedFlash -= dt;
     if (S.hawkFlash > 0) S.hawkFlash -= dt;
@@ -421,6 +424,13 @@ function loop() {
     updateParkMap(dt);
     updateDiagnostics(dt, rawFrameDt);
   }
-  renderer.render(scene, camera);
+  // Title/pause overlays are CSS, while the underlying 3D world is static.
+  // Keep a modest 4fps backdrop refresh instead of burning full GPU power
+  // behind a pause screen on iOS. Resume returns to full-rate instantly.
+  if (S.started && !S.paused) renderer.render(scene, camera);
+  else if (performance.now() - lastIdleRender >= 250) {
+    renderer.render(scene, camera);
+    lastIdleRender = performance.now();
+  }
 }
 loop();

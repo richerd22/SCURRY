@@ -109,3 +109,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Classify positive membership in the existing `MAP.garden` or `MAP.common` bounds before applying water/road/path exclusions. Move toss destination Y to its real floor once at launch, then interpolate and add a single vertical arc.
 
 **Consequence:** No side-of-park burial exploit, and friendlier visible food landings. This is still a schematic lawn mask, not a botanical survey of every plaza; more exact soil masks can be added when proved by geometry.
+
+
+## ADR-013 — reversible mobile graphics quality based on real frame time
+
+**Context:** The previous mobile performance ladder measured the physics-capped delta rather than actual frame duration, making very slow phones appear faster and slowing response to sustained low FPS. It could not raise visual quality after performance recovered. The renderer also spent full-rate GPU work behind the title/pause screen.
+
+**Decision:** Separate raw render-frame time from physics dt, track a time-weighted FPS EMA and downgrade after 3s <39fps. Upgrade after 12s >54fps, excluding >1s visibility gaps. Restore DPR/shadows/grass on recovery. Idle at ~4 canvas renders per second while title/paused, retaining the existing continuous requestAnimationFrame scheduling to resume immediately.
+
+**Consequences:** Battery relief and adaptive rendering without misrepresenting phone performance. Extra quality transitions are infrequent, but each shadow/pixel-ratio change can briefly incur a resource resize. Benchmark and tune on a physical iPhone before claiming a numerical FPS/power improvement.
