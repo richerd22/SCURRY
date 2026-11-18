@@ -98,6 +98,10 @@ export function updateSwanRide(dt) {
   // standing in the open for two seconds during a glance gets you spotted.
   if(stage!=='moving')return;
   const glance=(elapsed%12)>5 && (elapsed%12)<8.5;
+  if(boat.userData.operator){
+    const aim=glance?0.55:0;
+    boat.userData.operator.rotation.y+=(aim-boat.userData.operator.rotation.y)*Math.min(1,dt*3);
+  }
   if(glance&&!hidden){
     exposed+=dt;
     if(!lastWarning)toast('the operator is looking this way. DUCK!',1.7);

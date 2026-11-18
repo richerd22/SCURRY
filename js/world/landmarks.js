@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { groundHeight, terrainDisc } from './world.js';
+import { SWAN_SEATS } from './swan-passengers.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -871,6 +872,42 @@ function buildSwanBoats(scene) {
       v.position.set(sx, 2.14, -0.15);
       g.add(v);
     }
+    // Real boats carry people. Ten lightweight human silhouettes on the
+    // five existing bench rows; two instanced draws per hull instead of
+    // 20 separate model loads or hundreds of meshes.
+    const shape=new THREE.SphereGeometry(1,8,6);
+    const torsos=new THREE.InstancedMesh(shape,new THREE.MeshStandardMaterial({
+      color:0xffffff,roughness:1}),SWAN_SEATS.length);
+    const heads=new THREE.InstancedMesh(shape,new THREE.MeshStandardMaterial({
+      color:0xffffff,roughness:.95}),SWAN_SEATS.length);
+    const colors=[0x456d81,0x907153,0x7d4a4a,0x69745c,0xb18a5e,
+      0x54706d,0x686178,0x953f34,0x426287,0x7c716a];
+    const skins=[0xd7ae88,0x8c5e42,0xf0c7a2,0xbd9275,0x754a35];
+    const matrix=new THREE.Object3D();
+    SWAN_SEATS.forEach((s,i)=>{
+      matrix.position.set(s.x,1.40,s.z);matrix.scale.set(.22,.33,.16);
+      matrix.updateMatrix();torsos.setMatrixAt(i,matrix.matrix);
+      torsos.setColorAt(i,new THREE.Color(colors[i%colors.length]));
+      matrix.position.set(s.x,1.85,s.z);matrix.scale.set(.135,.155,.13);
+      matrix.updateMatrix();heads.setMatrixAt(i,matrix.matrix);
+      heads.setColorAt(i,new THREE.Color(skins[(i+drift.ph*10|0+skins.length)%skins.length]));
+    });
+    torsos.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
+    if(torsos.instanceColor)torsos.instanceColor.needsUpdate=true;
+    if(heads.instanceColor)heads.instanceColor.needsUpdate=true;
+    torsos.castShadow=false;heads.castShadow=false;
+    g.add(torsos,heads);
+    // Pedal operator behind the seats. This actor turns toward a peeking
+    // squirrel during a glance; detection now has a visible source.
+    const operator=new THREE.Group();
+    operator.position.set(0,0,2.95);
+    const crewCloth=new THREE.MeshStandardMaterial({color:0x274d42,roughness:1});
+    box(.52,.54,.31,crewCloth,0,1.43,0,operator,false);
+    const crewFace=new THREE.Mesh(new THREE.SphereGeometry(.145,10,8),
+      new THREE.MeshStandardMaterial({color:0xb88b69,roughness:1}));
+    crewFace.position.set(0,1.84,-.08);operator.add(crewFace);
+    box(.34,.08,.28,darkWood,0,2.0,-.07,operator,false);
+    g.add(operator);g.userData.operator=operator;
     // stern deck the swan rides on
     box(3.3, 0.14, 1.7, benchWood, 0, 0.8, 3.85, g);
     swan(g);

@@ -53,3 +53,8 @@ References: https://friendsofthepublicgarden.org/our-parks/the-garden/ ; https:/
 ## v0.6.77 — browser integration gate for new systems
 
 The existing headless Chromium suite now physically places a player on the already-collidable Swan Boat pier, presses the actual E handler to board, verifies that real player feet move with the boat above the water plane, peeks and hides via E, fast-forwards the boat clock using a **localhost-only** QA hook, and presses E to disembark at precisely the existing dock platform height. A second scenario places the player by a visible living squirrel and requires a real E prompt, then interacts through the same input path. No player-visible debug control or public QA API was added. These run alongside the preexisting 12 continuous terrain walk routes and elevated support probes; green CI will constitute desktop Chromium smoke evidence, not an iPhone acceptance.
+
+
+## v0.6.78 — real passengers and visible Swan Boat operator
+
+The boats were visually empty, despite the official Swan Boat operator guidance that passenger weight is necessary for the paddlewheel to sit properly. Each of the three already-authored Swan Boats now has ten small seated silhouettes instantiated into TWO mesh draws (body/head) plus a simple crew operator at the stern. The crew operator turns during the same existing sightline glance that powers the player hide/peek mechanic — detection has a visible actor instead of only text. No photo assets, third-party licensing or additional boat collider. Tests enforce all ten seats remain distinct and within the canopy interior. This is a stylized visual approximation rather than real-life boat operating physics. Source: https://swanboats.com/plan-your-visit/
