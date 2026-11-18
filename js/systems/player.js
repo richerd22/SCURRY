@@ -4,7 +4,8 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { groundHeight, inWater } from '../world/world.js';
+import { visibleGroundHeight, inWater } from '../world/world.js';
+import { walkSurface, resolveHorizontal } from './collision.js';
 import { sfx } from './audio.js';
 
 const EYE = 0.25;
@@ -17,12 +18,14 @@ let runPhase = 0;
 export function initPlayer(scene, camera) {
   const P = S.player;
   P.pos = new THREE.Vector3(24, 0, 30);
-  P.pos.y = groundHeight(P.pos.x, P.pos.z);
+  P.pos.y = visibleGroundHeight(P.pos.x, P.pos.z);
+  P.grounded = true;
   P.vel = new THREE.Vector3();
   P.yaw = -2.2; P.pitch = 0;
   buildPawRig(camera);
   document.addEventListener('keydown', (e) => { keys[e.code] = true; });
   document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+  window.addEventListener('blur', () => { for (const code in keys) keys[code] = false; });
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== document.body && document.pointerLockElement !== S.renderer.domElement) return;
     if (S.paused || !S.started) return;
@@ -186,41 +189,36 @@ function tryBite() {
 export function pressBite() { tryBite(); }
 export function setTouchKey(code, down) { keys[code] = !!down; }
 
-// highest walkable surface at (x,z) that is at or below refY + stepTol
+// The squirrel's position is at its feet, never at its camera or torso.
+const PHYSICS_DT = 1 / 90;  // ~7cm max horizontal stride at full sprint
+const STEP_UP = 1.3;       // preserve the original scramble onto stage steps
+const SNAP_DOWN = 0.25;    // small irregularities are not ledge falls
+
+function baseHeight(x, z) {
+  const P = S.player;
+  if (P.inHollow || P.inBurrow) return 0;
+  if (P.inFenway && S.realmGround.fenway) return S.realmGround.fenway(x, z);
+  if (P.inGarden && S.realmGround.garden) return S.realmGround.garden(x, z);
+  if (P.inCityHall && S.realmGround.cityhall) return S.realmGround.cityhall(x, z);
+  if (P.inEsplanade && S.realmGround.esplanade) return S.realmGround.esplanade(x, z);
+  return visibleGroundHeight(x, z);
+}
+
 function surfaceAt(x, z, refY, stepTol = 0.55) {
-  let best = groundHeight(x, z);
-  for (const p of S.platforms) {
-    if (Math.hypot(x - p.x, z - p.z) < p.r && p.y <= refY + stepTol && p.y > best) best = p.y;
-  }
-  for (const b of S.platformBoxes) {
-    if (x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ && b.y <= refY + stepTol && b.y > best) best = b.y;
-  }
-  return best;
+  return walkSurface(x, z, refY, stepTol, baseHeight(x, z),
+    S.platforms, S.platformBoxes, S.platformSegments);
 }
 
 function collideWalls(pos) {
-  for (const s of S.solids) {
-    const dx = pos.x - s.x, dz = pos.z - s.z;
-    const d = Math.hypot(dx, dz), min = s.r + RADIUS;
-    if (d < min && d > 0.0001) {
-      // don't push out of a trunk we are climbing
-      if (S.player.climbing && Math.abs(s.x - S.player.climbing.x) < 0.01 && Math.abs(s.z - S.player.climbing.z) < 0.01) continue;
-      pos.x = s.x + dx / d * min;
-      pos.z = s.z + dz / d * min;
-    }
-  }
-  for (const b of S.solidBoxes) {
-    if (pos.x > b.minX - RADIUS && pos.x < b.maxX + RADIUS && pos.z > b.minZ - RADIUS && pos.z < b.maxZ + RADIUS) {
-      const dxl = pos.x - (b.minX - RADIUS), dxr = (b.maxX + RADIUS) - pos.x;
-      const dzl = pos.z - (b.minZ - RADIUS), dzr = (b.maxZ + RADIUS) - pos.z;
-      const m = Math.min(dxl, dxr, dzl, dzr);
-      if (m === dxl) pos.x = b.minX - RADIUS; else if (m === dxr) pos.x = b.maxX + RADIUS;
-      else if (m === dzl) pos.z = b.minZ - RADIUS; else pos.z = b.maxZ + RADIUS;
-    }
-  }
-  if (!S.player.inHollow && !S.player.inBurrow && !S.player.inFenway && !S.player.inGarden && !S.player.inCityHall && !S.player.inEsplanade) {
+  const P = S.player;
+  // The home park's outer clamp is NOT applied to separate destination maps.
+  if (!P.inHollow && !P.inBurrow && !P.inFenway && !P.inGarden && !P.inCityHall && !P.inEsplanade) {
+    resolveHorizontal(pos, S.solids, S.solidBoxes, S.walls, RADIUS, P.climbing);
     pos.x = Math.max(-208, Math.min(208, pos.x));
     pos.z = Math.max(-118, Math.min(118, pos.z));
+  } else if (P.inEsplanade) {
+    // Trees and the shell in the river realm are also in the registries.
+    resolveHorizontal(pos, S.solids, S.solidBoxes, S.walls, RADIUS, P.climbing);
   }
 }
 
@@ -233,14 +231,64 @@ function nearestTrunk(pos) {
   return bd < 1.35 ? best : null;
 }
 
+function moveSubstep(dt, wx, wz, wl, mag, speed) {
+  const P = S.player, oldY = P.pos.y, wasGrounded = P.grounded;
+  if (wasGrounded) {
+    P.vel.x = wx / wl * speed * (P.moving ? 1 : 0);
+    P.vel.z = wz / wl * speed * (P.moving ? 1 : 0);
+  } else {
+    const accel = 26;
+    P.vel.x += wx / wl * accel * dt * mag;
+    P.vel.z += wz / wl * accel * dt * mag;
+    const hs = Math.hypot(P.vel.x, P.vel.z);
+    if (hs > 8.5) { P.vel.x *= 8.5 / hs; P.vel.z *= 8.5 / hs; }
+    P.vel.y -= 15.5 * dt;
+  }
+  const wishX = P.pos.x + P.vel.x * dt, wishZ = P.pos.z + P.vel.z * dt;
+  P.pos.x = wishX; P.pos.z = wishZ;
+  if (!wasGrounded) P.pos.y += P.vel.y * dt;
+
+  // Ground first, then walls: standing ON a bench/roof must not trigger its
+  // lower wall collider. Descending uses previous feet Y (a swept landing).
+  let support = surfaceAt(P.pos.x, P.pos.z, oldY, wasGrounded ? STEP_UP : 0.08);
+  if (wasGrounded) {
+    if (support >= oldY - SNAP_DOWN && support <= oldY + STEP_UP) {
+      P.pos.y = support; P.vel.y = 0;
+    } else {
+      P.grounded = false;
+      P.vel.y = -15.5 * dt;
+      P.pos.y = oldY + P.vel.y * dt;
+    }
+  } else if (P.vel.y <= 0 && oldY + 0.015 >= support && P.pos.y <= support) {
+    if (P.vel.y < -9) sfx.splash();
+    P.pos.y = support; P.vel.y = 0; P.grounded = true;
+  }
+  collideWalls(P.pos);
+  // A collision push may move the feet OFF the surface they first touched.
+  if (P.grounded) {
+    support = surfaceAt(P.pos.x, P.pos.z, P.pos.y, STEP_UP);
+    if (support >= P.pos.y - SNAP_DOWN && support <= P.pos.y + STEP_UP) {
+      P.pos.y = support; P.vel.y = 0;
+    } else P.grounded = false;
+  } else {
+    const floor = baseHeight(P.pos.x, P.pos.z);
+    if (P.pos.y < floor) { P.pos.y = floor; P.vel.y = 0; P.grounded = true; }
+  }
+  // Stop inertial air acceleration into an impassable wall.
+  if (!P.grounded) {
+    if (Math.abs(P.pos.x - wishX) > 0.005) P.vel.x = 0;
+    if (Math.abs(P.pos.z - wishZ) > 0.005) P.vel.z = 0;
+  }
+}
+
 export function updatePlayer(dt, camera) {
   const P = S.player;
   if (P.biteCooldown > 0) P.biteCooldown -= dt;
   if (P.biteAnim > 0) P.biteAnim -= dt;
   if (P.scramble > 0) P.scramble -= dt;
-  if (P.begging > 0) { P.begging -= dt; animatePaws(dt, camera); return; }
-
-  // keyboard + analog touch stick, merged and clamped
+  if (P.begging > 0) {
+    P.begging -= dt; syncPlayerCamera(camera); animatePaws(dt, camera); return;
+  }
   let fwd = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
   let str = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
   if (S.touch) { fwd += -S.touch.y; str += S.touch.x; }
@@ -248,91 +296,55 @@ export function updatePlayer(dt, camera) {
   str = Math.max(-1, Math.min(1, str));
   const sprint = keys.ShiftLeft || keys.ShiftRight;
   P.sprinting = !!sprint && fwd > 0.3;
-  const inWaterNow = inWater(P.pos.x, P.pos.z) && P.pos.y < 0.3;
+  const water = inWater(P.pos.x, P.pos.z) && P.pos.y < 0.3;
 
   if (P.climbing) {
     updateClimb(dt, fwd, str);
+    P.moving = Math.abs(fwd) + Math.abs(str) > 0.12;
   } else {
-    // wish direction in world space
     const sin = Math.sin(P.yaw), cos = Math.cos(P.yaw);
-    const wx = (-sin * fwd + cos * str);
-    const wz = (-cos * fwd - sin * str);
-    const wl = Math.hypot(wx, wz) || 1;
-    const mag = Math.min(1, Math.hypot(fwd, str)); // analog stick tilt
-    const speed = (P.sprinting ? 6.6 : 3.3) * (inWaterNow ? 0.45 : 1) * mag;
+    const wx = -sin * fwd + cos * str;
+    const wz = -cos * fwd - sin * str;
+    const wl = Math.hypot(wx, wz) || 1, mag = Math.min(1, Math.hypot(fwd, str));
+    const speed = (P.sprinting ? 6.6 : 3.3) * (water ? 0.45 : 1) * mag;
     P.moving = mag > 0.12;
 
-    if (P.grounded) {
-      P.vel.x = wx / wl * speed * (P.moving ? 1 : 0);
-      P.vel.z = wz / wl * speed * (P.moving ? 1 : 0);
-      if (keys.Space) {
-        P.vel.y = 6.1;                     // big squirrel jump
-        P.grounded = false;
-        sfx.squeak();
-      }
-      // start climbing: pushing toward a trunk
-      if (P.moving) {
-        const t = nearestTrunk(P.pos);
-        if (t && P.pos.y < t.trunkTop - 0.5) {
-          const toward = ((t.x - P.pos.x) * wx + (t.z - P.pos.z) * wz) / wl;
-          if (toward > 0.45) {
-            P.climbing = t;
-            P.climbAngle = Math.atan2(P.pos.x - t.x, P.pos.z - t.z);
-            P.vel.set(0, 0, 0);
-          }
-        }
-      }
-    } else {
-      // air control: tail-steer hard toward wish dir, keep momentum
-      const accel = 26;
-      P.vel.x += wx / wl * accel * dt * mag;
-      P.vel.z += wz / wl * accel * dt * mag;
-      const hs = Math.hypot(P.vel.x, P.vel.z), maxH = 8.5;
-      if (hs > maxH) { P.vel.x *= maxH / hs; P.vel.z *= maxH / hs; }
-      P.vel.y -= 15.5 * dt;
-      // grab a trunk mid-air too
-      if (P.moving) {
-        const t = nearestTrunk(P.pos);
-        if (t && P.pos.y > t.gy + 0.3 && P.pos.y < t.trunkTop) {
-          const toward = ((t.x - P.pos.x) * wx + (t.z - P.pos.z) * wz) / wl;
-          if (toward > 0.3) {
-            P.climbing = t;
-            P.climbAngle = Math.atan2(P.pos.x - t.x, P.pos.z - t.z);
-            P.vel.set(0, 0, 0);
-          }
+    if (P.grounded && keys.Space) {
+      P.vel.y = 6.1; P.grounded = false; sfx.squeak();
+    }
+    if (P.moving) {
+      const t = nearestTrunk(P.pos);
+      if (t && P.pos.y < t.trunkTop - 0.5
+          && (P.grounded || P.pos.y > t.gy + 0.3)) {
+        const toward = ((t.x - P.pos.x) * wx + (t.z - P.pos.z) * wz) / wl;
+        if (toward > (P.grounded ? 0.45 : 0.3)) {
+          P.climbing = t;
+          P.climbAngle = Math.atan2(P.pos.x - t.x, P.pos.z - t.z);
+          P.vel.set(0, 0, 0);
         }
       }
     }
-
-    if (!P.climbing) {
-      P.pos.x += P.vel.x * dt;
-      P.pos.z += P.vel.z * dt;
-      P.pos.y += P.vel.y * dt;
-      const stepTol = P.grounded ? 1.3 : 0.55; // squirrels scramble up steps and stage edges
-      const surf = surfaceAt(P.pos.x, P.pos.z, P.pos.y, stepTol);
-      if (P.pos.y <= surf) {
-        if (!P.grounded && P.vel.y < -9) sfx.splash(); // landing thump, never damage
-        P.pos.y = surf;
-        P.vel.y = 0;
-        P.grounded = true;
-      } else if (P.pos.y > surf + 0.05) {
-        P.grounded = false;
-      }
-      collideWalls(P.pos);
-      const surf2 = surfaceAt(P.pos.x, P.pos.z, P.pos.y, stepTol);
-      if (P.grounded && surf2 > P.pos.y) P.pos.y = surf2;
+    if (P.climbing) updateClimb(dt, fwd, str);
+    else {
+      const steps = Math.max(1, Math.ceil(dt / PHYSICS_DT));
+      const subDt = dt / steps;
+      for (let i = 0; i < steps; i++) moveSubstep(subDt, wx, wz, wl, mag, speed);
     }
   }
+  if (P.grounded && P.moving) runPhase += dt * (P.sprinting ? 16 : 10);
+  syncPlayerCamera(camera);
+  animatePaws(dt, camera);
+}
 
-  // camera
+// Re-sync after destination clamps/portals: these run after player physics.
+export function syncPlayerCamera(camera) {
+  const P = S.player;
   const bob = P.grounded && P.moving ? Math.sin(runPhase * 2) * 0.02 : 0;
   camera.position.set(P.pos.x, P.pos.y + EYE + bob, P.pos.z);
   camera.rotation.order = 'YXZ';
   camera.rotation.y = P.yaw + (P.scramble > 0 ? Math.sin(P.scramble * 40) * 0.03 : 0);
   camera.rotation.x = P.pitch;
   camera.rotation.z = P.grounded && P.moving ? Math.sin(runPhase) * 0.006 : 0;
-  if (P.grounded && P.moving) runPhase += dt * (P.sprinting ? 16 : 10);
-  animatePaws(dt, camera);
 }
 
 function updateClimb(dt, fwd, str) {
@@ -449,5 +461,5 @@ function animatePaws(dt, camera) {
 
 export function isOnGroundLow() {
   const P = S.player;
-  return !P.climbing && P.pos.y - groundHeight(P.pos.x, P.pos.z) < 1.1;
+  return !P.climbing && P.pos.y - baseHeight(P.pos.x, P.pos.z) < 1.1;
 }
