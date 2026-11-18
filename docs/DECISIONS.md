@@ -135,3 +135,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Prevent trunk attachment for 300ms after regular jump and 380ms after a climb push-off; preserve old approach thresholds outside that interval. Report food's real distance and rank against all other current interactions. Remove Esplanade's redundant re-pin tick now that food floor heights are stable.
 
 **Consequence:** More intentional climbing/jumps and predictable action selection without changing jump physics or interaction radii. Real input feel still requires playtesting at canopy branch joins.
+
+
+## ADR-016 — keep a browser-smoke gate separate from fast pure math CI
+
+**Context:** Syntax + unit tests cannot catch failures in Three.js import maps, WebGL initialization, actual screenshot mode, or mobile DOM controls. Earlier visual harnesses were temporary and not preserved in the repository.
+
+**Decision:** Add a separate headless Chromium/SwiftShader GitHub Actions workflow, triggered on main updates and on demand, that serves the unchanged static site, checks three representative poses and keyboard/touch map controls, and archives screenshot/error evidence. Do not add a bundler or runtime npm dependency to the game.
+
+**Consequence:** Browser regressions become visible and reproducible, but the smoke run costs CI installation/render time and can be affected by upstream CDN outages. Physical Safari and real GPU fidelity remain distinct acceptance gates.

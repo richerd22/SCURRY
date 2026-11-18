@@ -1,0 +1,39 @@
+name: SCURRY browser smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-webgl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runner (CI only, no game build)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Run static web server and headless WebGL routes
+        env:
+          SCURRY_BASE_URL: http://127.0.0.1:8000
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/scurry-server.log 2>&1 &
+          echo $! > /tmp/scurry-server.pid
+          trap 'kill $(cat /tmp/scurry-server.pid) || true' EXIT
+          node harness/browser-smoke.mjs
+      - name: Preserve screenshot and console evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scurry-webgl-smoke
+          path: .ci/browser-smoke/
+          retention-days: 7
+          if-no-files-found: warn

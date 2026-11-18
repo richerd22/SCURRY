@@ -17,6 +17,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [Engineering decisions](docs/DECISIONS.md): why the controller and mobile lifecycle work the way they do.
 - [Agent guide](docs/AGENT-GUIDE.md): the long-form implementation history, asset decisions and honest known state.
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
+- [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, screenshot poses and map keyboard/touch checks, with screenshots/console artifacts on pushes to main.
 
 **Current version: v0.6.44.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
 

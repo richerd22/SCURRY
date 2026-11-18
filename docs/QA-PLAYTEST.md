@@ -127,3 +127,8 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 - While climbing, leap backward/sideways, then hold toward the trunk; no instant re-grab should cancel the leap. After the short grace expires, normal midair grabs should still work.
 - Find a burrow mouth/rat market stall with food nearby. A physically closer door/interactable should outrank a more distant snack; the opposite when food is genuinely nearer. Keyboard E and touch ACT must agree.
 - In Esplanade, food on the grass embankment must remain at LAND_Y across many game frames without the old artificial tick; no dummy interactable should be needed.
+
+
+## Automated browser smoke evidence
+
+New [browser-smoke workflow](../.github/workflows/browser-smoke.yml) launches the real static site in headless Chromium + SwiftShader. Review the run's uploaded `scurry-webgl-smoke` artifact containing PNGs and `report.json` for spawn, Public Garden and mobile-touch spawn; verify no page/console error, live WebGL, screenshot readiness, G key and touch MAP. This is a basic runtime gate, **not** a replacement for longer playable physics checks or real-GPU/iPhone image and performance reviews.
