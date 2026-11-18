@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';import {test} from 'node:test';
 const src=readFileSync(new URL('../js/systems/mbta-rules.js',import.meta.url),'utf8');
-const {MBTA_STATIONS,MBTA_ROOMS,MBTA_RAT_GATE,MBTA_STAFF,MBTA_HIDE,
+const {MBTA_STATIONS,MBTA_ROOMS,MBTA_RAT_GATE,MBTA_STAFF,MBTA_HIDE,MBTA_RIDER_ROUTES,
   withinTransit,clampTransit,trainAt,transitCrowdLevel}=await import(
   'data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 test('the real line identities remain correct, only Park Street is a Red transfer',()=>{
@@ -44,4 +44,15 @@ test('trains are finite animations, without moving collision surfaces',()=>{
  }
  assert.equal(trainAt(0),-118);
  assert.equal(trainAt(42),-118);
+});
+
+test('every moving commuter segment stays on public platform, not track',()=>{
+ assert.equal(MBTA_RIDER_ROUTES.length,8);
+ for(const [k,route] of MBTA_RIDER_ROUTES.entries()){
+  const [a,b]=route;
+  for(let i=0;i<=100;i++){
+   const t=i/100,x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;
+   assert.ok(withinTransit(x,z),'commuter '+k+' on rail at '+x+','+z);
+  }
+ }
 });

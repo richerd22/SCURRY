@@ -109,3 +109,8 @@ The new every-20cm NPC navigation gate correctly caught a **3-metre hole in the 
 ## v0.6.87 — end-to-end park shifts and underground transit portal gate
 
 The browser gameplay smoke now uses only actual E key actions, while localhost-only QA positions the player and sets game hour. It asserts zero picnic/benched/dog actors at 03:00 with one night-shift worker, the same actors restored at noon, Park Street station ground support, E hide/unhide, a full staff shoo back to park, a functioning burrow→MBTA rat passage, and reciprocal return to market/park. NPC population is accessed through a localhost-only read-only QA snapshot; no public/debug API is exposed in production. This is an additive acceptance gate alongside the original 12 real traversal routes and canopy/bridge/fence contact parity. Node pure unit tests alone are insufficient evidence of gameplay.
+
+
+## v0.6.88 — actual subway entries and commuter agency
+
+The preexisting Park Street headhouse remains. Arlington and Boylston now each have a code-authored exterior staircase/rail marker instead of invisible lawn-only E portals, with finite low physical colliders set aside from the E spot. The market-to-MBTA culvert now has an actual iron grating in the Red concourse and a sign inside the rat market. Eight simple commuter figures follow individual corridor-safe short paths, face nearby squirrels, and accept E interactions that occasionally leave food on a real station floor with 24-second cooldown. Continuous pure route tests forbid passengers from walking into the train area. Art remains stylized and the compressed station level is explicitly schematic, not MBTA architecture survey data.

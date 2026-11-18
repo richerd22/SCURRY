@@ -52,3 +52,12 @@ export function trainAt(elapsed,phase=0){
   const t=((elapsed+phase)%42+42)%42;
   return t<28 ? -118+236*(t/28) : 128; // disappear beyond tunnel
 }
+
+
+// Short walk patterns: riders circulate only within station platforms.
+export const MBTA_RIDER_ROUTES=Object.freeze([
+ [[-90,4],[-73,4]],[[-73,8],[-88,8]],
+ [[-12,4],[7,4]],[[5,8],[-6,8]],
+ [[64,6],[88,6]],[[85,5],[65,5]],
+ [[69,51],[74,51]],[[73,64],[66,64]],
+].map(p=>Object.freeze(p.map(v=>Object.freeze(v)))));

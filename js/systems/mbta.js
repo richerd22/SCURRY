@@ -8,8 +8,9 @@ import { visibleGroundHeight } from '../world/world.js';
 import { TUN } from './burrows.js';
 import { clearPlayerInput } from './player.js';
 import { toast } from '../ui/hud.js';
+import { spawnFood } from './food.js';
 import { MBTA_ORIGIN, MBTA_STATIONS, MBTA_ROOMS, MBTA_RAT_GATE,
-  MBTA_STAFF, MBTA_HIDE, clampTransit, transitCrowdLevel, trainAt } from './mbta-rules.js';
+  MBTA_STAFF, MBTA_HIDE, MBTA_RIDER_ROUTES, clampTransit, transitCrowdLevel, trainAt } from './mbta-rules.js';
 
 const ORIGIN = new THREE.Vector3(MBTA_ORIGIN.x,0,MBTA_ORIGIN.z);
 const cloth=new THREE.MeshStandardMaterial({color:0xc3c3bc,roughness:.96});
@@ -70,6 +71,31 @@ function attendant(group,x,z) {
   g.position.set(x,0,z);group.add(g);
   return g;
 }
+
+function buildSurfaceStair(scene,s){
+  if(s.id==='park')return; // keep existing elaborate Park Street headhouse
+  const x=s.surfaceX+4.2,z=s.surfaceZ,gy=visibleGroundHeight(x,z);
+  const g=new THREE.Group();
+  slab(g,3,.15,2.5,dark,0,.02,0);
+  for(let i=0;i<4;i++)
+    slab(g,2.2,.12,.48,tile,0,.32-i*.065,-.78+i*.52);
+  for(const side of [-1,1]){
+    slab(g,.1,.64,2.5,steel,side*1.43,.36,0);
+    for(const zz of [-1.05,-.36,.36,1.05])
+      slab(g,.07,1,.08,steel,side*1.44,.78,zz);
+    slab(g,.07,.07,2.4,steel,side*1.44,1.28,0);
+  }
+  sign(g,s.name,'#216348',0,1.56,1.3,2.8);
+  const disk=mesh(g,new THREE.CircleGeometry(.4,20),
+    new THREE.MeshBasicMaterial({color:0x1a1c20,side:THREE.DoubleSide}),
+    -1.38,2.08,0);
+  disk.rotation.y=-Math.PI/2;
+  g.position.set(x,gy,z);scene.add(g);
+  // Squirrel's actual E entry lies 4.2m to the side, NOT in this solid.
+  S.solidBoxes.push({minX:x-1.52,maxX:x+1.52,minZ:z-1.3,maxZ:z+1.3,
+    minY:gy-.12,maxY:gy+.55});
+}
+
 function isAway(){
   const p=S.player;
   return p.inHollow||p.inBurrow||p.inFenway||p.inGarden||
@@ -177,7 +203,29 @@ export function buildMBTA(scene){
     mesh(h,new THREE.SphereGeometry(.145,8,6),
       new THREE.MeshStandardMaterial({color:i%3===0?0x8d6349:0xd7b295}),0,1.65,0);
     slab(h,.25,.81,.22,dark,-.1,.44,0);slab(h,.25,.81,.22,dark,.15,.44,0);
-    h.position.set(riderPos[i][0],0,riderPos[i][1]);root.add(h);riders.push(h);
+    h.position.set(riderPos[i][0],0,riderPos[i][1]);root.add(h);
+    const rec={mesh:h,x:riderPos[i][0],z:riderPos[i][1],
+      route:MBTA_RIDER_ROUTES[i],dir:i%2?-1:1,cooldown:0,pause:0};
+    const it={
+      x:ORIGIN.x+rec.x,z:ORIGIN.z+rec.z,y:0,r:1.6,
+      label:()=>S.player.inMBTA&&h.visible&&rec.cooldown<=0?
+        'E - ask commuter for a snack':null,
+      action:()=>{
+        if(!S.player.inMBTA||!h.visible||rec.cooldown>0||
+          Math.hypot(S.player.pos.x-ORIGIN.x-rec.x,
+            S.player.pos.z-ORIGIN.z-rec.z)>1.65)return;
+        rec.cooldown=24;rec.pause=3.4;
+        h.rotation.y=Math.atan2(S.player.pos.x-ORIGIN.x-rec.x,
+          S.player.pos.z-ORIGIN.z-rec.z);
+        if(i%3===0){
+          spawnFood('peanut',ORIGIN.x+rec.x+.4,ORIGIN.z+rec.z+.5,
+            {y:0,source:'mbta'});
+          toast('a commuter leaves a peanut for the station squirrel.',2.2);
+        }else toast('the commuter looks amused, then checks the train board.',2);
+      }
+    };
+    rec.interactable=it;S.interactables.push(it);
+    riders.push(rec);
   }
   root.userData.riders=riders;
   // Low-cost emissive station tubes replace many dynamic point lights.
@@ -186,7 +234,17 @@ export function buildMBTA(scene){
     slab(root,6,.07,.28,glow,x,3.94,3);
   for(let z=18;z<=67;z+=11)
     slab(root,4,.07,.28,glow,75,3.94,z);
+  // The old animal culvert has visible floor ironwork and a market sign.
+  const drain=new THREE.Mesh(new THREE.TorusGeometry(.68,.12,7,16),steel);
+  drain.rotation.x=Math.PI/2;
+  drain.position.set(MBTA_RAT_GATE.x,.14,MBTA_RAT_GATE.z);
+  root.add(drain);
+  for(let i=-2;i<=2;i++)
+    slab(root,1.2,.06,.045,steel,MBTA_RAT_GATE.x,.12,
+      MBTA_RAT_GATE.z+i*.18);
+  sign(root,'OLD RAT PASSAGE','#2a3a32',MBTA_RAT_GATE.x,1.65,69.45,4);
   scene.add(root);
+  for(const s of MBTA_STATIONS)buildSurfaceStair(scene,s);
 }
 export function initMBTA(){
   if(!stationRoot)return;
@@ -233,11 +291,30 @@ export function updateMBTA(dt){
   if(!stationRoot)return;
   elapsed+=dt;
   const level=transitCrowdLevel(S.timeHours);
-  stationRoot.userData.riders.forEach((a,i)=>{
-    a.visible=level==='rush'||(level==='regular'&&i<5)||
+  stationRoot.userData.riders.forEach((r,i)=>{
+    r.mesh.visible=level==='rush'||(level==='regular'&&i<5)||
       (level==='last-trains'&&i<2);
-    // People shift their posture; no nighttime commuter rave.
-    a.rotation.y=Math.sin(elapsed*.35+i)*.15;
+    r.cooldown=Math.max(0,r.cooldown-dt);
+    r.pause=Math.max(0,r.pause-dt);
+    const target=r.route[r.dir>0?1:0];
+    if(r.mesh.visible&&r.pause===0){
+      const dx=target[0]-r.x,dz=target[1]-r.z,dist=Math.hypot(dx,dz);
+      if(dist<.08)r.dir*=-1;
+      else{
+        const step=Math.min(dist,.52*dt);
+        r.x+=dx/dist*step;r.z+=dz/dist*step;
+        r.mesh.rotation.y=Math.atan2(-dx,-dz);
+      }
+    }
+    if(r.mesh.visible&&S.player.inMBTA&&
+      Math.hypot(S.player.pos.x-ORIGIN.x-r.x,
+        S.player.pos.z-ORIGIN.z-r.z)<1.8){
+      r.pause=Math.max(r.pause,.7);
+      r.mesh.rotation.y=Math.atan2(S.player.pos.x-ORIGIN.x-r.x,
+        S.player.pos.z-ORIGIN.z-r.z);
+    }
+    r.mesh.position.set(r.x,0,r.z);
+    r.interactable.x=ORIGIN.x+r.x;r.interactable.z=ORIGIN.z+r.z;
   });
   guard.visible=true; // overnight station staff may be on duty
   const gx=trainAt(elapsed,0);

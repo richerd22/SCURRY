@@ -362,6 +362,9 @@ export function buildBurrows(scene) {
   }
 
   buildMarket(g);
+  const transitSign=makeSign('THE T - RODENT ROUTE',2.5);
+  transitSign.position.set(49,1.52,5.8);transitSign.rotation.y=Math.PI;
+  g.add(transitSign);
   scene.add(g);
 }
 
