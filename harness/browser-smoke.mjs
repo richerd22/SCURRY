@@ -70,6 +70,8 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
       assert.equal(await page.locator('#map-panel').getAttribute('aria-hidden'), 'false');
       assert.ok(await page.locator('#map-legend button').count() >= 6,
         'numbered landmark legend must be visible on the phone');
+      assert.equal(await page.locator('#map-legend [data-transit="true"]').count(),3,
+        'all three real MBTA station entrances must be on the park atlas');
       await page.locator('#map-guide-toggle').tap();
       assert.equal(await page.locator('#map-guide').isVisible(),true,
         'Field Notes must open in map panel');

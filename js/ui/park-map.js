@@ -5,6 +5,7 @@ import { S, MAP } from '../state.js';
 import { PATHS } from '../world/world.js';
 import { mapPoint, mapHeading, mapRealm, waypointBearing } from './map-math.js';
 import { LANDMARKS, FIELD_NOTES } from '../systems/discovery-rules.js';
+import { MBTA_STATIONS } from '../systems/mbta-rules.js';
 import { discoveryProgress } from '../systems/discoveries.js';
 
 let panel, canvas, note, legend, route, toggle, guide, guideToggle,
@@ -59,13 +60,20 @@ export function initParkMap() {
     id:'hollow-tree', x:S.hollowTreePos.x, z:S.hollowTreePos.z,
     number:'H',label:'HOLLOW TREE'
   });
+  // Transit markers are navigable public street entrances, not new
+  // Field Notes. The 14-entry discovery/save contract stays unchanged.
+  for(const station of MBTA_STATIONS){
+    entries.push({id:'station-'+station.id,number:'T',transit:true,
+      x:station.surfaceX,z:station.surfaceZ,label:station.name+' T'});
+  }
   for (const entry of entries) {
     const item = document.createElement('button');
     item.type='button';
     item.className='map-destination';
     item.textContent = entry.number + '  ' + entry.label;
-    item.dataset.noteId = entry.id;
-    item.dataset.found = 'false';
+    item.dataset.noteId = entry.transit?'':entry.id;
+    item.dataset.transit = entry.transit?'true':'false';
+    item.dataset.found = entry.transit?'true':'false';
     item.setAttribute('aria-label', 'Track ' + entry.label);
     item.setAttribute('aria-pressed', 'false');
     item.addEventListener('click', (event) => {
@@ -184,14 +192,19 @@ function draw() {
     ctx.font = '12px ui-monospace, monospace';
     ctx.fillStyle = '#94ae96';
     ctx.fillText('THIS ATLAS COVERS THE COMMON + GARDEN', w/2, h/2 + 5);
-    ctx.fillText('FIND A BURROW EXIT TO RETURN TO THE PARK', w/2, h/2 + 27);
-    note.textContent = 'You are beyond the park map. Follow the burrow doors to return.';
+    ctx.fillText(S.player.inMBTA?'EXIT AT A STATION OR RETURN VIA THE RATS':
+      'FIND A BURROW EXIT TO RETURN TO THE PARK', w/2, h/2 + 27);
+    note.textContent = S.player.inMBTA?
+      'You are on the T. Find a station stair or the rat passage to return.':
+      'You are beyond the park map. Follow the burrow doors to return.';
     return;
   }
 
   if (legend) legend.style.display = 'grid';
   const visited = discoveryProgress().unlocked;
   for (const item of legend.children) {
+    // T stations are permanent waypoints, never discoverable pins.
+    if(item.dataset.transit==='true')continue;
     const found = visited.has(item.dataset.noteId);
     if (item.dataset.found !== String(found)) {
       item.dataset.found = String(found);
@@ -253,6 +266,10 @@ function draw() {
   if (S.hollowTreePos) pin(S.hollowTreePos.x,S.hollowTreePos.z,'H',
     selected?.number==='H'?'#fff8b2':
       visited.has('hollow-tree')?'#bfe7a2':'#edb57d');
+  for(const station of MBTA_STATIONS) {
+    pin(station.surfaceX,station.surfaceZ,'T',
+      selected?.id==='station-'+station.id?'#fff8b2':'#d6cbe9');
+  }
   // Squirrel marker: camera forward is (-sin(yaw), -cos(yaw)).
   const q=p(S.player.pos.x,S.player.pos.z), dir=mapHeading(S.player.yaw);
   const side={x:-dir.z,z:dir.x}, r=8;

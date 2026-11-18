@@ -30,5 +30,6 @@ export function mapRealm(player) {
   if (player.inGarden) return 'TD GARDEN';
   if (player.inCityHall) return 'CITY HALL PLAZA';
   if (player.inEsplanade) return 'CHARLES RIVER ESPLANADE';
+  if (player.inMBTA) return 'THE T · SUBWAY STATIONS';
   return null;
 }

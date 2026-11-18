@@ -157,3 +157,8 @@ The old surface wildlife AI guarded water and streets but not park benches, tree
 ## v0.6.95 — park residents have social reactions, no rat invisibility
 
 Before this pass, civilian wanderers occasionally stopped only for squirrels while ignoring cottontails and visible surface rats. Passersby now use one pure distance/reaction policy: pause and look at squirrels, stop longer for quiet rabbit-watching, and turn away along their EXISTING safe footpath from a nearby rat. Pauses have a 17-21s cooldown per walker; inactive night crowd, remote or underground actors are not eligible. The model clip switches to idle briefly, then resumes walking. No new WebGL meshes, extra interactions, currency, or geometry. Pure tests enforce distances and no reaction to invalid/out-of-realm animals.
+
+
+## v0.6.96 — public T entrances on the park atlas, preserved 14 Field Notes
+
+The park map previously had no indication where the newly playable subway stations were. It now draws three small T pins at the exact same Arlington, Boylston and Park Street surface E triggers used by gameplay. Their buttons join existing waypoint navigation, preserving all six original numbered landmarks plus Hollow Tree, and are **not** discoveries: no save key, Field Notes item, or schema migration. Opening the map while in the subway now reports THE T SUBWAY STATIONS and routes you back to public station stairs or the fictional rat tunnel rather than drawing a squirrel marker 8,000m off-map. Pure tests check station pin map bounds, isolation from Field Notes, and correct realm label. Existing mobile browser map smoke requires all three T controls.
