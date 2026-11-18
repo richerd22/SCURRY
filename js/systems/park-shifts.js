@@ -14,6 +14,7 @@ export function parkShift(hour) {
   squirrels:h>=5.5&&h<20,
   rabbits:(h>=5.5&&h<10)||(h>=17.5&&h<21),
   rats:h>=19||h<6.5,
+  crows:h>=5.5&&h<20,
  };
 }
 export function actorVisible(index,total,fraction){

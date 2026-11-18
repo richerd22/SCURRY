@@ -29,6 +29,7 @@ import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { spawnFood } from './food.js';
 import { isOnGroundLow, setCarriedVisual } from './player.js';
+import { parkShift } from './park-shifts.js';
 
 // ---------------------------------------------------------------- tuning
 const ANCHORS = [
@@ -334,7 +335,7 @@ function setLegs(c, visible) {
 function qualifies(c) {
   const P = S.player;
   if (!P || !P.pos || !S.carried) return false;
-  if (P.inHollow || P.inBurrow) return false;
+  if (P.inHollow || P.inBurrow || P.inMBTA || !parkShift(S.timeHours).crows) return false;
   if (!isOnGroundLow()) return false;
   return Math.hypot(P.pos.x - c.pos.x, P.pos.z - c.pos.z) < STALK_RANGE;
 }
@@ -476,6 +477,16 @@ export function updateCrows(dt) {
   for (const c of crows) {
     if (c.shotFrozen) continue;              // tableau crow #0: held pose
     if (shotMode) { idlePerched(c, dt); continue; } // bystanders stay put
+    // Crows roost at night. In-flight thieves safely finish returning
+    // any already-stolen food, but new stalking/swooping cannot begin.
+    if (!parkShift(S.timeHours).crows) {
+      if(c.state==='STALK'){
+        c.state='PERCH';c.stalkT=0;c.warnedStalk=false;
+      }else if(c.state==='SWOOP')startReturn(c,0);
+      if(c.state==='PERCH'||c.state==='SULK'){
+        idlePerched(c,dt);continue;
+      }
+    }
     if (c.gloatT > 0) c.gloatT -= dt;
     const u = c.mesh.userData;
 

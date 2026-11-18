@@ -114,3 +114,8 @@ The browser gameplay smoke now uses only actual E key actions, while localhost-o
 ## v0.6.88 — actual subway entries and commuter agency
 
 The preexisting Park Street headhouse remains. Arlington and Boylston now each have a code-authored exterior staircase/rail marker instead of invisible lawn-only E portals, with finite low physical colliders set aside from the E spot. The market-to-MBTA culvert now has an actual iron grating in the Red concourse and a sign inside the rat market. Eight simple commuter figures follow individual corridor-safe short paths, face nearby squirrels, and accept E interactions that occasionally leave food on a real station floor with 24-second cooldown. Continuous pure route tests forbid passengers from walking into the train area. Art remains stylized and the compressed station level is explicitly schematic, not MBTA architecture survey data.
+
+
+## v0.6.89 — night danger and roost consistency
+
+The dog-distance HUD was reading all dogs including off-duty invisible ones, warning of a nonexistent 3 AM dog. The query now ignores hidden/park-shifted dogs. Corvids are now daylight active: at night they roost, stop stalk attacks, abort in-progress swoops, but safely finish returning any food they already stole before settling. Existing crow photographic shot-mode tableau explicitly overrides this, so screenshot verification stays deterministic. Every night/day crow rule has pure tests; collision and food ownership remain untouched.

@@ -23,3 +23,10 @@ test('clock wraps and visibility masks stay deterministic',()=>{
  assert.equal(actorVisible(8,9,0),false);
  assert.equal(actorVisible(0,9,1),true);
 });
+
+test('daylight crow watches, nighttime crow roosts, overnight dogs do not trigger danger',()=>{
+ assert.equal(parkShift(13).crows,true);
+ assert.equal(parkShift(3).crows,false);
+ assert.equal(parkShift(21).crows,false);
+ assert.equal(parkShift(3).dogs,0);
+});

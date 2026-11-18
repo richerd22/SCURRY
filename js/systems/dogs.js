@@ -124,7 +124,7 @@ function playDogClip(d, name) {
 export function nearestDogDist() {
   const P = S.player.pos;
   let bd = 1e9;
-  for (const d of dogs) bd = Math.min(bd, d.pos.distanceTo(P));
+  for (const d of dogs) if (d.mesh.visible) bd = Math.min(bd, d.pos.distanceTo(P));
   return bd;
 }
 
