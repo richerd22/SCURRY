@@ -192,7 +192,8 @@ export function setTouchKey(code, down) { keys[code] = !!down; }
 // The squirrel's position is at its feet, never at its camera or torso.
 const PHYSICS_DT = 1 / 90;  // ~7cm max horizontal stride at full sprint
 const STEP_UP = 1.3;       // preserve the original scramble onto stage steps
-const SNAP_DOWN = 0.25;    // small irregularities are not ledge falls
+const SNAP_DOWN = 0.25;    // regular lawn, kerbs and low furniture
+const BRANCH_SNAP_DOWN = 0.9; // canopy links can intentionally descend ~0.75m
 
 function baseHeight(x, z) {
   const P = S.player;
@@ -251,8 +252,9 @@ function moveSubstep(dt, wx, wz, wl, mag, speed) {
   // Ground first, then walls: standing ON a bench/roof must not trigger its
   // lower wall collider. Descending uses previous feet Y (a swept landing).
   let support = surfaceAt(P.pos.x, P.pos.z, oldY, wasGrounded ? STEP_UP : 0.08);
+  const snapDown = oldY - baseHeight(P.pos.x, P.pos.z) > 2 ? BRANCH_SNAP_DOWN : SNAP_DOWN;
   if (wasGrounded) {
-    if (support >= oldY - SNAP_DOWN && support <= oldY + STEP_UP) {
+    if (support >= oldY - snapDown && support <= oldY + STEP_UP) {
       P.pos.y = support; P.vel.y = 0;
     } else {
       P.grounded = false;
@@ -267,7 +269,7 @@ function moveSubstep(dt, wx, wz, wl, mag, speed) {
   // A collision push may move the feet OFF the surface they first touched.
   if (P.grounded) {
     support = surfaceAt(P.pos.x, P.pos.z, P.pos.y, STEP_UP);
-    if (support >= P.pos.y - SNAP_DOWN && support <= P.pos.y + STEP_UP) {
+    if (support >= P.pos.y - snapDown && support <= P.pos.y + STEP_UP) {
       P.pos.y = support; P.vel.y = 0;
     } else P.grounded = false;
   } else {
