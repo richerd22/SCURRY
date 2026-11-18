@@ -440,6 +440,30 @@ if (qaLocal) {
         horizontalDistance:Math.hypot(p.pos.x-start.x,p.pos.z-start.z),
         minClear,minMeshClear,maxStepY,nonGround,climbs,penetrations,meshSamples,samples};
     },
+    // Global survey: an independent Three.js triangle raycast at hundreds
+    // of park coordinates. Detect mismatches between visible-ground
+    // physics and the actual mesh that could put feet inside polygons.
+    surveyGroundTriangles: () => {
+      const terrain=scene.children.find(o=>o.userData.scurryTerrainMesh);
+      if(!terrain)throw new Error('missing park terrain mesh');
+      const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
+      const origin=new THREE.Vector3();
+      let count=0,negative=0,min=Infinity,max=-Infinity;
+      let worstLow=null,worstHigh=null;
+      for(let iz=0;iz<=20;iz++)for(let ix=0;ix<=30;ix++){
+        const x=-204+ix*408/30,z=-110+iz*220/20;
+        origin.set(x,60,z);ray.set(origin,down);
+        const hit=ray.intersectObject(terrain,false)[0];
+        if(!hit)throw new Error('terrain triangle ray missed at '+x+','+z);
+        const sampled=visibleGroundHeight(x,z);
+        const gap=sampled-hit.point.y;
+        if(gap<min){min=gap;worstLow={x,z,sampled,mesh:hit.point.y};}
+        if(gap>max){max=gap;worstHigh={x,z,sampled,mesh:hit.point.y};}
+        if(gap<-.015)negative++;
+        count++;
+      }
+      return {count,negative,min,max,worstLow,worstHigh};
+    },
     // Representative *actual registered* supports, not synthetic boxes.
     // Used to walk along canopy, Garden bridge and sloped fence rail tops.
     supportTargets: () => {

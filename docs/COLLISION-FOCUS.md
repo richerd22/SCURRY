@@ -21,3 +21,7 @@ The browser integration test now discovers an actual canopy platform, the Garden
 ## v0.6.66 user-facing clipping reproduction
 
 Open https://scurry.cold.fyi/?diag=1 in a normal browser and play through a suspicious contact. The optional diagnostics panel now holds a bounded recent 180-sample movement trace (roughly 30 seconds at 6Hz), including feet X/Y/Z, actual floor, contact state, vertical velocity, frame FPS and realm. Tap COPY WALK TRACE to copy JSON for a GitHub issue/ChatGPT. The copy is **manual, on-device only**: no upload, analytics, background recording or trace allocation during normal non-diag play. It tracks minimum grounded-floor gap and negative penetration samples without pretending that a clean trace proves the whole world collision is fixed. Four pure Node tests validate bounded storage, event counts, bad data and snapshot immutability.
+
+## v0.6.66+ whole-map triangle parity gate
+
+The same live Chromium browser now raycasts 651 evenly spaced sample points across the full Common/Garden mesh, comparing each actual rendered-triangle height to visibleGroundHeight. Any sampled floor below the triangle by over 1.5cm is a failure; a floor more than 20cm above the mesh is flagged as a likely hovering/misregistered surface. Metrics and worst XZ coordinates are archived as terrain-triangle-survey.json independently from the movement-route traces. This does not replace dense walk/jump exploration, but broadens coverage beyond the five chosen open-world routes.

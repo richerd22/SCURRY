@@ -205,6 +205,16 @@ async function checkGameplay() {
       await page.keyboard.press('e');
       await page.waitForFunction(() => !window.__scurryQA.state().inBurrow,null,{timeout:10000});
     }
+    // World-wide independent mesh-vs-ground survey before actual movement:
+    // 651 spatial points detect a miss between collision math and the
+    // triangulated terrain even where no chosen path happened to go.
+    const survey=await page.evaluate(()=>window.__scurryQA.surveyGroundTriangles());
+    writeFileSync(out+'/terrain-triangle-survey.json',JSON.stringify(survey,null,2));
+    assert.equal(survey.count,651);
+    assert.equal(survey.negative,0,'world-wide feet sample below visible mesh');
+    assert.ok(survey.min>=-.015,'terrain math below mesh '+JSON.stringify(survey.worstLow));
+    assert.ok(survey.max<=.2,'terrain collision sits far above visible mesh '+JSON.stringify(survey.worstHigh));
+    console.log('TERRAIN SURVEY '+JSON.stringify(survey));
     // Continuous open-world traversals. Real keyboard W is held through
     // the actual player movement substeps, not simulated by teleporting
     // between samples. Raycast against the REAL Three.js terrain triangles.
