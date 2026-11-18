@@ -79,3 +79,8 @@ At close range to the staff NPC, the squirrel receives a warning and is gently s
 Still needed: true WebGL browser test for all four portals, nighttime state, dynamic train scenery, worker warning; user iPhone Safari test; authentic platform/architecture study. No AI imagery, new external models or actual track-level player access.
 
 Sources: [MBTA Park Street](https://www.mbta.com/stops/place-pktrm), [MBTA Arlington](https://www.mbta.com/stops/place-armnl), [MBTA subway guide](https://www.mbta.com/guides/subway-guide), [Boston Common entrances](https://www.boston.gov/sites/default/files/file/2023/05/BCMP_Executive%2BSummary.pdf).
+
+
+## v0.6.82 — night-shift civilians and proper picnic hours
+
+The new deterministic parkShift(hour) policy controls real moving passerby visibility and their E prompts, seated people, the vendor, picnic blankets and owners, as well as the live stealable blanket snacks. One nearby Park Street night worker replaces the unconvincing crowd of tourists and picnickers at 3 AM. The parked pretzel cart remains physical when closed. Night-shift rules are a stylized city simulation, not real schedule data. Test cases cover midnight, day/rush/evening, and cyclic hours. Further update applies the shared policy to dogs and wildlife.

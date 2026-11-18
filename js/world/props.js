@@ -193,7 +193,7 @@ function buildBlankets(scene) {
     g.position.set(x, gy, z);
     scene.add(g);
     S.blankets.push({
-      x, z, gy, index: i,
+      x, z, gy, index: i, mesh:g,
       lookingAway: false, gazeTimer: 2 + Math.random() * 4,
       foodTaken: false,
     });

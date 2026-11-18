@@ -11,6 +11,7 @@ import { spawnFood, tossFood } from './food.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
+import { parkShift, actorVisible } from './park-shifts.js';
 
 const SKIN = [0xe8b98f, 0xc98a5e, 0x8a5a34, 0xf0cba8, 0x6e4525];
 const SHIRT = [0xb84a4a, 0x4a6eb8, 0x4a9a5e, 0xd9c84a, 0x7a4a9a, 0xe8e4da, 0x3a8a9a, 0xd97f3b];
@@ -119,6 +120,7 @@ function seatOnBench(h, spot) {
 
 const wanderers = [];
 const pendingTosses = [];
+let nightWorker=null;
 
 export function buildHumans(scene) {
   // bench sitters - the beg targets
@@ -134,7 +136,7 @@ export function buildHumans(scene) {
     S.benchSitters.push(sitter);
     S.interactables.push({
       x: spot.x, z: spot.z, y: spot.gy, r: 2.4,
-      label: () => sitter.cooldown > 0 ? null : 'E - beg',
+      label: () => !sitter.mesh.visible || sitter.cooldown > 0 ? null : 'E - beg',
       action: () => startBeg(sitter),
     });
   }
@@ -153,11 +155,11 @@ export function buildHumans(scene) {
     wanderers.push(w);
     const it={
       x:w.x,z:w.z,y:groundHeight(w.x,w.z),r:1.9,
-      label:()=>w.cooldown>0||S.player.onSwanBoat||S.player.inBurrow||
+      label:()=>!w.mesh.visible||w.cooldown>0||S.player.onSwanBoat||S.player.inBurrow||
         S.player.inHollow||S.player.inFenway||S.player.inGarden||
         S.player.inCityHall||S.player.inEsplanade?null:'E - beg from passerby',
       action:()=>{
-        if(w.cooldown>0||S.player.begging>0||S.player.onSwanBoat||
+        if(!w.mesh.visible||w.cooldown>0||S.player.begging>0||S.player.onSwanBoat||
            Math.hypot(S.player.pos.x-w.x,S.player.pos.z-w.z)>2)return;
         startBeg(w);
         toast('the passerby stops to see what a squirrel wants.',1.8);
@@ -192,16 +194,25 @@ export function buildHumans(scene) {
     const vendor = { mesh: v, x: cp.x - 0.4, z: cp.z - 1.3, cooldown: 0, phase: 0, vendor: true };
     S.interactables.push({
       x: vendor.x, z: vendor.z, y: cp.y, r: 2.6,
-      label: () => vendor.cooldown > 0 ? null : 'E - beg (vendor)',
+      label: () => !vendor.mesh.visible || vendor.cooldown > 0 ? null : 'E - beg (vendor)',
       action: () => startBeg(vendor),
     });
     S.benchSitters.push(vendor);
   }
+  // One late-shift park worker, not nine tourists picnicking at 3 AM.
+  const nw=makeHuman(1.02);setActorRole(nw,'walk');scene.add(nw);
+  nightWorker={mesh:nw,baseX:-27,baseZ:-88};
+  S.interactables.push({
+    x:-27,z:-88,y:groundHeight(-27,-88),r:1.8,
+    label:()=>nw.visible&&!S.player.inMBTA?'E - greet night-shift worker':null,
+    action:()=>{if(nw.visible&&Math.hypot(S.player.pos.x+27,S.player.pos.z+88)<2)
+      toast('night shift. someone keeps the Common looking good.',2.4);},
+  });
 }
 
 function startBeg(sitter) {
   const P = S.player;
-  if (sitter.cooldown > 0 || P.begging > 0) return;
+  if (sitter.cooldown > 0 || P.begging > 0 || !sitter.mesh.visible) return;
   P.begging = 1.25;
   sitter.cooldown = 26;
   sfx.squeak();
@@ -210,17 +221,31 @@ function startBeg(sitter) {
 
 export function updateHumans(dt) {
   const now = performance.now() / 1000;
+  const shift=parkShift(S.timeHours);
+  if(nightWorker){
+    nightWorker.mesh.visible=shift.nightWorker;
+    if(shift.nightWorker){
+      const x=nightWorker.baseX+Math.sin(now*.35)*1.05;
+      const z=nightWorker.baseZ+Math.cos(now*.35)*.4;
+      nightWorker.mesh.position.set(x,groundHeight(x,z),z);
+      nightWorker.mesh.rotation.y=Math.sin(now*.2)*.9;
+    }
+  }
   // sourced-model actors: advance mixers, keep the ranger's clip honest
   for (const a of actors) {
     if (!a.mixer) continue;
     if (a.role === 'ranger') applyActorClip(a);
     a.mixer.update(dt);
   }
-  for (const s of S.benchSitters) {
+  for (let j=0;j<S.benchSitters.length;j++) {
+    const s=S.benchSitters[j];
+    s.mesh.visible=s.vendor?shift.vendor:actorVisible(j,10,shift.sitters);
     if (s.cooldown > 0) s.cooldown -= dt;
     s.mesh.rotation.z = Math.sin(now * 0.8 + s.phase) * 0.02;
   }
-  for (const w of wanderers) {
+  for (let wi=0;wi<wanderers.length;wi++) {
+    const w=wanderers[wi];
+    w.mesh.visible=actorVisible(wi,wanderers.length,shift.walkers);
     w.cooldown=Math.max(0,w.cooldown-dt);
     w.pauseCooldown=Math.max(0,w.pauseCooldown-dt);
     w.pause=Math.max(0,w.pause-dt);
@@ -248,7 +273,7 @@ export function updateHumans(dt) {
     // Passersby actually notice small park residents. Only a nearby
     // squirrel can draw a short, cooldown-gated pause; other walkers
     // continue their paths rather than freezing the whole crowd.
-    if(w.pauseCooldown<=0&&w.pause<=0&&S.wildlifeActors){
+    if(w.mesh.visible&&w.pauseCooldown<=0&&w.pause<=0&&S.wildlifeActors){
       const nearby=S.wildlifeActors.find(v=>v.kind==='squirrel'&&v.mesh.visible&&
         Math.hypot(v.x-x,v.z-z)<1.55);
       if(nearby){
@@ -265,8 +290,11 @@ export function updateHumans(dt) {
       p.armL.rotation.x = -sw * 0.7; p.armR.rotation.x = sw * 0.7;
     }
   }
-  // blanket owners: gaze wanders; sometimes they look right at the blanket
+  // Picnics close overnight as a whole, including their food prompts.
   for (const b of S.blankets) {
+    if(b.mesh)b.mesh.visible=shift.picnics;
+    if(b.owner0)b.owner0.visible=shift.picnics;
+    if(b.owner1)b.owner1.visible=shift.picnics;
     b.gazeTimer -= dt;
     if (b.gazeTimer <= 0) {
       b.lookingAway = !b.lookingAway && Math.random() < 0.75 ? true : (Math.random() < 0.5);
