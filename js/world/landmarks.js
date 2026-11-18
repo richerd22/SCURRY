@@ -9,6 +9,7 @@ import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE } from './boston-landmark-layout.js'
 import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { GARDEN_ART } from './garden-art-facts.js';
+import { DUCKLING_COUNT, DUCKLING_YAW, MOTHER_RADIUS, DUCKLING_RADIUS, ducklingPose } from './ducklings-layout.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -1035,22 +1036,27 @@ function buildDucklings(scene) {
     return d;
   }
   const mother = duck(1.15, 1, 0.42); g.add(mother);
-  for (let i = 0; i < 8; i++) {
-    const d = duck(0.52, 1.3, 0.18);
-    d.position.set(Math.sin(i * 0.55) * 0.22, 0, -0.95 - i * 0.6);
-    d.rotation.y = -0.2 * Math.cos(i * 0.55);
+  for (let i = 0; i < DUCKLING_COUNT; i++) {
+    const d = duck(0.52, 1.3, 0.18),p=ducklingPose(i);
+    d.position.set(p.localX,0,p.localZ);
+    d.rotation.y=p.yaw;
     g.add(d);
   }
   // Beacon/Charles corner of the Garden (not the south lagoon shore).
   const {x,z}=GARDEN_ART.ducklings,gy=groundHeight(x,z);
   g.position.set(x, gy, z);
-  g.rotation.y = 0.8;
+  g.rotation.y=DUCKLING_YAW;
   scene.add(g);
-  // the ducklings stand on cobblestones
-  const cobble = terrainDisc(x, z, 3.4, granite, 0.03);
-  cobble.rotation.y = 0.8;
+  // The entire parade is about 5.2m long; make the cobbles match the
+  // actual eight small bronzes and keep the ground top level legible.
+  const cobble=terrainDisc(x-1.9,z-2.1,4.1,granite,.03);
+  cobble.rotation.y=DUCKLING_YAW;
   scene.add(cobble);
-  S.solids.push({ x, z, r: 1.6, minY: gy - 0.1, maxY: gy + 2 });
+  S.solids.push({x,z,r:MOTHER_RADIUS,minY:gy-.1,maxY:gy+1.5});
+  for(let i=0;i<DUCKLING_COUNT;i++){
+    const p=ducklingPose(i,x,z);
+    S.solids.push({x:p.x,z:p.z,r:DUCKLING_RADIUS,minY:gy-.1,maxY:gy+.65});
+  }
   addGardenArtInteraction(GARDEN_ART.ducklings,gy);
 }
 

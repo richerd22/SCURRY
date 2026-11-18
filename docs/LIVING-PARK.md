@@ -177,3 +177,8 @@ The v0.6.97 pure 35cm path sampler failed (154/155 tests passed): our index chan
 ## v0.6.99 — two real Garden sculptures become actionable
 
 Both **Make Way for Ducklings** (Nancy Schön, 1987, eight children of Mrs. Mallard) and **George Washington equestrian monument** (Thomas Ball, unveiled July 3, 1869) now expose E inspections at the actual authored sculptures near Beacon/Charles and Arlington entrance. One pure sculpture facts layout sets both geometry coordinates and interaction anchors, and existing 14 Field Notes remain unaltered. Interactions verify same realm and real feet height, never allow an arbitrary remote or elevated trigger, reuse HUD toast and E touch. No new geometry/images/colliders, no changed game save or art licenses. Sources: https://publicartboston.com/content/make-way-ducklings , https://friendsofthepublicgarden.org/our-parks/the-garden/ .
+
+
+## v0.7.0 — bronze Ducklings are actual eight obstacles, not one ghost circle
+
+The old Make Way for Ducklings scene had a 1.6m invisible cylinder blocking a large section while eight separate duckling meshes were completely non-solid. Replaced it with a 0.73m mother collider and **eight 24.5cm finite-height duckling circles**, each positioned by the EXACT pure local-to-world transform that builds the corresponding bronze mesh. Matching cobblestone pad follows the parade. No scene artwork or saved discovery migration. Pure regression tests verify eight unique poses, no extreme overlaps and world-space parity; live browser gameplay now requires actual E prompts at the Ducklings and Washington without bypassing the interaction handler. This is a source-geometry and physics fix, not a new unnecessary feature. Boston sculptures remain code-authored approximation.

@@ -318,6 +318,17 @@ async function checkGameplay() {
     assert.ok(Math.abs((await get()).pos.y-.45)<.01,
       'boat exit must meet existing dock physics deck');
 
+    // New historical Garden E actions must be reachable just outside the
+    // corresponding real colliders, not floating off by the old monument.
+    await page.evaluate(()=>window.__scurryQA.placeOnTerrain(-81.8,-80,0));
+    await page.waitForFunction(()=>/count the Ducklings/i.test(
+      window.__scurryQA.state().prompt||''),null,{timeout:30000,polling:200});
+    await page.keyboard.press('e');
+    await page.evaluate(()=>window.__scurryQA.placeOnTerrain(-188,0,0));
+    await page.waitForFunction(()=>/inspect Washington statue/i.test(
+      window.__scurryQA.state().prompt||''),null,{timeout:30000,polling:200});
+    await page.keyboard.press('e');
+
     // At least one real squirrel interaction is rendered and keyboard
     // reachable; the same E handler handles passengers and wildlife.
     // A burrow squirrel is not a surface squirrel. Start beside an
