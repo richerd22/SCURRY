@@ -48,6 +48,7 @@ export const S = {
   caps: 0,             // bottle caps: rat-market currency (systems/burrows.js owns)
   gooseWarn: 0,        // seconds of goose warning left for the HUD (systems/geese.js manages)
   shotPose: null,      // ?shot= pose name in debug mode (main.js sets; systems read)
+  debugEye: null,      // optional camera eye height in shot mode only; never changes physics
   carried: null,       // food type string or null
   timeHours: 17.6,     // starts at golden hour
   rangerAlert: 0,      // seconds the ranger stays mad

@@ -1216,3 +1216,8 @@ Support queries used to scan every canopy disc, stepping box and rail *multiple 
 ## v0.6.35 (Nov 18 2026) — durable save regression gate
 
 The original save tests were in a temporary harness and were not part of the repo's CI. Added `tests/save-regressions.mjs`, which runs the actual `save.js` source with only state/audio imports stubbed and verifies no-write when clean, live stash/caps persistence, audio sync, sanitization, corrupt/private storage recovery, forward schema safety, and midnight-vs-dawn day rules. Fixes in `save.js`: count sanitization on writes and dirty checks; future-version `v > 1` blobs remain byte-identical instead of being overwritten by an older client. This changes no save key or current schema version. Distinguish this from complete browser localStorage testing; CI covers these pure behaviors.
+
+
+## v0.6.36 (Nov 18 2026): two-scale visual evidence + truthful diagnostics
+
+Shot mode accepts `&eye=1.7` for an eye-height-only reference camera, alongside canonical `&eye=0.25`. Only `S.debugShot` reads this, not live play. A 1m+ shot hides the paws root so a squirrel paw doesn't levitate at human eye. Shot pose feet use `visibleGroundHeight`, matching rendered lawn/paths/plazas. Diagnostics FPS now divides by raw frame time (the simulation still clamps to <=50ms), avoiding the artificial 20fps floor under bad performance. Docs/QA-PLAYTEST.md includes paired example poses. No change to real physics or material quality; it only makes comparison evidence more reliable.

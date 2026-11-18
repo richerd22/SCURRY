@@ -86,3 +86,8 @@ Touch uses a left virtual stick, right lookzone, jump and action buttons; **poin
 ## v0.6.35: save behavior and upgrade safety
 
 `js/systems/save.js` persists the *live* stash, caps, personal best day count, cumulative dawn crossings and mute state at `scurry-save-v1`. Saves are dirty-checked and guarded against private-browser storage exceptions. The new permanent Node suite uses the actual production source and tests nine operational invariants: no write unless changed, live balances, audio settings, corrupted storage recovery, quota/private-mode safety, integer count sanitization, forward schema safety, and the dawn-crossing day rule. A blob with numeric schema `v > 1` is intentionally left untouched by this older client; missing `v` remains legacy-compatible. No backend/cloud sync is provided; clearing browser storage loses local progress.
+
+
+## v0.6.36: two-scale scene fidelity inspection
+
+The source gameplay camera stays 0.25 m above squirrel feet. Only `?shot=<pose>&eye=<metres>` enables a camera reference height from 0.15–2.0m, so the same authored pose can be judged at human height (1.7m) and squirrel height (0.25m). Paw meshes are hidden for human-height inspection; physics, interactions and actual player posture remain squirrel-sized. Screenshot pose feet now use the visible triangle/path terrain surface. Live diagnostic FPS uses real elapsed frame time rather than the simulation's 50ms timestep cap; this does not itself boost performance.

@@ -4,7 +4,7 @@ Target: **solid collision and delightful control on desktop and iPhone**. Owner 
 
 ## Reproduce efficiently
 
-1. Open a fresh tab to `https://scurry.cold.fyi/?diag=1` (or append `&diag=1` to a shot/route URL). Verify the deployed `scurry-version` is **0.6.33** before attributing behavior to this sprint.
+1. Open a fresh tab to `https://scurry.cold.fyi/?diag=1` (or append `&diag=1` to a shot/route URL). Verify the deployed `scurry-version` is **0.6.36** before attributing behavior to this sprint.
 2. Reproduce the behavior twice, in both directions when applicable. Record the overlay's `feet x/y/z`, `ground/gap`, `GROUNDED/AIRBORNE/CLIMBING`, the visible object and any input held.
 3. Record platform/browser/OS, horizontal vs vertical orientation, touch vs keyboard, time-of-day in game, and whether the game was backgrounded before the glitch.
 4. Report **expected vs actual**, 3–6 steps, device and URL; attach a short screen recording when possible. Do not substitute subjective "looks good" for a reproducible acceptance.
@@ -61,10 +61,17 @@ Video / screenshot / console error:
 ## Release checklist
 
 - [ ] Syntax checks green on all JS/MJS
-- [ ] Node regressions green (collision + jumps)
+- [ ] Node regressions green (collision + jumps + save)
 - [ ] No CNAME/import map/mobile HTML regressions
 - [ ] Live version/changed JS confirmed after deployment
 - [ ] Headless visual and console smoke pass (if harness accessible)
 - [ ] Physical iOS Safari + multitouch/visibility playtest
 - [ ] Real-GPU quality/performance signoff; no assertion beyond observed evidence
 - [ ] Agent guide, wiki, decisions and Notion hub updated with **honest** pass/fail status
+
+
+## Repeatable human-reference image check (v0.6.36)
+
+For any named screenshot pose, add `&eye=1.7` to inspect the same scene from a human's viewpoint without changing the squirrel's position, collisions, jumps, or camera during normal gameplay. Leave `eye` out for the canonical squirrel perspective (0.25 m). Example comparison: `?shot=beaconclose&t=17.6&eye=0.25` versus `?shot=beaconclose&t=17.6&eye=1.7`; test `garden`, `tremontclose`, `parkchurch`, `canopy` separately. Arbitrary values are allowed only from 0.15 to 2.0 m and only in shot mode. Screenshot poses now seat their feet on `visibleGroundHeight`, the rendered terrain sampling used by actual physics, instead of the analytic source function. The root paw rig hides above 1m for inspection only so it does not appear to float in the human-height frame. A reference shot is not a claim that geometry is to-scale at both heights: record where it fails.
+
+The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead of the physics-clamped 50 ms interval, so phones running below 20 FPS do not misleadingly report exactly 20. Treat it as instantaneous and noisy, not a benchmark.

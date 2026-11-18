@@ -352,7 +352,11 @@ export function updatePlayer(dt, camera) {
 export function syncPlayerCamera(camera) {
   const P = S.player;
   const bob = P.grounded && P.moving ? Math.sin(runPhase * 2) * 0.02 : 0;
-  camera.position.set(P.pos.x, P.pos.y + EYE + bob, P.pos.z);
+  const eye = S.debugShot && Number.isFinite(S.debugEye) ? S.debugEye : EYE;
+  camera.position.set(P.pos.x, P.pos.y + eye + bob, P.pos.z);
+  // A human-height *inspection camera* should not display squirrel paws
+  // suspended at 1.7m. Normal gameplay and squirrel-height shots are unchanged.
+  paws.visible = !(S.debugShot && eye >= 1);
   camera.rotation.order = 'YXZ';
   camera.rotation.y = P.yaw + (P.scramble > 0 ? Math.sin(P.scramble * 40) * 0.03 : 0);
   camera.rotation.x = P.pitch;

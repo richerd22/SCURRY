@@ -204,13 +204,17 @@ if (S.isTouch) {
 if (Q.has('shot')) {
   S.debugShot = true;
   S.shotPose = Q.get('shot');
+  // Visual QA only: compare a 0.25m squirrel frame to a 1.7m human
+  // reference from EXACTLY the same XZ pose; physics remains squirrel-sized.
+  const eye = Number(Q.get('eye'));
+  if (Q.has('eye') && Number.isFinite(eye) && eye >= 0.15 && eye <= 2) S.debugEye = eye;
   S.started = true;
   titleEl.style.display = 'none';
   pauseEl.style.display = 'none';
   if (Q.get('t')) S.timeHours = parseFloat(Q.get('t'));
   const P = S.player;
   const pose = (x, z, tx, tz, pitch = 0) => {
-    P.pos.set(x, groundHeight(x, z), z);
+    P.pos.set(x, visibleGroundHeight(x, z), z);
     P.yaw = Math.atan2(-(tx - x), -(tz - z));
     P.pitch = pitch;
     P.grounded = true;
@@ -328,7 +332,7 @@ if (diagHud) {
   document.body.appendChild(diagHud);
 }
 let diagElapsed = 0;
-function updateDiagnostics(dt) {
+function updateDiagnostics(dt, rawFrameDt) {
   if (!diagHud || !S.started) return;
   diagElapsed += dt;
   if (diagElapsed < 0.16) return; // 6 updates/sec, not per render frame
@@ -339,7 +343,7 @@ function updateDiagnostics(dt) {
   const sample = S.realmGround[realm];
   const ground = realm === 'park' ? visibleGroundHeight(pos.x, pos.z) :
     (sample ? sample(pos.x, pos.z) : 0);
-  diagHud.textContent = `SCURRY DIAG | ${realm}\nfeet: ${pos.x.toFixed(2)} / ${pos.y.toFixed(2)} / ${pos.z.toFixed(2)}\nground: ${ground.toFixed(2)} | gap: ${(pos.y-ground).toFixed(2)}\n${P.climbing ? 'CLIMBING' : P.grounded ? 'GROUNDED' : 'AIRBORNE'} | vy: ${v.y.toFixed(2)}\nFPS: ${Math.round(1/Math.max(dt,.001))} | quality: ${perfTier} | touch: ${S.isTouch}`;
+  diagHud.textContent = `SCURRY DIAG | ${realm}\nfeet: ${pos.x.toFixed(2)} / ${pos.y.toFixed(2)} / ${pos.z.toFixed(2)}\nground: ${ground.toFixed(2)} | gap: ${(pos.y-ground).toFixed(2)}\n${P.climbing ? 'CLIMBING' : P.grounded ? 'GROUNDED' : 'AIRBORNE'} | vy: ${v.y.toFixed(2)}\nFPS: ${Math.round(1/Math.max(rawFrameDt,.001))} | quality: ${perfTier} | touch: ${S.isTouch}`;
 }
 
 // ---------- the loop ----------
@@ -373,7 +377,8 @@ function warnings() {
 
 function loop() {
   requestAnimationFrame(loop);
-  const dt = Math.min(0.05, clock.getDelta());
+  const rawFrameDt = clock.getDelta();
+  const dt = Math.min(0.05, rawFrameDt); // cap simulation step, NOT diagnostic FPS
   perfLadder(dt);
   if (S.started && !S.paused) {
     if (S.spottedFlash > 0) S.spottedFlash -= dt;
@@ -398,7 +403,7 @@ function loop() {
     scanInteractions();
     const prompt = currentE ? currentE.label : (currentF ? currentF.label : '');
     updateHUD(prompt, warnings());
-    updateDiagnostics(dt);
+    updateDiagnostics(dt, rawFrameDt);
   }
   renderer.render(scene, camera);
 }
