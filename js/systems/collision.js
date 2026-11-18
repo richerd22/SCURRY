@@ -121,12 +121,77 @@ export function walkSurface(x, z, refY, stepTol, base, platforms, boxes, segment
   return best;
 }
 
+// Conservative broad phase for horizontal solids. Candidate shapes are
+// returned in registry order. If a push leaves its query cell, the solver
+// restarts from original coordinates against the full registries.
+export function createObstacleIndex(circles, boxes, walls, radius, cellSize = 8) {
+  if (!(cellSize > 0) || !(radius >= 0)) throw new RangeError('invalid collision bounds');
+  const groups = [circles, boxes, walls];
+  let rows = new Map(), far = [[], [], []], counts = [-1,-1,-1], generation = 0;
+  const empty = {parts:[[],[],[]],compiled:null};
+  const cell = n => Math.floor(n / cellSize);
+  function rebuild() {
+    rows = new Map(); far = [[],[],[]]; empty.compiled = null;
+    for(let type=0;type<3;type++){
+      for(let order=0;order<groups[type].length;order++){
+        const s=groups[type][order]; let x0,x1,z0,z1;
+        if(type===0){
+          const r=s.r+radius;
+          x0=s.x-r;x1=s.x+r;z0=s.z-r;z1=s.z+r;
+        }else if(type===1){
+          x0=s.minX-radius;x1=s.maxX+radius;
+          z0=s.minZ-radius;z1=s.maxZ+radius;
+        }else{
+          const r=(s.r||.05)+radius;
+          x0=Math.min(s.x0,s.x1)-r;x1=Math.max(s.x0,s.x1)+r;
+          z0=Math.min(s.z0,s.z1)-r;z1=Math.max(s.z0,s.z1)+r;
+        }
+        x0=cell(x0);x1=cell(x1);z0=cell(z0);z1=cell(z1);
+        const item={shape:s,order};
+        if(![x0,x1,z0,z1].every(Number.isFinite)||(x1-x0+1)*(z1-z0+1)>256){
+          far[type].push(item);continue;
+        }
+        for(let ix=x0;ix<=x1;ix++){
+          let row=rows.get(ix);if(!row){row=new Map();rows.set(ix,row);}
+          for(let iz=z0;iz<=z1;iz++){
+            let box=row.get(iz);
+            if(!box){box={parts:[[],[],[]],compiled:null};row.set(iz,box);}
+            box.parts[type].push(item);
+          }
+        }
+      }
+    }
+    counts=groups.map(g=>g.length);generation++;
+  }
+  function ordered(local, distant) {
+    if(!distant.length)return local.map(a=>a.shape);
+    const merged=[];let i=0,j=0;
+    while(i<local.length||j<distant.length){
+      if(j>=distant.length||(i<local.length&&local[i].order<distant[j].order))
+        merged.push(local[i++].shape);
+      else merged.push(distant[j++].shape);
+    }
+    return merged;
+  }
+  return {
+    query(x,z){
+      if(groups.some((g,i)=>g.length!==counts[i]))rebuild();
+      const bucket=rows.get(cell(x))?.get(cell(z))||empty;
+      if(!bucket.compiled)bucket.compiled=bucket.parts.map((list,i)=>ordered(list,far[i]));
+      return {circles:bucket.compiled[0],boxes:bucket.compiled[1],walls:bucket.compiled[2]};
+    },
+    sameCell(x,z,oldX,oldZ){return cell(x)===cell(oldX)&&cell(z)===cell(oldZ);},
+    invalidate(){counts[0]=-1;},
+    get generation(){return generation;}
+  };
+}
+
 function overlapsY(pos, shape) {
   return pos.y + BODY_HEIGHT > (shape.minY ?? -Infinity)
     && pos.y < (shape.maxY ?? Infinity) - 0.005;
 }
 
-export function resolveHorizontal(pos, circles, boxes, walls, radius, climbing = null) {
+function settleHorizontal(pos, circles, boxes, walls, radius, climbing, sameCell = null) {
   // Iterative corner settling; zero vector allocations per frame.
   for (let pass = 0; pass < 2; pass++) {
     for (const s of circles) {
@@ -134,9 +199,11 @@ export function resolveHorizontal(pos, circles, boxes, walls, radius, climbing =
       if (climbing && Math.abs(s.x - climbing.x) < 0.01 && Math.abs(s.z - climbing.z) < 0.01) continue;
       const dx = pos.x - s.x, dz = pos.z - s.z, rr = s.r + radius, d2 = dx * dx + dz * dz;
       if (d2 >= rr * rr) continue;
-      if (d2 < 1e-12) { pos.x = s.x + rr; continue; }
-      const k = rr / Math.sqrt(d2);
-      pos.x = s.x + dx * k; pos.z = s.z + dz * k;
+      if (d2 < 1e-12) pos.x = s.x + rr;
+      else { const k = rr / Math.sqrt(d2);
+        pos.x = s.x + dx * k; pos.z = s.z + dz * k;
+      }
+      if (sameCell && !sameCell()) return false;
     }
     for (const b of boxes) {
       if (!overlapsY(pos, b)) continue;
@@ -147,6 +214,7 @@ export function resolveHorizontal(pos, circles, boxes, walls, radius, climbing =
       const m = Math.min(l, r, n, f);
       if (m === l) pos.x = loX; else if (m === r) pos.x = hiX;
       else if (m === n) pos.z = loZ; else pos.z = hiZ;
+      if (sameCell && !sameCell()) return false;
     }
     for (const w of walls) {
       if (!overlapsY(pos, w)) continue;
@@ -164,6 +232,21 @@ export function resolveHorizontal(pos, circles, boxes, walls, radius, climbing =
         const k = rr / Math.sqrt(d2);
         pos.x = cx + ex * k; pos.z = cz + ez * k;
       }
+      if (sameCell && !sameCell()) return false;
     }
   }
+  return true;
 }
+
+export function resolveHorizontal(pos, circles, boxes, walls, radius, climbing = null, index = null) {
+  if (!index) return settleHorizontal(pos,circles,boxes,walls,radius,climbing);
+  const x=pos.x,z=pos.z, candidates=index.query(x,z);
+  const safe=() => index.sameCell(pos.x,pos.z,x,z);
+  if (settleHorizontal(pos,candidates.circles,candidates.boxes,candidates.walls,radius,climbing,safe)) return true;
+  // Any pushed position leaving the initial cell could contact a shape
+  // omitted from its candidate list. Discard partial result and replay the
+  // exact two-pass full scan from the original XZ.
+  pos.x=x;pos.z=z;
+  return settleHorizontal(pos,circles,boxes,walls,radius,climbing);
+}
+

@@ -18,7 +18,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [Agent guide](docs/AGENT-GUIDE.md): the long-form implementation history, asset decisions and honest known state.
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 
-**Current version: v0.6.42.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
+**Current version: v0.6.43.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
 
 ## Controls
 

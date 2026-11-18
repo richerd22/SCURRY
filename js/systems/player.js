@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { S } from '../state.js';
 import { visibleGroundHeight, inWater } from '../world/world.js';
-import { walkSurface, resolveHorizontal, createSurfaceIndex } from './collision.js';
+import { walkSurface, resolveHorizontal, createSurfaceIndex, createObstacleIndex } from './collision.js';
 import { advanceJumpIntent, resetJumpIntent } from './jump.js';
 import { sfx } from './audio.js';
 
@@ -15,6 +15,7 @@ const keys = {};
 // Jump is a fresh press (never repeated on landing), with brief grace at edges.
 const jumpIntent = { held: false, buffer: 0, coyote: 0 };
 const surfaceIndex = createSurfaceIndex(S.platforms, S.platformBoxes, S.platformSegments);
+const obstacleIndex = createObstacleIndex(S.solids, S.solidBoxes, S.walls, RADIUS);
 let paws, belly, bellyMat, hindMat, pawL, pawR, carriedMesh, carriedVisual;
 let tailGroup, tailMat, tailTipMat;
 let runPhase = 0;
@@ -229,12 +230,12 @@ function collideWalls(pos) {
   const P = S.player;
   // The home park's outer clamp is NOT applied to separate destination maps.
   if (!P.inHollow && !P.inBurrow && !P.inFenway && !P.inGarden && !P.inCityHall && !P.inEsplanade) {
-    resolveHorizontal(pos, S.solids, S.solidBoxes, S.walls, RADIUS, P.climbing);
+    resolveHorizontal(pos, S.solids, S.solidBoxes, S.walls, RADIUS, P.climbing, obstacleIndex);
     pos.x = Math.max(-208, Math.min(208, pos.x));
     pos.z = Math.max(-118, Math.min(118, pos.z));
   } else if (P.inEsplanade) {
     // Trees and the shell in the river realm are also in the registries.
-    resolveHorizontal(pos, S.solids, S.solidBoxes, S.walls, RADIUS, P.climbing);
+    resolveHorizontal(pos, S.solids, S.solidBoxes, S.walls, RADIUS, P.climbing, obstacleIndex);
   }
 }
 
