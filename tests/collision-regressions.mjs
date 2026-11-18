@@ -111,3 +111,26 @@ test('index respects negative cell edges, rail jump gates and giant surfaces', (
       walkSurface(x, z, y, .1, 0, discs, boxes, segments));
   }
 });
+
+
+test('dense but escapable four-trunk corner resolves actual overlap, not only index parity', () => {
+  // Deterministic witness: the old two-pass solver left 7.5cm of trunk
+  // penetration, while a valid collision-free position exists.
+  const circles = [
+    {x:-.4702143853,z:.4257036466,r:.8091047824,minY:-1,maxY:3},
+    {x:-1.1306546454,z:.5693055805,r:.5275426327,minY:-1,maxY:3},
+    {x:1.2561824143,z:-.5615105334,r:.8156325277,minY:-1,maxY:3},
+    {x:.2878523179,z:-1.4238528925,r:.3025651448,minY:-1,maxY:3},
+  ];
+  const radius=.22;
+  for(const indexed of [false,true]){
+    const p={x:.0364760479,y:0,z:.1532662722};
+    const index=indexed?collision.createObstacleIndex(circles,[],[],radius):null;
+    resolveHorizontal(p,circles,[],[],radius,null,index);
+    for(const c of circles){
+      const clearance=Math.hypot(p.x-c.x,p.z-c.z)-(c.r+radius);
+      assert.ok(clearance>=-.001,
+        'solver must not leave squirrel buried inside tree: '+clearance+' indexed='+indexed);
+    }
+  }
+});

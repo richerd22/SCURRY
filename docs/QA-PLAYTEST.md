@@ -263,3 +263,8 @@ Reload identical `?shot=spawn&t=17.6&lowq=1` and Garden/Charles Street screensho
 ## v0.6.70 — independent wide-route stress and no-canopy runtime probe
 
 Browser CI now does 12 authored path/slope traversals (previously five), including reverses, perimeter, Common spines and Garden approaches, and saves a per-route terrain trace **before asserting**. Each 90Hz step checks contact against the real terrain-height function; periodic independent raycasts compare against rendered mesh triangles. It also runs the actual player controller at an isolated synthetic canopy-top state to prove a missing platform cannot instant-teleport the squirrel to lawn level. These probes are localhost-only and restore player state. The physical walktest remains required for uncontrolled branches, jumping sequences, tight corners, arbitrary directions and real iPhone controls.
+
+
+## v0.6.71 — crowded-collider separation acceptance
+
+A deterministic cluster of four plausible trunks left a squirrel 7.5cm embedded under the former fixed two-pass solver, even though a collision-free result exists. Physics now iterates separation until clear, with a hard 48-pass cap for pathological geometry and early-out when no colliders overlap. The exact witness is tested with both indexed and full-scan resolution, asserting less than 1mm residual penetration. Real walktest: push/sprint between densely grouped trees, along overlapping fences/benches and at hard corners. Capture `?diag=1` trace where stuck/clipping still occurs; no claim of complete collision acceptance without physical and browser results.

@@ -216,8 +216,12 @@ function overlapsY(pos, shape) {
 }
 
 function settleHorizontal(pos, circles, boxes, walls, radius, climbing, sameCell = null) {
-  // Iterative corner settling; zero vector allocations per frame.
-  for (let pass = 0; pass < 2; pass++) {
+  // A fixed two passes can leave the squirrel embedded in a cluster of
+  // trunks or a fence/box corner even when a free solution exists. Iterate
+  // until there is no overlap; cap pathological/impossible intersections so
+  // gameplay cannot hang. Almost all ordinary positions finish in one pass.
+  for (let pass = 0; pass < 48; pass++) {
+    let moved = false;
     for (const s of circles) {
       if (!overlapsY(pos, s)) continue;
       if (climbing && Math.abs(s.x - climbing.x) < 0.01 && Math.abs(s.z - climbing.z) < 0.01) continue;
@@ -227,6 +231,7 @@ function settleHorizontal(pos, circles, boxes, walls, radius, climbing, sameCell
       else { const k = rr / Math.sqrt(d2);
         pos.x = s.x + dx * k; pos.z = s.z + dz * k;
       }
+      moved = true;
       if (sameCell && !sameCell()) return false;
     }
     for (const b of boxes) {
@@ -238,6 +243,7 @@ function settleHorizontal(pos, circles, boxes, walls, radius, climbing, sameCell
       const m = Math.min(l, r, n, f);
       if (m === l) pos.x = loX; else if (m === r) pos.x = hiX;
       else if (m === n) pos.z = loZ; else pos.z = hiZ;
+      moved = true;
       if (sameCell && !sameCell()) return false;
     }
     for (const w of walls) {
@@ -258,8 +264,10 @@ function settleHorizontal(pos, circles, boxes, walls, radius, climbing, sameCell
         const k = rr / Math.sqrt(d2);
         pos.x = cx + ex * k; pos.z = cz + ez * k;
       }
+      moved = true;
       if (sameCell && !sameCell()) return false;
     }
+    if (!moved) break;
   }
   return true;
 }
