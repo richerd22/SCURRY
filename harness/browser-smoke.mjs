@@ -205,11 +205,118 @@ async function checkGameplay() {
   } finally { await context.close(); }
 }
 
+
+// Live mobile scenario (not a debug screenshot): actual pointer handlers,
+// real animation/physics, and E-equivalent ACT portal transitions.
+async function checkTouchGameplay() {
+  const context = await browser.newContext({
+    viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,
+  });
+  const page = await context.newPage();
+  const title='mobile-live-play';
+  page.on('pageerror', e => faults.push(title+': JS '+(e.stack||e.message)));
+  page.on('console', m => {if(m.type()==='error')faults.push(title+': console '+m.text());});
+  const get=()=>page.evaluate(()=>window.__scurryQA.state());
+  try {
+    const response=await page.goto(base+'/?qa=1&lowq=1&touch=1',
+      {waitUntil:'domcontentloaded',timeout:60000});
+    assert.equal(response?.status(),200);
+    await page.waitForFunction(()=>!!window.__scurryQA&&!!document.getElementById('stick-base'),
+      null,{timeout:120000});
+    assert.equal((await get()).started,false,'mobile title must wait for a tap');
+    await page.locator('#title').tap();
+    await page.waitForFunction(()=>window.__scurryQA.state().started,null,{timeout:15000});
+    const start=await get();
+    // Keep touch #41 held while triggering touch #42 on JUMP.
+    await page.evaluate(()=>{
+      const base=document.getElementById('stick-base'),r=base.getBoundingClientRect();
+      const x=r.left+r.width/2,y=r.top+r.height/2-38;
+      base.dispatchEvent(new PointerEvent('pointerdown',{
+        bubbles:true,cancelable:true,pointerType:'touch',pointerId:41,isPrimary:true,clientX:x,clientY:y
+      }));
+    });
+    await page.waitForFunction(()=>window.__scurryQA.state().touch.y < -.4,null,
+      {timeout:8000});
+    await page.waitForFunction(begin=>{
+      const p=window.__scurryQA.state().pos;
+      return Math.hypot(p.x-begin.x,p.z-begin.z)>.15;
+    },start.pos,{timeout:20000,polling:150});
+    const beforeJump=await get();
+    await page.evaluate(()=>{
+      const btn=document.getElementById('btn-jump'),r=btn.getBoundingClientRect();
+      btn.dispatchEvent(new PointerEvent('pointerdown',{
+        bubbles:true,cancelable:true,pointerType:'touch',pointerId:42,isPrimary:false,
+        clientX:r.left+r.width/2,clientY:r.top+r.height/2
+      }));
+    });
+    await page.waitForFunction(y=>window.__scurryQA.state().pos.y>y+.04,
+      beforeJump.pos.y,{timeout:12000,polling:150});
+    await page.evaluate(()=>{
+      window.dispatchEvent(new PointerEvent('pointerup',{
+        bubbles:true,pointerType:'touch',pointerId:41
+      }));
+      document.getElementById('btn-jump').dispatchEvent(new PointerEvent('pointerup',{
+        bubbles:true,pointerType:'touch',pointerId:42
+      }));
+    });
+    await page.waitForFunction(()=>{
+      const t=window.__scurryQA.state().touch;
+      return Math.abs(t.x)<.001&&Math.abs(t.y)<.001;
+    },null,{timeout:8000});
+    // A second pointer looking on the right must change yaw without stick.
+    const originalYaw=(await get()).yaw;
+    await page.evaluate(()=>{
+      const zone=document.getElementById('lookzone');
+      const x=innerWidth*.78,y=innerHeight*.46;
+      zone.dispatchEvent(new PointerEvent('pointerdown',{
+        bubbles:true,cancelable:true,pointerType:'touch',pointerId:43,
+        clientX:x,clientY:y
+      }));
+      window.dispatchEvent(new PointerEvent('pointermove',{
+        bubbles:true,cancelable:true,pointerType:'touch',pointerId:43,
+        clientX:x+90,clientY:y+12
+      }));
+      window.dispatchEvent(new PointerEvent('pointerup',{
+        bubbles:true,pointerType:'touch',pointerId:43
+      }));
+    });
+    assert.ok(Math.abs((await get()).yaw-originalYaw)>.2,
+      'mobile look-zone drag must rotate camera');
+    await page.locator('#btn-sprint').tap();
+    assert.equal((await get()).touch.sprint,true,'sprint toggles on');
+    await page.locator('#btn-sprint').tap();
+    assert.equal((await get()).touch.sprint,false,'sprint toggles off');
+    // Positioning is QA-only; entering burrow must still use ACT's
+    // pointerdown callback as the real phone UI would.
+    const prompt=await page.evaluate(()=>{
+      const it=window.__scurryQA.interactions().find(item=>
+        item.label.includes('dive into the burrow'));
+      if(!it)throw Error('no surface burrow entrance registered');
+      window.__scurryQA.place(it.x,it.y,it.z);
+      return window.__scurryQA.state().prompt;
+    });
+    assert.match(prompt,/burrow/i);
+    await page.locator('#btn-act').tap();
+    await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
+      null,{timeout:10000});
+    assert.equal((await get()).inBurrow,true);
+    await page.screenshot({path:out+'/'+title+'.png'});
+    results.push({title,status:'PASS',
+      routes:'live joystick + simultaneous jump + look + sprint + ACT burrow'});
+    console.log(title+': PASS joystick, dual-touch jump, look, sprint, ACT portal');
+  } catch(e) {
+    faults.push(title+': '+(e.stack||e));
+    results.push({title,status:'FAIL'});
+    try{await page.screenshot({path:out+'/'+title+'-failure.png'});}catch{}
+  } finally {await context.close();}
+}
+
 try {
   await checkScene('spawn');
   await checkScene('garden');
   await checkScene('spawn', true);
   await checkGameplay();
+  await checkTouchGameplay();
 } finally {
   await browser.close();
 }
@@ -217,4 +324,4 @@ writeFileSync(out + '/report.json', JSON.stringify({ results, faults }, null, 2)
 if (faults.length) {
   console.error('SCURRY browser smoke FAILED:\n' + faults.join('\n\n'));
   process.exitCode = 1;
-} else console.log('SCURRY browser smoke: desktop/mobile poses and live route checks passed; screenshots archived.');
+} else console.log('SCURRY browser smoke: static scenes, live desktop routes and mobile touch actions passed.');

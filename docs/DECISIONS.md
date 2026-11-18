@@ -216,3 +216,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Only begin desktop scene gestures when the mousedown target is the renderer canvas. Verify this in a real browser while opening/closing the atlas, using a test-only snapshot of bite cooldown. Keep touch and pointer-lock geometry unchanged.
 
 **Consequence:** UI controls cannot sneak into gameplay actions. The whole-document mousemove handler remains appropriate for tracking a drag already initiated on the canvas, including when the pointer temporarily leaves it.
+
+
+## ADR-025 — mobile screenshot checks are not input acceptance
+
+**Context:** The existing mobile browser smoke validated only appearance and the map button. It could not detect a stuck joystick, broken dual-finger jump, nonfunctional look, sprint toggle or ACT interaction.
+
+**Decision:** Add a separate real-play touch scenario using the site's actual touch event handlers and independent pointer IDs in Chromium mobile emulation. Verify movement, jump, look, button toggles, and an ACT burrow transition with local-only feet placement.
+
+**Consequence:** Earlier detection of touch-controller integration failures with no extra production runtime dependency. Synthetic PointerEvents still cannot establish native iOS Safari touch or safe-area correctness; keep the physical device gate open.

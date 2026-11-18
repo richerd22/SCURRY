@@ -182,3 +182,8 @@ In a normal non-shot play session enter each of Fenway, TD Garden, City Hall and
 ## Unlocked desktop map click isolation (v0.6.52)
 
 In desktop Safari/Chrome with pointer lock denied, click MAP and select or clear a landmark, then close the panel; the squirrel should never BITE or turn during UI clicks. Click/drag on the actual game canvas to aim; a short canvas click should still BITE. CI asserts the bite cooldown stays zero through opening/closing MAP in unlocked live play.
+
+
+## Simulated live touch test (v0.6.53)
+
+The browser workflow's `mobile-live-play` scenario now exercises a virtual joystick held while a second finger presses JUMP, both releases, a right-side look drag, SPRINT toggle, and ACT button burrow entry in live play. Inspect its screenshot and JSON test report. Then repeat on a **physical iPhone in Safari**, using real simultaneous fingers, home indicator gestures and app backgrounding. The Chromium synthetic-input test catches handler logic, not iOS touch policy/thermal issues.

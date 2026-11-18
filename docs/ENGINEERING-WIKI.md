@@ -203,3 +203,10 @@ The new live WebGL/keyboard E browser route test passed the Common/burrow loop a
 ## v0.6.52 — game canvas is the only desktop bite/drag input surface
 
 The new unlocked-mouse fallback originally listened for all document mousedown events; clicking MAP, a numbered waypoint, or another HUD control while playing would silently trigger `tryBite` on release even though the user had not interacted with the scene. Only `S.renderer.domElement` now opens a desktop aim-drag or bite gesture. UI controls remain separate; pointer-locked scene input remains unchanged. The live browser QA now opens and closes MAP with a mouse while the game is active in no-lock mode and asserts `biteCooldown` stays inactive, in addition to the drag-yaw assertion. This is a direct follow-on safety fix to the v0.6.48 pointer-lock fallback.
+
+
+## v0.6.53 — live simulated multi-touch game integration test
+
+The existing screenshot-mode mobile smoke only established that touch controls were *visible* and MAP could open. A new `mobile-live-play` test actually taps PLAY in a live (non-shot) 390×844 Chrome mobile emulation and dispatches independent touch pointer IDs through the production handlers: hold virtual joystick to walk, press/hold JUMP with a second pointer while still moving, release both and verify neutral analog values, drag the right look zone to rotate camera, toggle SPRINT on and off, then use a real ACT button tap to enter a rat burrow. The test asserts world position changes, jump altitude, camera yaw, sprint state and the burrow realm flag. It archives its own screenshot/report evidence.
+
+This expands reproducible browser functional coverage without adding build dependencies to the game. Synthetic PointerEvents exercise actual event handlers, but **do not certify native iOS Safari multi-touch APIs, touch-action behavior, page-gesture prevention or device thermals**; those remain physical iPhone QA. On the production site `?qa=1` does not install any test controls outside localhost. No game rendering/physics features were changed in v0.6.53; this is regression infrastructure.

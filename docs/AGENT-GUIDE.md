@@ -1303,3 +1303,8 @@ Live browser E2E revealed a real transit bug at Fenway: portal feet were hard-co
 ## v0.6.52 — mouse UI clicks cannot bite (Nov 18 2026)
 
 Restricted unlocked primary-mouse bite/drag start to the Three.js canvas rather than any document target, so clicking HUD/map/waypoints does not accidentally boop something. Browser live-play now asserts MAP open/close leaves `biteCooldown` unchanged while unlocked. Canvas drag and canvas short-click still work normally. No changes to touch ACT/BITE buttons.
+
+
+## v0.6.53 — mobile live interaction coverage (Nov 18 2026)
+
+The browser workflow now starts a live 390×844 simulated touch game and tests: virtual joystick forward movement, second simultaneous pointer holding JUMP, neutral stick release, right-side look yaw, SPRINT on/off, and ACT entering a rat tunnel. Events exercise the actual `ui/touch.js` handler paths; no direct function calls to game actions. Screenshots and failures are archived with the WebGL smoke artifact. This is Chromium touch emulation, not a substitute for real iPhone Safari QA. Keep the workflow ≤15 minutes, inspect failures instead of dropping touch assertions to make CI green.
