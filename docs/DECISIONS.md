@@ -82,3 +82,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Tag true ambient park food at spawn and count that category for the existing 20-item restock target. Leave every authored cache or arena spawn untagged as world food. Also share immutable per-type food materials and base/cap geometry rather than creating GPU resource clones for identical food.
 
 **Consequence:** The Common can replenish independently from expansion content. A new system that wants the *same* ambient budget must explicitly use source:'ambient'; otherwise its items cannot affect the home refill logic. Mesh ownership remains per food item, but its material and geometry are shared, so callers must never dispose shared assets on individual removal.
+
+
+## ADR-010 — avoid per-pickup camera materials; validate interactions on demand
+
+**Context:** World food reused materials after v0.6.38, but the visible paw prop still created and discarded new geometry/material per pickup; touch/keyboard ACT could act on stale proximity prompts computed a frame earlier.
+
+**Decision:** Keep one recolorable carried-food mesh for the entire session and one shared action path for keyboard/touch that recomputes the nearby interaction immediately before dispatch. Reset held keyboard state on pagehide and deny bite actions while paused.
+
+**Consequence:** No fresh GPU allocation per carry swap and fewer stale world actions; a small O(number-of-interactables) scan happens on user input in addition to each frame, negligible relative to rendering. Recoloring must use `color.setHex`, not reassign a per-item material.

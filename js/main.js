@@ -105,10 +105,23 @@ function scanInteractions() {
   currentF = buryAction();
 }
 
+// Rebuild the prompt on the actual input event, not a frame-old snapshot.
+// Portals, flying food, and rapid multitouch can change world state between
+// the last requestAnimationFrame and the next E/F/ACT/BURY action.
+function interactNow() {
+  if (!S.started || S.paused) return;
+  scanInteractions();
+  if (currentE) currentE.action();
+}
+function buryNow() {
+  if (!S.started || S.paused) return;
+  scanInteractions();
+  if (currentF) currentF.action();
+}
 document.addEventListener('keydown', (e) => {
   if (!S.started || S.paused || e.repeat) return; // actions should not auto-repeat
-  if (e.code === 'KeyE' && currentE) currentE.action();
-  if (e.code === 'KeyF' && currentF) currentF.action();
+  if (e.code === 'KeyE') interactNow();
+  if (e.code === 'KeyF') buryNow();
   if (e.code === 'KeyM') { setMuted(!isMuted()); toast(isMuted() ? 'sound off' : 'sound on', 1.2); }
 });
 
@@ -181,8 +194,8 @@ window.addEventListener('pagehide', suspendGame);
 // ---------- touch controls (mobile requirement) ----------
 if (S.isTouch) {
   initTouch({
-    onInteract: () => { if (S.started && !S.paused && currentE) currentE.action(); },
-    onBury: () => { if (S.started && !S.paused && currentF) currentF.action(); },
+    onInteract: interactNow,
+    onBury: buryNow,
   });
   titleEl.querySelector('.go').textContent = 'TAP TO PLAY';
   pauseEl.querySelector('.go').textContent = 'TAP TO RESUME';

@@ -15,7 +15,7 @@ const keys = {};
 // Jump is a fresh press (never repeated on landing), with brief grace at edges.
 const jumpIntent = { held: false, buffer: 0, coyote: 0 };
 const surfaceIndex = createSurfaceIndex(S.platforms, S.platformBoxes, S.platformSegments);
-let paws, belly, bellyMat, hindMat, pawL, pawR, carriedMesh;
+let paws, belly, bellyMat, hindMat, pawL, pawR, carriedMesh, carriedVisual;
 let tailGroup, tailMat, tailTipMat;
 let runPhase = 0;
 
@@ -29,11 +29,14 @@ export function initPlayer(scene, camera) {
   buildPawRig(camera);
   document.addEventListener('keydown', (e) => { keys[e.code] = true; });
   document.addEventListener('keyup', (e) => { keys[e.code] = false; });
-  window.addEventListener('blur', () => { for (const code in keys) keys[code] = false; resetJumpIntent(jumpIntent); });
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) return;
+  const resetHeldKeys = () => {
     for (const code in keys) keys[code] = false;
     resetJumpIntent(jumpIntent);
+  };
+  window.addEventListener('blur', resetHeldKeys);
+  window.addEventListener('pagehide', resetHeldKeys);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) resetHeldKeys();
   });
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== document.body && document.pointerLockElement !== S.renderer.domElement) return;
@@ -110,6 +113,12 @@ function buildPawRig(camera) {
   carriedMesh = new THREE.Group();
   carriedMesh.position.set(0.062, -0.2, -0.32);
   carriedMesh.visible = false;
+  // Allocate this small carried-food visual once. Pickup/swap only recolors
+  // it instead of creating a new geometry and GPU material every time.
+  carriedVisual = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 6),
+    new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.9, transparent: true, opacity: 0 }));
+  carriedVisual.scale.set(1, 0.8, 1.2);
+  carriedMesh.add(carriedVisual);
   paws.add(carriedMesh);
 
   // belly + chest: flat, low, far back - looking down reads as a body
@@ -173,19 +182,16 @@ function buildPawRig(camera) {
 }
 
 export function setCarriedVisual(type) {
-  while (carriedMesh.children.length) carriedMesh.remove(carriedMesh.children[0]);
   if (!type) { carriedMesh.visible = false; return; }
-  const mats = { acorn: 0x7a4a22, pretzel: 0xa06a28, sandwich: 0xe3d3a2, peanut: 0xc8a86a };
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 6),
-    new THREE.MeshStandardMaterial({ color: mats[type] || 0x999999, roughness: 0.9, transparent: true, opacity: 0 }));
-  m.scale.set(1, 0.8, 1.2);
-  carriedMesh.add(m);
+  const mats = { acorn: 0x7a4a22, pretzel: 0xa06a28, sandwich: 0xe3d3a2,
+    peanut: 0xc8a86a, croissant: 0xd9a860, popcorn: 0xf5edd6 };
+  carriedVisual.material.color.setHex(mats[type] || 0x999999);
   carriedMesh.visible = true;
 }
 
 function tryBite() {
   const P = S.player;
-  if (P.biteCooldown > 0 || P.begging > 0) return;
+  if (!S.started || S.paused || P.biteCooldown > 0 || P.begging > 0) return;
   P.biteCooldown = 1.4;
   P.biteAnim = 0.22;
   sfx.boop();

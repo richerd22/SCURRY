@@ -1231,3 +1231,8 @@ Audit found a real destination-placement fault: `spawnFood(opts.y)` initially pl
 ## v0.6.38 (Nov 18 2026) — ambient economy + resource reuse
 
 Discovered a scaling bug: `updateFood` capped home-park ambient respawns by the total non-stealable `S.foods` count, which also includes canopy cache, rat market, Fenway, City Hall, TD Garden and Esplanade. Those offscreen food items could block all home replenishment. Fixed by tagging true park ambient items with `source:'ambient'` and counting only those toward the legacy cap of 20. `makeFoodMesh` now shares material per type and a cached acorn-cap material/geometry, avoiding repeated identical GPU allocations while keeping per-food meshes animated and individually removable. Two added production-module tests ensure ambient economy and material reuse. Model source/visual look unchanged.
+
+
+## v0.6.39 (Nov 18 2026) — retained carried visual and live action dispatch
+
+The squirrel's camera-attached carried food visual used to allocate a fresh `SphereGeometry` and `MeshStandardMaterial` **on every pickup or swap**, without disposal, eventually leaking small GPU resources in long mobile sessions. `buildPawRig` now constructs a single hidden mesh once; `setCarriedVisual(type)` only recolors it. Supported colors now explicitly include croissant and popcorn, not a fallback grey. `main.js` E/F/ACT/BURY handlers now re-scan nearby interactions immediately on input, rather than blindly executing a last-frame prompt. `player.js` clears held keyboard/jump state on `pagehide` as well as blur/hidden; touch bite is correctly ignored while paused. No player speed, jump velocity, map geometry or UI layout changed.

@@ -89,3 +89,11 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 
 - Bury or collect most Common scattered snacks, then visit a realm/market and return. Over 9–18 game seconds the Common's freely scattered food should begin restocking even when cache/realm foods still exist elsewhere.
 - Repeat collecting/burying acorns for several minutes on an iPhone while monitoring memory and responsiveness; the materials for identical snack types now reuse the same GPU objects. A leak-free long session is still a physical-device observation, not proved by Node tests.
+
+
+## Rapid interaction / long session (v0.6.39)
+
+- Rapidly pick up/swap acorn, croissant and popcorn using keyboard E or touch ACT. The carried prop should change color immediately without briefly disappearing or spawning a new detached mesh.
+- On an iPhone run a long forage session (20+ pickups). Inspect WebGL resources with available device tools when possible; carried food should no longer increase geometry/material allocations per pickup.
+- Walk to the edge of a burrow or food prompt, then quickly leave range and press ACT: the action must be recalculated from the current position.
+- Background Safari while holding jump on an attached keyboard; return and verify Space does not remain stuck. Touch BITE must not activate during the pause overlay.
