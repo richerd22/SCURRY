@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { meshTerrainHeight } from '../systems/collision.js';
 import { createPathProximityIndex } from './path-index.js';
+import { seededRandom } from './seeded-random.js';
 import { makeParkFenceLayout } from './fence-layout.js';
 import { buildParkEntrances } from './gate-art.js';
 import { insideParkLawn } from './ground-rules.js';
@@ -132,6 +133,9 @@ export function isGrass(x, z) {
 
 // ---------- ground texture painting ----------
 function paintGround() {
+  // Stable independent layer seed: screenshots should differ for real art
+  // revisions, not because ground grass/flowers reroll every page load.
+  const rnd=seededRandom(0x5c0ee);
   const W = 2048, H = 1170;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
@@ -147,8 +151,8 @@ function paintGround() {
   }
   // grass noise
   for (let i = 0; i < 26000; i++) {
-    g.fillStyle = Math.random() < 0.5 ? 'rgba(20,60,15,0.16)' : 'rgba(140,190,90,0.13)';
-    g.fillRect(Math.random() * W, Math.random() * H, 2.4, 2.4);
+    g.fillStyle = rnd() < 0.5 ? 'rgba(20,60,15,0.16)' : 'rgba(140,190,90,0.13)';
+    g.fillRect(rnd() * W, rnd() * H, 2.4, 2.4);
   }
   // Garden lawns slightly richer
   g.fillStyle = 'rgba(30,90,40,0.18)';
@@ -156,11 +160,11 @@ function paintGround() {
   // flower beds in the Garden (colour blobs)
   const bedCols = ['#b8546e', '#d9a441', '#e8e4da', '#a04a7a', '#c96f3b'];
   for (let i = 0; i < 26; i++) {
-    const bx = MAP.garden.minX + 12 + Math.random() * 120, bz = -88 + Math.random() * 176;
+    const bx = MAP.garden.minX + 12 + rnd() * 120, bz = -88 + rnd() * 176;
     if (ellipseDip(bx, bz, MAP.lagoon) > 0) continue;
     g.fillStyle = bedCols[i % bedCols.length];
     g.globalAlpha = 0.55;
-    g.beginPath(); g.ellipse(px(bx), pz(bz), (3 + Math.random() * 5) * m, (1.6 + Math.random() * 2) * m, Math.random(), 0, 7); g.fill();
+    g.beginPath(); g.ellipse(px(bx), pz(bz), (3 + rnd() * 5) * m, (1.6 + rnd() * 2) * m, rnd(), 0, 7); g.fill();
   }
   g.globalAlpha = 1;
   // Charles Street asphalt
@@ -290,8 +294,9 @@ export function buildWorld(scene) {
   // stars (fade in at night via daycycle)
   const starGeo = new THREE.BufferGeometry();
   const starPos = [];
+  const starRnd=seededRandom(0x5ca123);
   for (let i = 0; i < 700; i++) {
-    const a = Math.random() * Math.PI * 2, e = Math.random() * Math.PI * 0.48 + 0.05, r = 850;
+    const a = starRnd() * Math.PI * 2, e = starRnd() * Math.PI * 0.48 + 0.05, r = 850;
     starPos.push(Math.cos(a) * Math.cos(e) * r, Math.sin(e) * r, Math.sin(a) * Math.cos(e) * r);
   }
   starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));

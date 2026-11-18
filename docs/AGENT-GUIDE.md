@@ -1358,3 +1358,8 @@ From City of Boston master-plan references, code-built eight granite piers acros
 ## v0.6.62 — model hash fingerprints and screened public candidates
 
 Every model, glTF external BIN and texture in the provenance ledger now includes its exact Git blob SHA-1, verified against file bytes by the pure Node audit, with extra regressions for silent asset swaps and missing fingerprints. A model with a preexisting review-ID cannot be replaced invisibly under the old name without a manifest fingerprint change. An unreviewed model still cannot enter as a new ID. Added `docs/MODEL-CANDIDATES.md` for individually verified CC0 model pages for fence, bench, tree, trash can; these are **not** imported and need art/scale/perf acceptance. The full source/rights process remains in `docs/MODEL-SOURCING.md`. SHA identity is not rights clearance.
+
+
+## v0.6.64 — stable seeded grass/flower/stars across visual QA reloads
+
+Static ground canvas grass grain and decorative Garden flower patches (formerly fresh Math.random) now use a fixed local PRNG, and the 700 stars use a separately seeded stream. This prevents a baseline image changing every reload without moving paths/terrain, models or the collision registry. Four pure tests cover deterministic sequences, independent layers, value range and invalid seed handling. This is reusable in other no-bundler games. Screenshots still need physical GPU and atmospheric/time consistency checks.

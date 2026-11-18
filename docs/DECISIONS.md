@@ -315,3 +315,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Record the Git blob SHA-1 identity of every existing model and related binary/texture. CI must compare bytes for each path and reject missing identities or symlinks. A deliberate replacement requires a visible manifest diff and fresh author/source/license evidence; unrelated sourced model candidates remain a separate *not yet imported* review queue.
 
 **Consequence:** Future code reviews can distinguish the original unresolved legacy bytes from an unreviewed substitution. Hash identity alone is neither licence proof nor a defense against someone deliberately changing both the file and manifest, so human source review still matters.
+
+
+## ADR-036 — separate visual layout seeds from gameplay randomness
+
+**Context:** The same screenshot pose could regenerate different ground flecks, Garden flower patches and star placement every reload, confounding the art-quality evidence agents and future projects rely on.
+
+**Decision:** Use small standalone pure seeded-random streams with fixed values for each static visual layer. Retain source geometry/world physics intact, and do not share the deterministic PRNG with stochastic NPC actions or future network-security uses. Add numerical sequence/independence tests.
+
+**Consequence:** Stable art composition across comparable QA builds and a portable reproducible screenshot practice. It does not stabilize day/night animation timing, third-party model loading or physical GPU differences, so human visual acceptance still matters.

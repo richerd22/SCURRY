@@ -247,3 +247,8 @@ For a new 3D asset: record the exact original item URL, author, license version 
 ## Asset byte-swap audit (v0.6.62)
 
 Before replacing a GLB, glTF, BIN or texture, check that the `gitBlobs[path]` identity changes in the manifest in the same commit and that source evidence is updated. `node tools/audit-assets.mjs` should reject a binary overwritten without its manifest identity and reject any symlink to an external model. Do not interpret a green hash audit as copyright permission. Screen candidate models in `docs/MODEL-CANDIDATES.md` at both eye heights before importing anything.
+
+
+## Screenshot determinism (v0.6.64)
+
+Reload identical `?shot=spawn&t=17.6&lowq=1` and Garden/Charles Street screenshot poses several times. Ground-speckle/flower patch distribution and star coordinates should be stable; any geometry or asset difference must be attributable to a code/asset revision, not new random layout. Environmental animation or model-load timing can still vary, so inspect those separately. Do not use deterministic static layer appearance as an FPS or mobile-performance claim.
