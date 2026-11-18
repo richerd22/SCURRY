@@ -1333,3 +1333,8 @@ Audio now cancels its recurring birdsong/cricket timeout during pause and mute, 
 ## v0.6.57 — ranger/hawk catch relocation cannot overlap
 
 Added `systems/relocation.js` with pure single-flight begin/complete/advance transitions. Only one 650ms fade may be active, and another catch is blocked for 1.5s after landing (simulation dt freezes while paused). Ranger guard runs *before* stash deduction; hawk guard before carried-food drop. Fade clears keys and freezes player/threat movement, then zeroes vel and climb, resyncs camera and grants grace before un-fading. Three Node tests permanently cover duplicate calls, landing immunity and invalid/paused dt. No weapons, no fatal catches; animal boops and friendly relocation remain the game's approach.
+
+
+## v0.6.58 (Nov 18 2026) — visited map markers and single-flight fade in live browser
+
+Field Notes tint visited atlas markers green and show a check mark/accessible visited state on legend buttons, including the Hollow Tree. Waypoint focus retains its brighter highlight. Browser E2E invokes real relocation twice through localhost-only QA and asserts one fade, grounded landing and grace; mobile E2E checks new Bandstand discovery changes the map state. No asset creation, geometry changes, new dependencies, build step or public QA hooks.

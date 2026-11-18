@@ -203,7 +203,21 @@ async function checkGameplay() {
       await page.keyboard.press('e');
       await page.waitForFunction(() => !window.__scurryQA.state().inBurrow,null,{timeout:10000});
     }
-    results.push({title,status:'PASS',routes:'walk/jump/mouse-drag/pause + burrow + four destinations'});
+    // Actual shared fade code, not just relocation.js pure state tests.
+    const transitions = await page.evaluate(() => [
+      window.__scurryQA.tryRelocation(), window.__scurryQA.tryRelocation()
+    ]);
+    assert.deepEqual(transitions,[true,false], 'two catches may not start two teleports');
+    assert.equal((await get()).relocating,true);
+    await page.waitForFunction(() => !window.__scurryQA.state().relocating,
+      null,{timeout:15000,polling:100});
+    const landing = await get();
+    assert.ok(landing.grounded && Math.abs(landing.pos.y-landing.floor)<.1,
+      'single catch must land on visible supported terrain');
+    assert.ok(landing.catchGrace>0, 'landing must grant catch immunity');
+    assert.equal(await page.evaluate(() => window.__scurryQA.tryRelocation()),false,
+      'landing grace must refuse immediate catch');
+    results.push({title,status:'PASS',routes:'walk/jump/drag/pause + four destinations + relocation'});
     await page.screenshot({path:out+'/'+title+'.png'});
     console.log(title+': PASS walk, jump, pause, burrow and destination return routes');
   } catch(e) {
@@ -324,6 +338,18 @@ async function checkTouchGameplay() {
     assert.equal(await saved.getAttribute('data-found'),'true',
       'Field Notes burrow discovery must survive a full reload');
     await page.screenshot({path:out+'/'+title+'-saved-notes.png'});
+    await page.locator('#map-guide-toggle').tap();
+    await page.evaluate(() => window.__scurryQA.place(140,0,42));
+    await page.waitForFunction(() => {
+      try { return JSON.parse(localStorage.getItem('scurry-field-notes-v1'))?.ids?.includes('bandstand'); }
+      catch { return false; }
+    },null,{timeout:15000});
+    await page.waitForFunction(() => document.querySelector(
+      '#map-legend [data-note-id="bandstand"]')?.dataset.found==='true',
+      null,{timeout:10000});
+    assert.match(await page.locator('#map-legend [data-note-id="bandstand"]')
+      .getAttribute('aria-label'),/visited/i);
+    await page.screenshot({path:out+'/'+title+'-visited-atlas.png'});
     results.push({title,status:'PASS',
       routes:'live joystick + simultaneous jump + look + sprint + ACT burrow + persisted notes'});
     console.log(title+': PASS joystick, dual-touch jump, look, sprint, ACT portal');

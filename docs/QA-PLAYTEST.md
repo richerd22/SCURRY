@@ -217,3 +217,8 @@ Start with MUTE saved across reload, tap PLAY and verify silence. Unmute and lis
 - Let the ranger net a squirrel with at least 12 stash. Exactly one 25% deduction should occur for one net; during the 650ms fade, input should not move the squirrel or trigger another catch. After the bandstand landing, allow a short ~1.5s escape grace before another ranger net is possible.
 - Trigger a Hawk Dua catch near the ranger if possible. No overlapping fade animations, double teleports, or duplicate dropped food. Hawk relocation must leave stash intact.
 - Background Safari mid-fade or shortly after landing. Catch grace must not evaporate during the inactive tab. Play resumes with no stuck movement keys or camera lag.
+
+
+## Visited atlas feedback / catch fade (v0.6.58)
+
+Discover Bandstand or Frog Pond, open MAP, and confirm green numbered pin plus a ✓ in the corresponding legend row. Selecting the waypoint should still visibly highlight it. The browser suite exercises two attempted simultaneous relocations and asserts exactly one proceeds, but the separate physical playtest must confirm actual ranger stash loss only once and Hawk Dua does not chain teleports.

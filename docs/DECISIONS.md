@@ -270,3 +270,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Use one shared pure relocation state machine with an in-flight flag, a short landing grace, and simulation-time advancement. All enemy callers check protection **before** side effects; the shared fade callback refuses duplicates, clears control input, freezes movement and completes one camera-synchronized teleport. No stun damage or harm is introduced.
 
 **Consequence:** No rapid catch cascades or competing teleport callbacks. Player can move again after relocation, and catch immunity does not decay while Safari is backgrounded. Browser encounter QA is still needed to test adversarial ranger/hawk proximity, separate from pure transition tests.
+
+
+## ADR-031 — display discovered locations in the atlas, not permanent HUD
+
+**Context:** Field Notes recorded visits but the map hid that context. The catch relocation guard had pure tests but no browser-level fade callback coverage.
+
+**Decision:** Use the existing Field Notes ID set to tint atlas pins and mark legend entries visited. Test the real shared fade twice in one frame through localhost-only QA, including grounded landing and post-catch grace.
+
+**Consequence:** Optional exploration feedback and better catch test evidence without additional persistent state or an always-on quest system. Physical iPhone and adversarial ranger/hawk encounters remain open.

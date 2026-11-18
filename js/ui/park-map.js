@@ -56,7 +56,7 @@ export function initParkMap() {
   // Numbered pins replace the long inline labels that clipped on phones.
   const entries = MARKERS.map((marker, i) => ({ ...marker, number: String(i + 1) }));
   if (S.hollowTreePos) entries.push({
-    x:S.hollowTreePos.x, z:S.hollowTreePos.z,
+    id:'hollow-tree', x:S.hollowTreePos.x, z:S.hollowTreePos.z,
     number:'H',label:'HOLLOW TREE'
   });
   for (const entry of entries) {
@@ -64,6 +64,8 @@ export function initParkMap() {
     item.type='button';
     item.className='map-destination';
     item.textContent = entry.number + '  ' + entry.label;
+    item.dataset.noteId = entry.id;
+    item.dataset.found = 'false';
     item.setAttribute('aria-label', 'Track ' + entry.label);
     item.setAttribute('aria-pressed', 'false');
     item.addEventListener('click', (event) => {
@@ -188,6 +190,15 @@ function draw() {
   }
 
   if (legend) legend.style.display = 'grid';
+  const visited = discoveryProgress().unlocked;
+  for (const item of legend.children) {
+    const found = visited.has(item.dataset.noteId);
+    if (item.dataset.found !== String(found)) {
+      item.dataset.found = String(found);
+      item.setAttribute('aria-label',
+        (found ? 'Visited, track ' : 'Track ') + item.textContent);
+    }
+  }
   const p = (x, z) => mapPoint(x, z, MAP, w, h, PADD);
   function rect(x0, z0, x1, z1, color, border = null) {
     const a = p(x0,z0), b = p(x1,z1);
@@ -237,9 +248,11 @@ function draw() {
     ctx.fillText(text,q.x,q.y+3);
   }
   MARKERS.forEach((marker,i) => pin(marker.x,marker.z,String(i+1),
-    selected?.number===String(i+1)?'#fff8b2':'#e7cc87'));
+    selected?.number===String(i+1)?'#fff8b2':
+      visited.has(marker.id)?'#bfe7a2':'#e7cc87'));
   if (S.hollowTreePos) pin(S.hollowTreePos.x,S.hollowTreePos.z,'H',
-    selected?.number==='H'?'#fff8b2':'#edb57d');
+    selected?.number==='H'?'#fff8b2':
+      visited.has('hollow-tree')?'#bfe7a2':'#edb57d');
   // Squirrel marker: camera forward is (-sin(yaw), -cos(yaw)).
   const q=p(S.player.pos.x,S.player.pos.z), dir=mapHeading(S.player.yaw);
   const side={x:-dir.z,z:dir.x}, r=8;

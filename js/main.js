@@ -388,6 +388,11 @@ if (qaLocal) {
         touch: { ...S.touch }, audioPaused: isGameAudioPaused(),
       };
     },
+    // Diagnostic control is localhost-only. No public QA API is exposed.
+    tryRelocation: () => S.fadeCatch(0, {
+      pos: new THREE.Vector3(0, visibleGroundHeight(0, 0), 0),
+      grounded:true, message:'QA relocation complete'
+    }),
     interactions: () => S.interactables.map(it => ({
       x: it.x, y: it.y, z: it.z, r: it.r, label: it.label(),
     })).filter(it => typeof it.label === 'string'),

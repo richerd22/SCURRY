@@ -243,3 +243,10 @@ The v0.6.50 audio pause suspended WebAudio and skipped synthesis but left its `s
 Ranger net catches and Hawk Dua both use the shared 650ms fade/teleport callback. Previously a ranger could subtract 25% of the stash before calling the fade and a second catch could be triggered while the first timeout had not completed; overlapping timers could teleport the squirrel twice. New pure `systems/relocation.js` guards a single in-flight relocation and a 1.5s post-landing grace. Ranger and hawk check those flags **before** stash deduction or dropping carried food. `S.fadeCatch` returns false if a transition is already pending, clears held input, freezes squirrel movement and threat updates during the fade, and on completion restores position, zero velocity, climbing/grace-related locomotion flags and the camera before releasing control.
 
 The grace runs in simulation time, not wall-clock time: paused/backgrounded gameplay does not consume it. Three Node tests enforce duplicate-catch prevention, grace expiry and invalid/paused delta behavior. Actual ranger/Hawk in-browser adversarial testing remains open; this is a guard against repeated side effects, not a change to their chase behavior or stash penalty formula. Do not claim real iPhone acceptance from pure tests.
+
+
+## v0.6.58 — Field Notes reflected on the atlas + actual fade test
+
+Numbered map pins now turn subtle green after their shared Field Notes discovery; the legend gains a ✓ and an accessible "Visited, track" name. The Hollow Tree uses the same ID as the notebook, and brighter selected-waypoint highlights still take priority. No additional progress storage or HUD clutter.
+
+The permanent desktop WebGL playtest now calls the game's actual shared `S.fadeCatch` twice via a **localhost-only** test hook, checking exactly one fade starts, the squirrel lands grounded on visible terrain, landing grace begins, and an immediate second catch is rejected. The mobile playtest additionally records the Bandstand and verifies the updated atlas pin/legend reflect that discovery. These are integration checks, not real ranger/hawk encounter choreography or native iPhone signoff.

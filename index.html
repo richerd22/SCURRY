@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0c0f0a">
-<meta name="scurry-version" content="0.6.57">
+<meta name="scurry-version" content="0.6.58">
 <title>SCURRY - a Boston Common squirrel game</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0c0f0a;
@@ -113,6 +113,9 @@
     border-radius:4px; padding:7px 5px; cursor:pointer; touch-action:manipulation;
     font:inherit; }
   #map-legend button[aria-pressed="true"] { color:#182518; background:#e9d8a9; }
+  #map-legend button[data-found="true"]:not([aria-pressed="true"]) { border-color:#83b983; }
+  #map-legend button[data-found="true"]::after { content:'✓'; float:right; margin-left:4px; color:#a6e3a1; }
+  #map-legend button[aria-pressed="true"]::after { color:#182518; }
   #map-panel header { gap:6px; }
   #map-panel header strong { flex:1 1 auto; min-width:100px; line-height:1.35; }
   #map-panel header > div { display:flex; flex:0 0 auto; align-items:center; gap:6px; }
