@@ -222,6 +222,9 @@ async function checkGameplay() {
       const walk=await page.evaluate(steps=>window.__scurryQA.traceTerrainWalk(steps),steps);
       await page.keyboard.up('w');
       traversals.push({name,...walk});
+      // Persist BEFORE assertions: a failing walk still leaves its exact
+      // world-coordinate trace in the uploaded failure artifact.
+      writeFileSync(out+'/terrain-traversal.json',JSON.stringify(traversals,null,2));
       assert.ok(walk.horizontalDistance>1, name+' player must move through world');
       assert.ok(walk.minClear>=-.03, name+' feet penetrated support '+walk.minClear);
       assert.ok(walk.minMeshClear>=-.03,name+' feet under rendered mesh '+walk.minMeshClear);
@@ -241,6 +244,7 @@ async function checkGameplay() {
       const walk=await page.evaluate(n=>window.__scurryQA.traceTerrainWalk(n),target.steps);
       await page.keyboard.up('w');
       traversals.push({name:target.name,kind:'elevated',...walk});
+      writeFileSync(out+'/terrain-traversal.json',JSON.stringify(traversals,null,2));
       assert.ok(walk.horizontalDistance>.1,target.name+' was stuck');
       assert.ok(walk.minMeshClear>=-.03,target.name+' clipped below terrain mesh');
       assert.equal(walk.penetrations,0,target.name+' penetrated ground');
