@@ -49,3 +49,10 @@ For every candidate asset, keep a plain review record with source URL, author, l
 Copy tools/audit-assets.mjs, tests/asset-audit-regressions.mjs and assets/model-provenance.json into a new repository. Reset the LEGACY_REVIEW_IDS set to EMPTY—future projects start with **no exceptions**. Adapt the allowed asset folder and mobile limits as needed. Keep item-level provenance, an import/LOD budget and an automated no-build gate from day one; make missing parts a documented backlog instead of pretending everything is finished.
 
 The validator is a technical guardrail, not a legal opinion or retroactive permission grant.
+
+
+## Provenance byte integrity (v0.6.62)
+
+Each listed model file now has a `gitBlobs[path]` entry holding its **Git blob SHA-1**, matching `git hash-object path` for the exact committed file. CI recalculates this identity and fails on any untracked model replacement, missing hash, unsafe file/symlink or unregistered texture/buffer. Updating model geometry requires intentionally updating its hash and recording the related provenance review—not silently overwriting a legacy same-named model. This is reproducible file integrity, **not** proof that its author/license is valid. For an actually cleared new model, register its own ID, original source link and per-model license evidence; legacy unresolved-rights IDs must not be copied to another game.
+
+See [specific screened model candidates](MODEL-CANDIDATES.md) before committing a new model. A public-domain licence does not guarantee the model is architecturally accurate or worth its mobile GPU/texture budget.

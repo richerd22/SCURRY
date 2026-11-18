@@ -14,7 +14,10 @@
       "url": null,
       "license": "CC0 claimed; exact per-model source missing",
       "status": "review",
-      "use": "park benches"
+      "use": "park benches",
+      "gitBlobs": {
+        "assets/models/Bench.glb": "c4c4a45865b3b77d80eef21d6f9b85d01552f382"
+      }
     },
     {
       "id": "park-bench",
@@ -27,7 +30,10 @@
       "url": null,
       "license": "CC0 claimed; exact per-model source missing",
       "status": "review",
-      "use": "park benches"
+      "use": "park benches",
+      "gitBlobs": {
+        "assets/models/ParkBench.glb": "1b54a6c8f28e26891b674e178dc23bf438b6d3dd"
+      }
     },
     {
       "id": "dog",
@@ -40,7 +46,10 @@
       "url": null,
       "license": "CC0 claimed; exact item license missing",
       "status": "review",
-      "use": "park dogs"
+      "use": "park dogs",
+      "gitBlobs": {
+        "assets/models/Dog.glb": "edf9dbfb6dc55746a62d3a076430875169b583f4"
+      }
     },
     {
       "id": "man",
@@ -53,7 +62,10 @@
       "url": null,
       "license": "CC0 claimed; exact item license missing",
       "status": "review",
-      "use": "park NPCs"
+      "use": "park NPCs",
+      "gitBlobs": {
+        "assets/models/Man.glb": "938feebca107e40a6e6d9a5a24856c65ff07a41a"
+      }
     },
     {
       "id": "shiba",
@@ -66,7 +78,10 @@
       "url": null,
       "license": "CC0 claimed; exact item license missing",
       "status": "review",
-      "use": "park dogs"
+      "use": "park dogs",
+      "gitBlobs": {
+        "assets/models/ShibaInu.glb": "2adf5b3efb841b21bf844cba48e01f066b421640"
+      }
     },
     {
       "id": "lantern",
@@ -79,7 +94,10 @@
       "url": null,
       "license": "CC0 claimed; exact item license missing",
       "status": "review",
-      "use": "park lights"
+      "use": "park lights",
+      "gitBlobs": {
+        "assets/models/PostLantern.glb": "32ee8b50c7ce6d9383fa9129c26c1c550adb1156"
+      }
     },
     {
       "id": "elm-pack",
@@ -104,7 +122,22 @@
       "url": null,
       "license": "unverified; public item/source ledger missing",
       "status": "review",
-      "use": "hero elm canopy"
+      "use": "hero elm canopy",
+      "gitBlobs": {
+        "assets/models/Tree1.gltf": "5acb8e06c4a00bf312ba545e98e12546c8a04159",
+        "assets/models/Tree1.bin": "2314152f29b64b210efc80781baede9325ccadd0",
+        "assets/models/Tree2.gltf": "f35e3d2d70bbf46f328de5ce2aac68351c6839c6",
+        "assets/models/Tree2.bin": "76ae87f7495fd76cb64b52962e9e04dadf820d04",
+        "assets/models/Tree3.gltf": "49ab78ac201bfab0f68a032e013338b503d28994",
+        "assets/models/Tree3.bin": "69ea5d426631dbe44061ed11ffc8201c0ae13a9d",
+        "assets/models/Tree4.gltf": "2c912cc5274bb57fa6b6454a4b927822e9fae591",
+        "assets/models/Tree4.bin": "a646fc71625bb28174ac018cda02348aa981ef19",
+        "assets/models/Tree5.gltf": "cdade5dea1a2cbeaa42cbc385c8db17035d733e0",
+        "assets/models/Tree5.bin": "93faafae6e6a252ab0b221ef00eae71a8bb91da6",
+        "assets/models/tex/tree-tex-6e06166c.png": "340c103d3954d954034ef288494e307bfc9dd5bb",
+        "assets/models/tex/tree-tex-bb2b27d5.png": "e4e08b1c70fd52e2634b6891eb18d112dda8966d",
+        "assets/models/tex/tree-tex-d371222b.png": "ce9a7109a74fc8993aa17e4bed3dec6705bb546b"
+      }
     },
     {
       "id": "city-hall",
@@ -117,7 +150,10 @@
       "url": "https://www.bostonplans.org/3d-data-maps/3d-smart-model/3d-data-download",
       "license": "PDDL source family verified; exact tile/conversion not documented",
       "status": "review",
-      "use": "City Hall"
+      "use": "City Hall",
+      "gitBlobs": {
+        "assets/models/cityhall.glb": "e164baa75a535ea061df6e2e3ceaf3177572011b"
+      }
     },
     {
       "id": "fenway-surrounds",
@@ -130,7 +166,10 @@
       "url": "https://www.bostonplans.org/3d-data-maps/3d-smart-model/3d-data-download",
       "license": "PDDL source family verified; exact tile/conversion not documented",
       "status": "review",
-      "use": "Fenway neighborhood"
+      "use": "Fenway neighborhood",
+      "gitBlobs": {
+        "assets/models/fenway-neighborhood.glb": "ca823a0aa33102fbce4f644f722bebd7e6cb176b"
+      }
     },
     {
       "id": "hatch-shell",
@@ -143,7 +182,10 @@
       "url": "https://www.bostonplans.org/3d-data-maps/3d-smart-model/3d-data-download",
       "license": "PDDL source family verified; exact tile/conversion not documented",
       "status": "review",
-      "use": "Esplanade"
+      "use": "Esplanade",
+      "gitBlobs": {
+        "assets/models/hatchshell.glb": "e685bf13c2ccbd654c969907e5bc1e2f8adb164e"
+      }
     },
     {
       "id": "fenway",
@@ -156,7 +198,10 @@
       "url": "https://3dwarehouse.sketchup.com/",
       "license": "3D Warehouse General Model License; exact item/distribution terms under review",
       "status": "review",
-      "use": "Fenway Park"
+      "use": "Fenway Park",
+      "gitBlobs": {
+        "assets/models/fenway.glb": "bbc097a66e6e9436b02f8d0d5012d6ffa83ba46c"
+      }
     },
     {
       "id": "td-garden",
@@ -170,7 +215,10 @@
       "license": "unknown",
       "status": "unknown",
       "use": "TD Garden interior",
-      "notes": "Owner documented public release in v0.6.26 despite unverified original author/license; published bytes are not automatically licensed."
+      "notes": "Owner documented public release in v0.6.26 despite unverified original author/license; published bytes are not automatically licensed.",
+      "gitBlobs": {
+        "assets/models/garden.glb": "c5fd2379d56b87fdc3d58a46b90c56b9ad42e44e"
+      }
     }
   ]
 }

@@ -3,7 +3,7 @@ import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {test} from 'node:test';
-import {auditAssets} from '../tools/audit-assets.mjs';
+import {auditAssets,gitBlobSha} from '../tools/audit-assets.mjs';
 function root(t){
   const dir=mkdtempSync(path.join(tmpdir(),'scurry-asset-'));
   t.after(()=>rmSync(dir,{recursive:true,force:true}));
@@ -21,7 +21,8 @@ function manifest(status='verified'){
   return {schemaVersion:1,assets:[{
     id:'new-test',files:['assets/models/test.glb'],kind:'prop',author:'Artist',
     source:'Artist site',url:'https://example.org/model',license:'CC0-1.0',
-    licenseEvidenceUrl:'https://example.org/model/license',status,use:'test'
+    licenseEvidenceUrl:'https://example.org/model/license',status,use:'test',
+    gitBlobs:{'assets/models/test.glb':gitBlobSha(glb())}
   }]};
 }
 test('valid verified model checks out',(t)=>{
@@ -53,4 +54,17 @@ test('asset path traversal cannot escape repository',(t)=>{
   const dir=root(t);const m=manifest();
   m.assets[0].files=['assets/models/../../private.glb'];
   assert.match(auditAssets(dir,m).errors.join(','),/invalid path/);
+});
+
+test('model swap with unchanged source ledger hash is caught',(t)=>{
+  const dir=root(t);
+  const swapped=glb();swapped[swapped.length-1]=0x00;
+  writeFileSync(path.join(dir,'assets/models/test.glb'),swapped);
+  const out=auditAssets(dir,manifest());
+  assert.match(out.errors.join(','),/model bytes differ from recorded gitBlob/);
+});
+test('missing provenance hash is not accepted even with claimed CC0 evidence',(t)=>{
+  const dir=root(t);writeFileSync(path.join(dir,'assets/models/test.glb'),glb());
+  const m=manifest();delete m.assets[0].gitBlobs;
+  assert.match(auditAssets(dir,m).errors.join(','),/missing exact gitBlob identity/);
 });

@@ -14,6 +14,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 
 - [Engineering wiki](docs/ENGINEERING-WIKI.md): architecture, simulation invariants, collision contracts, world expansion, assets and mobile performance.
 - [Public 3D model pipeline](docs/MODEL-SOURCING.md): provenance and licensing, scale/LOD budgets, world quality and reusable intake process.
+- [Screened public 3D model candidates](docs/MODEL-CANDIDATES.md): exact original CC0 item pages, art-fit verdicts and references; unimported until source/quality clearance.
 - [Model provenance inventory](assets/model-provenance.json): all 24 3D model and dependency files, including honest open review status.
 - [Playtest & troubleshooting](docs/QA-PLAYTEST.md): repeatable desktop/iPhone collision routes, telemetry (`?diag=1`), evidence template and limitations.
 - [Engineering decisions](docs/DECISIONS.md): why the controller and mobile lifecycle work the way they do.
@@ -21,7 +22,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 - [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, still screenshots, real desktop PLAY/WALK/JUMP/PORTAL round trips, simulated mobile dual-touch controls, optional map/notes checks, and screenshots/console artifacts on pushes to main.
 
-**Current version: v0.6.61.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. Native iPhone Safari and real-GPU/performance playtesting remain required.
+**Current version: v0.6.62.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. Native iPhone Safari and real-GPU/performance playtesting remain required.
 
 ## Controls
 

@@ -242,3 +242,8 @@ For a new 3D asset: record the exact original item URL, author, license version 
 - Inspect Charles Street scene in screenshots `desktop-charles.png` and `desktop-charles-human-eye.png`, and in physical iPhone Safari near Garden gate entries. Stone posts and dark ironwork should read at squirrel scale, plaques should remain restrained and not look like giant floating billboards.
 - Walk through all four original gaps, from both directions. The stone piers must have sensible physical hitboxes but **must not** create an invisible wall across a gateway. Jump against pier/cap, return to grass, check camera clipping and high-grade ground contact.
 - Compare architecture against official City of Boston park master plan; mark these procedural piers as simplified reference-inspired models, not exact original GPS/mesh geometry. Record photos before changing gate placements.
+
+
+## Asset byte-swap audit (v0.6.62)
+
+Before replacing a GLB, glTF, BIN or texture, check that the `gitBlobs[path]` identity changes in the manifest in the same commit and that source evidence is updated. `node tools/audit-assets.mjs` should reject a binary overwritten without its manifest identity and reject any symlink to an external model. Do not interpret a green hash audit as copyright permission. Screen candidate models in `docs/MODEL-CANDIDATES.md` at both eye heights before importing anything.

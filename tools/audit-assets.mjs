@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {createHash} from 'node:crypto';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export const LEGACY_REVIEW_IDS=new Set(["bench","park-bench","dog","man","shiba","lantern","elm-pack","city-hall","fenway-surrounds","hatch-shell","fenway","td-garden"]);
 const EXT=new Set(['.glb','.gltf','.bin','.png','.jpg','.jpeg','.webp']);
@@ -18,7 +19,13 @@ function pathsAt(dir,root,out=[]){
 }
 function safe(s){
   return typeof s==='string'&&s.startsWith('assets/models/')&&
-    !s.includes('\\')&&!s.includes('//')&&!s.split('/').some(p=>p==='..'||p==='.');
+    !/[\\%?:#]/.test(s)&&!s.includes('//')&&
+    !s.split('/').some(p=>p==='..'||p==='.');
+}
+// Git blob identity, not a license signature. Prevent silent binary
+// replacement of a previously reviewed package without a manifest diff.
+export function gitBlobSha(data) {
+  return createHash('sha1').update('blob '+data.length+'\0').update(data).digest('hex');
 }
 function glbIssue(file){
   const data=fs.readFileSync(file);
@@ -61,9 +68,15 @@ export function auditAssets(root,manifest,{legacyIds=LEGACY_REVIEW_IDS}={}){
       seen.set(p,a.id);
       const file=path.join(root,p);
       if(!fs.existsSync(file)){errors.push(p+': missing file');continue;}
-      const stat=fs.statSync(file);
-      if(!stat.isFile()||stat.size===0)errors.push(p+': empty/nonfile');
+      const stat=fs.lstatSync(file);
+      if(stat.isSymbolicLink()){errors.push(p+': symlinks cannot be registered as model binaries');continue;}
+      if(!stat.isFile()||stat.size===0){errors.push(p+': empty/nonfile');continue;}
       if(stat.size>8*1024*1024)errors.push(p+': exceeds per-file mobile 8MiB budget');
+      const expected=a.gitBlobs?.[p];
+      if(typeof expected!=='string'||!/^[a-f0-9]{40}$/.test(expected))
+        errors.push(p+': missing exact gitBlob identity in provenance manifest');
+      else if(gitBlobSha(fs.readFileSync(file))!==expected)
+        errors.push(p+': model bytes differ from recorded gitBlob identity');
       if(p.endsWith('.glb')){
         const issue=glbIssue(file);
         if(issue)errors.push(p+': '+issue);

@@ -1353,3 +1353,8 @@ Replaced the old one-mesh-per-post perimeter with five shared instanced meshes: 
 ## v0.6.61 — gateway architectural details, ground collision and inspection views
 
 From City of Boston master-plan references, code-built eight granite piers across four existing fence openings with correct ground Y, collidable solid AABBs, capped crowns/bronze collars and small canvas-text plaques (Garden 1837 / Boston Common). Pure entrance-layout.js and four tests ensure entrances stay open. Public model/texture inventory stays unchanged, as no licensed source image or downloaded model is introduced. Headless WebGL screenshot check now includes Charles Street same-XZ 0.25m squirrel and 1.7m human reference viewpoints. Distinguish historically inspired schematic art from measured site geometry, and manually review screenshots on real GPU.
+
+
+## v0.6.62 — model hash fingerprints and screened public candidates
+
+Every model, glTF external BIN and texture in the provenance ledger now includes its exact Git blob SHA-1, verified against file bytes by the pure Node audit, with extra regressions for silent asset swaps and missing fingerprints. A model with a preexisting review-ID cannot be replaced invisibly under the old name without a manifest fingerprint change. An unreviewed model still cannot enter as a new ID. Added `docs/MODEL-CANDIDATES.md` for individually verified CC0 model pages for fence, bench, tree, trash can; these are **not** imported and need art/scale/perf acceptance. The full source/rights process remains in `docs/MODEL-SOURCING.md`. SHA identity is not rights clearance.

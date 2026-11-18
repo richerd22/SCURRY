@@ -306,3 +306,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Add simple authored granite entrance piers and small orientation plaques at the four previously defined fence gaps. Sample terrain Y for each shaft and expose exactly its occupied AABB as a gameplay solid. Keep the open middle of every passage clear, and assert it in pure unit tests. Add repeatable software-WebGL screenshots of the same Charles Street pose at squirrel and human reference heights.
 
 **Consequence:** A stronger park-specific visual identity and consistent physical obstruction at the piers without inventing inaccessible entrances. This is schematic historically inspired artwork, not faithful reconstruction; sources and approximations are documented.
+
+
+## ADR-035 — old public model filenames must not become rights-check loopholes
+
+**Context:** The first asset audit blocked a brand-new unknown-rights model ID, but a developer could overwrite a file under a preexisting grandfathered ID and use the legacy warnings as a quiet bypass.
+
+**Decision:** Record the Git blob SHA-1 identity of every existing model and related binary/texture. CI must compare bytes for each path and reject missing identities or symlinks. A deliberate replacement requires a visible manifest diff and fresh author/source/license evidence; unrelated sourced model candidates remain a separate *not yet imported* review queue.
+
+**Consequence:** Future code reviews can distinguish the original unresolved legacy bytes from an unreviewed substitution. Hash identity alone is neither licence proof nor a defense against someone deliberately changing both the file and manifest, so human source review still matters.
