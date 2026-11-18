@@ -456,7 +456,9 @@ export function buildCharlesStreet(scene, groundHeight) {
   // instantly pop 13cm at 90Hz (captured in the Charles Street walk trace).
   // Geometry and physical support are generated from the same profile.
   const sidewalks = makeCharlesSidewalkLayout(groundHeight);
-  scene.add(instanced(boxGeo(),concrete,sidewalks.cores));
+  const flatWalk=instanced(boxGeo(),concrete,sidewalks.cores);
+  flatWalk.userData.scurrySidewalkSurface=true;
+  scene.add(flatWalk);
   for(const core of sidewalks.cores)S.platformBoxes.push(core.collision);
 
   // Unit wedge has top .07 above its instance centre at the high end
@@ -476,7 +478,9 @@ export function buildCharlesStreet(scene, groundHeight) {
   }
   for(const highAtRight of [true,false]){
     const rows=sidewalks.ramps.filter(r=>r.highAtRight===highAtRight);
-    scene.add(instanced(curbWedge(highAtRight),concrete,rows));
+    const slope=instanced(curbWedge(highAtRight),concrete,rows);
+    slope.userData.scurrySidewalkSurface=true;
+    scene.add(slope);
   }
   for(const ramp of sidewalks.ramps)S.platformBoxes.push(ramp.collision);
 

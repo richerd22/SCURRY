@@ -30,6 +30,7 @@ import { initTouch } from './ui/touch.js';
 import { initParkMap, updateParkMap } from './ui/park-map.js';
 import { initDiscoveries, updateDiscoveries } from './systems/discoveries.js';
 import { createContactRecorder } from './systems/contact-recorder.js';
+import { boxSurfaceHeight } from './systems/collision.js';
 import { beginRelocation, completeRelocation, advanceRelocation } from './systems/relocation.js';
 import { createMobileQualityState, advanceMobileQuality } from './systems/mobile-quality.js';
 import { whenModelsSettled } from './systems/models.js';
@@ -439,6 +440,37 @@ if (qaLocal) {
       return {steps,start,end:{x:p.pos.x,y:p.pos.y,z:p.pos.z},
         horizontalDistance:Math.hypot(p.pos.x-start.x,p.pos.z-start.z),
         minClear,minMeshClear,maxStepY,nonGround,climbs,penetrations,meshSamples,samples};
+    },
+    // Second independent visual/physics parity: 168 points across both
+    // Charles Street sidewalks, including both ramp shoulders. Raycast the
+    // actually *rendered* instanced concrete and compare with the ramp Y
+    // used by the indexed player support solver.
+    surveySidewalkSurfaces: () => {
+      const meshes=scene.children.filter(o=>o.userData.scurrySidewalkSurface);
+      const boxes=S.platformBoxes.filter(b=>b.isCharlesSidewalk);
+      if(meshes.length!==3||boxes.length!==72)
+        throw new Error('sidewalk mesh or collider registrations missing');
+      const ray=new THREE.Raycaster(),origin=new THREE.Vector3(),down=new THREE.Vector3(0,-1,0);
+      let count=0,maxAbsDiff=0,worst=null,minSurface=Infinity,maxSurface=-Infinity;
+      for(let zz=-96;zz<96;zz+=16)for(const cx of [-59.9,-40.1]){
+        const z=zz+8;
+        for(const dx of [-1.2,-.82,-.45,0,.45,.82,1.2]){
+          const x=cx+dx;
+          const matching=boxes.filter(b=>x>=b.minX-1e-8&&x<=b.maxX+1e-8&&
+            z>=b.minZ&&z<=b.maxZ);
+          if(!matching.length)throw new Error('missing physical curb '+x+','+z);
+          const support=Math.max(...matching.map(b=>boxSurfaceHeight(b,x)));
+          origin.set(x,30,z);ray.set(origin,down);
+          const hit=ray.intersectObjects(meshes,false)[0];
+          if(!hit)throw new Error('missing visual curb at '+x+','+z);
+          const diff=support-hit.point.y,absolute=Math.abs(diff);
+          if(absolute>maxAbsDiff){maxAbsDiff=absolute;worst={x,z,support,visual:hit.point.y,diff};}
+          minSurface=Math.min(minSurface,hit.point.y);
+          maxSurface=Math.max(maxSurface,hit.point.y);
+          count++;
+        }
+      }
+      return {count,maxAbsDiff,worst,minSurface,maxSurface};
     },
     // Global survey: an independent Three.js triangle raycast at hundreds
     // of park coordinates. Detect mismatches between visible-ground

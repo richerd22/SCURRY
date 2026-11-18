@@ -205,6 +205,14 @@ async function checkGameplay() {
       await page.keyboard.press('e');
       await page.waitForFunction(() => !window.__scurryQA.state().inBurrow,null,{timeout:10000});
     }
+    // Independent *rendered* sidewalk wedge parity, not merely shared
+    // formula agreement between the layout and platform collision.
+    const curbs=await page.evaluate(()=>window.__scurryQA.surveySidewalkSurfaces());
+    writeFileSync(out+'/sidewalk-visual-collision.json',JSON.stringify(curbs,null,2));
+    assert.equal(curbs.count,168,'full Charles Street sidewalk visual sample grid');
+    assert.ok(curbs.maxAbsDiff<.005,
+      'concrete mesh not aligned to actual player support: '+JSON.stringify(curbs.worst));
+    console.log('CURB VISUAL PARITY '+JSON.stringify(curbs));
     // World-wide independent mesh-vs-ground survey before actual movement:
     // 651 spatial points detect a miss between collision math and the
     // triangulated terrain even where no chosen path happened to go.

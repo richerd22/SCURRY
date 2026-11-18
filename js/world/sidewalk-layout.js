@@ -20,21 +20,21 @@ export function makeCharlesSidewalkLayout(groundAt){
       cores.push({
         p:[cx,floor+centerY,centerZ],s:[flatWidth,slabThickness,length],
         collision:{minX:cx-halfWidth+shoulder,maxX:cx+halfWidth-shoulder,
-          ...common,y:top}
+          ...common,y:top,isCharlesSidewalk:true}
       });
       ramps.push({
         highAtRight:true,
         p:[cx-halfWidth+shoulder/2,floor+centerY,centerZ],
         s:[shoulder,1,length],
         collision:{minX:cx-halfWidth,maxX:cx-halfWidth+shoulder,
-          ...common,y:top,y0:lip,y1:top}
+          ...common,y:top,y0:lip,y1:top,isCharlesSidewalk:true}
       });
       ramps.push({
         highAtRight:false,
         p:[cx+halfWidth-shoulder/2,floor+centerY,centerZ],
         s:[shoulder,1,length],
         collision:{minX:cx+halfWidth-shoulder,maxX:cx+halfWidth,
-          ...common,y:top,y0:top,y1:lip}
+          ...common,y:top,y0:top,y1:lip,isCharlesSidewalk:true}
       });
     }
   }
