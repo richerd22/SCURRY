@@ -172,3 +172,8 @@ The old civilian wanderer selector included PATHS[6], the literal Frog Pond stra
 ## v0.6.98 — CI caught an NPC waypoint misindex before release acceptance
 
 The v0.6.97 pure 35cm path sampler failed (154/155 tests passed): our index change had mistakenly replaced the safe northeast Park Street entry route at PATHS[6] with the actual underwater Frog Pond feeder at PATHS[7]. The canonical world.js PATHS list includes an extra Park Street connector added in v0.6.90, shifting later entries. Restored CIVILIAN_PATH_INDICES to [0,1,4,6,8,11], precisely the safe original selection; retained the new ranger dry shoreline route and KEEP the strict sampling test. The regression now explicitly asserts index 7 is excluded. Lesson: array-index assumptions must be proven against the current world map, not stale comments. No reduction in collision or walkable requirements.
+
+
+## v0.6.99 — two real Garden sculptures become actionable
+
+Both **Make Way for Ducklings** (Nancy Schön, 1987, eight children of Mrs. Mallard) and **George Washington equestrian monument** (Thomas Ball, unveiled July 3, 1869) now expose E inspections at the actual authored sculptures near Beacon/Charles and Arlington entrance. One pure sculpture facts layout sets both geometry coordinates and interaction anchors, and existing 14 Field Notes remain unaltered. Interactions verify same realm and real feet height, never allow an arbitrary remote or elevated trigger, reuse HUD toast and E touch. No new geometry/images/colliders, no changed game save or art licenses. Sources: https://publicartboston.com/content/make-way-ducklings , https://friendsofthepublicgarden.org/our-parks/the-garden/ .

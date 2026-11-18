@@ -8,6 +8,7 @@ import { ETHER, etherColliders } from './ether-layout.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE } from './boston-landmark-layout.js';
 import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
+import { GARDEN_ART } from './garden-art-facts.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -990,6 +991,27 @@ function buildSwanBoats(scene) {
   }
 }
 
+// Shared lightweight E action: validate realm, horizontal and vertical
+// reach at execution time. Reading plaques on a rooftop cannot trigger it.
+function addGardenArtInteraction(fact,groundY) {
+  S.interactables.push({
+    x:fact.x,z:fact.z,y:groundY,r:fact.r,
+    label:()=>{
+      const p=S.player;
+      return p.inHollow||p.inBurrow||p.inMBTA||p.inFenway||
+        p.inGarden||p.inCityHall||p.inEsplanade||p.onSwanBoat?null:fact.label;
+    },
+    action:()=>{
+      const p=S.player;
+      if(p.inHollow||p.inBurrow||p.inMBTA||p.inFenway||
+         p.inGarden||p.inCityHall||p.inEsplanade||p.onSwanBoat)return;
+      if(Math.hypot(p.pos.x-fact.x,p.pos.z-fact.z)>fact.r+.05||
+        Math.abs(p.pos.y-groundY)>1.65)return;
+      toast(fact.message,3.5);
+    }
+  });
+}
+
 // --- Make Way for Ducklings, Garden path near the Charles St gate ---
 // Polished v0.6.13: necks (mother's tall, ducklings' stubby), flattened
 // bills instead of round cones, tail wedges, chunky duckling heads, and
@@ -1020,7 +1042,7 @@ function buildDucklings(scene) {
     g.add(d);
   }
   // Beacon/Charles corner of the Garden (not the south lagoon shore).
-  const x = -78, z = -80, gy = groundHeight(x, z);
+  const {x,z}=GARDEN_ART.ducklings,gy=groundHeight(x,z);
   g.position.set(x, gy, z);
   g.rotation.y = 0.8;
   scene.add(g);
@@ -1029,6 +1051,7 @@ function buildDucklings(scene) {
   cobble.rotation.y = 0.8;
   scene.add(cobble);
   S.solids.push({ x, z, r: 1.6, minY: gy - 0.1, maxY: gy + 2 });
+  addGardenArtInteraction(GARDEN_ART.ducklings,gy);
 }
 
 // --- George Washington statue, Garden south mall ---
@@ -1040,7 +1063,7 @@ function buildDucklings(scene) {
 function buildWashington(scene) {
   const g = new THREE.Group();
   // Arlington Street entrance opposite Commonwealth Avenue Mall.
-  const x = -193, z = 0, gy = groundHeight(x, z);
+  const {x,z}=GARDEN_ART.washington,gy=groundHeight(x,z);
   box(4.4, 2.2, 3.2, granite, 0, 1.1, 0, g);
   box(3.6, 0.7, 2.6, stone, 0, 2.55, 0, g);
   const TOP = 2.9; // pedestal cap surface; hooves stand here
@@ -1119,6 +1142,7 @@ function buildWashington(scene) {
   S.platformBoxes.push({ minX: x - 2.2, maxX: x + 2.2, minZ: z - 1.6, maxZ: z + 1.6, y: gy + 2.2 });
   S.platformBoxes.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 1.3, maxZ: z + 1.3, y: gy + 2.9 });
   S.solids.push({ x, z, r: 0.95, minY: gy + 2.9, maxY: gy + 7.0 });
+  addGardenArtInteraction(GARDEN_ART.washington,gy);
 }
 
 
