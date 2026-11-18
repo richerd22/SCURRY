@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
 import { meshTerrainHeight } from '../systems/collision.js';
+import { insideParkLawn } from './ground-rules.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
 
@@ -111,6 +112,10 @@ export function inWater(x, z) {
 }
 export function onRoad(x, z) { return x > MAP.charlesMinX - 1 && x < MAP.charlesMaxX + 1; }
 export function isGrass(x, z) {
+  // The texture canvas paints grass beneath paved city apron too. That is
+  // visual fill, not permission to bury food on the sidewalk or outside the
+  // park: the authored two-park footprint is the only eligible region.
+  if (!insideParkLawn(x, z, MAP)) return false;
   if (inWater(x, z) || onRoad(x, z)) return false;
   if (distToPaths(x, z) < 2.4) return false;
   return true;

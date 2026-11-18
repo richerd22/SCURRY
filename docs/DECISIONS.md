@@ -100,3 +100,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Add a lightweight, user-opened Canvas 2D atlas using the game's actual `MAP` and `PATHS`, with one directional player marker. Render at 5 Hz only while visible, cap pixel density, and label other realms explicitly rather than rendering misleading out-of-bounds markers. Desktop G and a touch MAP button toggle it. No image generation, network assets, or build step.
 
 **Consequence:** More navigable park without ongoing GPU cost or changing gameplay physics. It is an authored schematic: individual building footprints and far-destination floor plans remain outside scope, and a future discovery system can extend the markers without modifying terrain.
+
+
+## ADR-012 — a painted landscape is not a gameplay soil mask
+
+**Context:** `isGrass()` was a negative test (not water, road or path), which classified the city apron outside the Common and Garden as grass. That let carried food be buried on paved ground. Food tosses also applied the ground adjustment twice.
+
+**Decision:** Classify positive membership in the existing `MAP.garden` or `MAP.common` bounds before applying water/road/path exclusions. Move toss destination Y to its real floor once at launch, then interpolate and add a single vertical arc.
+
+**Consequence:** No side-of-park burial exploit, and friendlier visible food landings. This is still a schematic lawn mask, not a botanical survey of every plaza; more exact soil masks can be added when proved by geometry.

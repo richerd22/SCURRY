@@ -61,7 +61,11 @@ export function tossFood(type, from, to) {
   const mesh = makeFoodMesh(type);
   mesh.position.copy(from);
   S.scene.add(mesh);
-  projectiles.push({ mesh, type, from: from.clone(), to: to.clone(), t: 0, dur: 0.55 });
+  // All toss endpoints settle onto the home terrain. Precompute a real
+  // end height rather than mixing target.y=0 with another ground correction
+  // in each frame (that used to dip below ground near touchdown).
+  const target = new THREE.Vector3(to.x, groundHeight(to.x, to.z) + 0.05, to.z);
+  projectiles.push({ mesh, type, from: from.clone(), to: target, t: 0, dur: 0.55 });
 }
 
 // ambient spawns near benches, carts, trash cans
@@ -123,7 +127,7 @@ export function updateFood(dt) {
       spawnFood(p.type, p.to.x, p.to.z);
     } else {
       p.mesh.position.lerpVectors(p.from, p.to, p.t);
-      p.mesh.position.y += Math.sin(p.t * Math.PI) * 1.1 + (groundHeight(p.to.x, p.to.z) - p.from.y) * p.t;
+      p.mesh.position.y += Math.sin(p.t * Math.PI) * 1.1;
       p.mesh.rotation.x += dt * 9;
     }
   }

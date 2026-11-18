@@ -129,3 +129,17 @@ test('repeat food spawns share material and acorn cap geometry', async () => {
   assert.equal(a.mesh.children[0].geometry, b.mesh.children[0].geometry);
   assert.equal(a.mesh.children[0].material, b.mesh.children[0].material);
 });
+
+test('toss trajectory stays on the correct arc above terrain instead of sinking below the target', async () => {
+  const h = await harness();
+  const source = new Vector3(0,1.1,0), end = new Vector3(1,0,1);
+  h.tossFood('pretzel', source, end);
+  const mesh = [...h.S.scene.meshes][0];
+  h.updateFood(.55 * .90);
+  const expectY = 1.1*.1 + .05*.9 + Math.sin(.9*Math.PI)*1.1;
+  assert.ok(Math.abs(mesh.position.y-expectY)<1e-9,
+    'near landing the tossed food should have a single, smooth arc');
+  h.updateFood(.55*.1);
+  assert.equal(h.S.foods.length,1,'landing creates one collectible food item');
+  assert.equal(h.S.foods[0].floorY,0,'landed food rests on terrain');
+});

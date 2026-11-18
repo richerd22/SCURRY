@@ -1241,3 +1241,8 @@ The squirrel's camera-attached carried food visual used to allocate a fresh `Sph
 ## v0.6.40 (Nov 18 2026) — schematic park atlas
 
 Added an optional map to improve wayfinding from squirrel height. `js/ui/park-map.js` paints a Canvas 2D atlas only while open (~5Hz, capped DPR2). It reads the same `MAP` footprints and `PATHS` geometry as world.js, water ellipses, major landmarks, runtime hollow-tree and squirrel XY/Z/yaw. Buttons: G desktop, MAP fixed button on touch. Separate coordinate realms display destination title and return instructions rather than a false dot over the Common; backgrounding closes it. `js/ui/map-math.js` provides pure projection, orientation and realm naming; three Node tests cover it. No extra Three scene, build step or generated imagery. Playtest mobile overlay touch targets, readable labels and pointer-lock interaction before calling UI acceptance.
+
+
+## v0.6.41 (Nov 18 2026): soil membership and toss-arc correction
+
+`isGrass()` incorrectly accepted sidewalk/city apron outside the park because its only logic was exclusion of water, paths and Charles Street. New pure `world/ground-rules.js` limits candidate burial to the actual Common/Garden footprints before those exclusions, with two Node tests for boundary and invalid coordinates. `food.js` tosses previously interpolated to a target Y of zero and then applied the ground elevation correction again on each tick, visibly sinking into terrain near touchdown; now a launch-time ground endpoint is used with one sine arc. An additional regression checks the trajectory and spawned landing collectible. No changes to spawn probabilities, world geometry or material art.

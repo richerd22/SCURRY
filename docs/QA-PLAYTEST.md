@@ -105,3 +105,10 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 - Check crossing the bridge, bandstand, Monument, Fountain, Frog Pond, Washington and runtime Hollow Tree marker. Markers are schematic but should align in the right neighborhoods.
 - On iPhone, MAP button should be reachable with the right thumb but should not steal joystick/look pointers; opening/closing it should not alter movement state. Rotate the phone and check canvas fit / labels / safe areas.
 - Travel into the rat tunnels and a remote destination. The map must show the destination title instead of plotting thousands-of-metres-away coordinates onto the Common. Background Safari with map open; it should reset closed on return.
+
+
+## Soil boundary / thrown food (v0.6.41)
+
+- Collect food, stand on grassy ground inside each of the Common and Public Garden, and verify BURY is available when away from a wet path, Charles Street, water and objects.
+- Approach a sidewalk just beyond the park footprint; BURY must not appear even if the underlay texture is green. Try corners and Charles Street crossings.
+- Accept a tossed snack from a human or trash can. The arc should stay in view, settle without diving through the lawn near touchdown, and create exactly one pickup.
