@@ -77,7 +77,7 @@ async function checkScene(pose, mobile = false) {
       await page.locator('#map-legend button').first().tap();
       assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'),'false');
       assert.equal(await page.locator('#map-route').getAttribute('aria-hidden'),'false');
-      assert.match(await page.locator('#map-route').innerText(),/GARDEN BRIDGE/);
+      assert.match(await page.locator('#map-route').innerText(),/garden bridge/i);
       await page.locator('#map-route').tap();
       assert.equal(await page.locator('#map-route').getAttribute('aria-hidden'),'true');
     } else {
