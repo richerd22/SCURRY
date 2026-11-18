@@ -25,6 +25,8 @@ export const CORRIDORS = [
   { id: 'ring_e',     minX: 17,   maxX: 20,   minZ: -14, maxZ: 14 },
   { id: 'br_hollow',   minX: -1.5,  maxX: 1.5,  minZ: -20, maxZ: -11 },
   { id: 'br_frog',     minX: -26,   maxX: -17,  minZ: -1.5, maxZ: 1.5 },
+  // Physical missing link between spoke_w and ring_w: this gap was solid dirt.
+  { id: 'join_w', minX: -17.3, maxX: -13.7, minZ: -1.5, maxZ: 1.5 },
   { id: 'br_monument', minX: -17.5, maxX: -14.5, minZ: 11, maxZ: 20 },
   { id: 'br_garden',   minX: -1.5,  maxX: 1.5,  minZ: 11,  maxZ: 20 },
   { id: 'br_mall',     minX: 14.5,  maxX: 17.5, minZ: 11,  maxZ: 20 },
