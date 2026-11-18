@@ -247,7 +247,7 @@ function buildSnag(scene) {
   const rec = { x, z, r: 0.42, gy, trunkTop: canopyY - 0.6, canopyY, canopyR: 1.7, snag: true };
   S.trees.push(rec);
   S.platforms.push({ x, z, r: 1.55, y: py });
-  S.solids.push({ x, z, r: 0.55 });
+  S.solids.push({ x, z, r: 0.55, minY: gy - 0.2, maxY: rec.trunkTop });
   // bare grey trunk + stub limbs, no leaves - it is very dead
   const g = new THREE.Group();
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.52, canopyY - gy, 7), snagMat);

@@ -378,7 +378,7 @@ export function buildTremontRow(scene, groundHeight) {
     for (const sx of [-0.8, 0.8]) for (const sz of [-1.38, 1.38]) {
       carWheels.push({ p: [x + sx, gy + 0.34, z + sz], s: [1, 1, 1], rz: Math.PI / 2 });
     }
-    S.solidBoxes.push({ minX: x - 0.95, maxX: x + 0.95, minZ: z - 2.25, maxZ: z + 2.25 });
+    S.solidBoxes.push({ minX: x - 0.95, maxX: x + 0.95, minZ: z - 2.25, maxZ: z + 2.25, minY: gy - 0.1, maxY: gy + 1.6 });
   }
   for (const z of [-92, -58, -40, -8, 34, 52, 78, 92]) car(213.4, z);
   scene.add(instanced(boxGeo(), paintMat, carBodies));
@@ -491,7 +491,7 @@ export function buildCharlesStreet(scene, groundHeight) {
     for (const sx of [-0.8, 0.8]) for (const sz of [-1.38, 1.38]) {
       carWheels.push({ p: [x + sx, gy + 0.34, z + sz], s: [1, 1, 1], rz: Math.PI / 2 });
     }
-    S.solidBoxes.push({ minX: x - 0.95, maxX: x + 0.95, minZ: z - 2.25, maxZ: z + 2.25 });
+    S.solidBoxes.push({ minX: x - 0.95, maxX: x + 0.95, minZ: z - 2.25, maxZ: z + 2.25, minY: gy - 0.1, maxY: gy + 1.6 });
   }
   for (const z of [-88, -52, -38, 2, 48, 64, 84]) car(-56.1, z, 1);
   for (const z of [-80, -46, -6, 12, 56, 76]) car(-43.9, z, -1);

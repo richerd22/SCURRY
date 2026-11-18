@@ -51,7 +51,8 @@ function buildBenches(scene) {
     scene.add(g);
     benchGroups.push({ g, parts });
     BENCH_SPOTS.push({ x, z, rotY, gy });
-    S.solids.push({ x, z, r: 0.8 });
+    S.solids.push({ x, z, r: 0.8, minY: gy - 0.1, maxY: gy + 0.545 });
+    S.platforms.push({ x, z, r: 0.57, y: gy + 0.545 });
   }
   swapBenches();
 }
@@ -126,7 +127,7 @@ function buildLamps(scene) {
     g.position.set(x, gy, z);
     scene.add(g);
     S.lamps.push({ sprite, bulbMat, light, x, z });
-    S.solids.push({ x, z, r: 0.3 });
+    S.solids.push({ x, z, r: 0.3, minY: gy - 0.1, maxY: gy + 3.45 });
     lampGroups.push({ g, post });
   }
   swapLampPosts();
@@ -157,7 +158,8 @@ function buildTrashCans(scene) {
     can.position.set(x, gy + 0.48, z);
     can.castShadow = true;
     scene.add(can);
-    S.solids.push({ x, z, r: 0.5 });
+    S.solids.push({ x, z, r: 0.5, minY: gy - 0.1, maxY: gy + 0.955 });
+    S.platforms.push({ x, z, r: 0.4, y: gy + 0.955 });
     (S.trashCans = S.trashCans || []).push(new THREE.Vector3(x, gy, z));
   }
 }
@@ -229,6 +231,7 @@ function buildPretzelCart(scene) {
   g.position.set(x, gy, z);
   g.rotation.y = -0.5;
   scene.add(g);
-  S.solidBoxes.push({ minX: x - 1.2, maxX: x + 1.2, minZ: z - 0.8, maxZ: z + 0.8 });
+  S.solidBoxes.push({ minX: x - 1.2, maxX: x + 1.2, minZ: z - 0.8, maxZ: z + 0.8, minY: gy - 0.1, maxY: gy + 1.55 });
+  S.platformBoxes.push({ minX: x - 1.0, maxX: x + 1.0, minZ: z - 0.55, maxZ: z + 0.55, y: gy + 1.55 });
   S.pretzelCart = new THREE.Vector3(x, gy, z);
 }

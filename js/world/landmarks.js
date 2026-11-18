@@ -33,8 +33,8 @@ function cyl(rt, rb, h, mat, x, y, z, parent, seg = 12) {
   parent.add(m);
   return m;
 }
-function solidBox(x, z, hw, hd, parent4) {
-  S.solidBoxes.push({ minX: x - hw, maxX: x + hw, minZ: z - hd, maxZ: z + hd });
+function solidBox(x, z, hw, hd, maxY = Infinity, minY = -Infinity) {
+  S.solidBoxes.push({ minX: x - hw, maxX: x + hw, minZ: z - hd, maxZ: z + hd, minY, maxY });
 }
 
 export function buildLandmarks(scene) {
@@ -129,7 +129,10 @@ function buildStateHouse(scene) {
   // (windows live in the facade texture now - they glow at dusk via emissiveMap)
   g.position.set(x, gy, z);
   scene.add(g);
-  solidBox(x, z, 29, 10);
+  solidBox(x, z, 29, 10, gy + 14.4, gy - 1);
+  // The main-block roof is walkable; tower geometry has its own collision.
+  S.platformBoxes.push({ minX: x - 27.8, maxX: x + 27.8, minZ: z - 7.8, maxZ: z + 7.8, y: gy + 14.4 });
+  S.solids.push({ x, z, r: 5.2, minY: gy + 14.4, maxY: gy + 21.55 });
   S.stateHouseMat = brick; // daycycle raises the window glow at dusk
 }
 
@@ -173,7 +176,7 @@ function buildMonument(scene) {
     fig.position.set(fx, 1.7, fz);
     fig.rotation.y = Math.atan2(fx, fz);
     g.add(fig);
-    S.solids.push({ x: x + fx, z: z + fz, r: 0.45 });
+    S.solids.push({ x: x + fx, z: z + fz, r: 0.45, minY: gy + 1.2, maxY: gy + 4 });
   }
   // the column: lathe-turned with entasis + fluting, capital on top
   cyl(1.7, 1.85, 0.5, stone, 0, 4.85, 0, g, 14);
@@ -203,7 +206,7 @@ function buildMonument(scene) {
   box(0.07, 1.05, 0.72, bronze, 0.62, 24.75, 0.38, g, false);
   g.position.set(x, gy, z);
   scene.add(g);
-  S.solids.push({ x, z, r: 3.1 }); // pedestal + column core; the steps stay walkable
+  S.solids.push({ x, z, r: 3.1, minY: gy, maxY: gy + 25 }); // pedestal + column core; the steps stay walkable
   // walkable steps
   S.platformBoxes.push({ minX: x - 5.5, maxX: x + 5.5, minZ: z - 5.5, maxZ: z + 5.5, y: gy + 1.2 });
   S.platformBoxes.push({ minX: x - 4.25, maxX: x + 4.25, minZ: z - 4.25, maxZ: z + 4.25, y: gy + 2.4 });
@@ -390,7 +393,7 @@ function buildBrewerFountain(scene) {
   fh.position.set(0, 4.48, 0); fh.castShadow = true; g.add(fh);
   g.position.set(x, gy, z);
   scene.add(g);
-  S.solids.push({ x, z, r: 5.1 });
+  S.solids.push({ x, z, r: 5.1, minY: gy, maxY: gy + 3.5 });
 }
 
 // --- Park Street station headhouse ---
@@ -526,7 +529,13 @@ function buildParkStStation(scene) {
   box(3.45, 0.05, 0.05, greenMetal, 5.6, 1.16, -2.2, g, false);
   g.position.set(x, gy, z);
   scene.add(g);
-  solidBox(x, z, 3.6, 2.6);
+  solidBox(x, z, 3.6, 2.6, gy + 3.65, gy - 0.1);
+  // Approximate the visible barrel roof in seven thin, walkable strips.
+  for (let i = -3; i <= 3; i++) {
+    const rx = i * 0.9, roofY = gy - 2.1 + Math.sqrt(6.6 * 6.6 - rx * rx);
+    S.platformBoxes.push({ minX: x + rx - 0.46, maxX: x + rx + 0.46,
+      minZ: z - 2.3, maxZ: z + 2.3, y: roofY });
+  }
 }
 
 // --- Park Street Church, the Common's NE corner ---
@@ -700,6 +709,13 @@ function buildBridge(scene) {
   // entry ramps on both banks
   S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: -21.5, maxZ: -17.5, y: 0.5 });
   S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: 17.5, maxZ: 21.5, y: 0.5 });
+  // Guard the edge at deck level; allow a jump onto the upper bridge rail.
+  for (const side of [-2.6, 2.6]) {
+    S.walls.push({ x0: x + side, z0: -17.5, x1: x + side, z1: 17.5,
+      r: 0.05, minY: 1.15, maxY: 2.07 });
+    S.platformSegments.push({ x0: x + side, z0: -17.5, x1: x + side, z1: 17.5,
+      r: 0.18, y: 2.07, jumpOnly: true });
+  }
 }
 
 // --- swan boats on the lagoon ---
@@ -957,7 +973,7 @@ function buildDucklings(scene) {
   const cobble = terrainDisc(x, z, 3.4, granite, 0.03);
   cobble.rotation.y = 0.8;
   scene.add(cobble);
-  S.solids.push({ x, z, r: 1.6 });
+  S.solids.push({ x, z, r: 1.6, minY: gy - 0.1, maxY: gy + 2 });
 }
 
 // --- George Washington statue, Garden south mall ---
@@ -1057,6 +1073,6 @@ function buildGamewellBoxes(scene) {
     box(0.6, 0.12, 0.45, gold, 0, 2.86, 0, g);
     g.position.set(x, gy, z);
     scene.add(g);
-    S.solids.push({ x, z, r: 0.35 });
+    S.solids.push({ x, z, r: 0.35, minY: gy - 0.1, maxY: gy + 1.2 });
   }
 }

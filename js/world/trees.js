@@ -143,7 +143,7 @@ export function buildTrees(scene) {
     const rec = { x, z, r: 0.55, gy, trunkTop: gy + h, canopyY, canopyR };
     S.trees.push(rec);
     S.platforms.push({ x, z, r: canopyR * 0.92, y: canopyY - 0.55 });
-    S.solids.push({ x, z, r: 0.62 });
+    S.solids.push({ x, z, r: 0.62, minY: gy - 0.2, maxY: gy + h });
     elmVisuals.push({ group: tree, rec });
   }
 
@@ -207,7 +207,7 @@ function buildMallWaypoint(scene) {
   const rec = { x, z, r: 0.55, gy, trunkTop: gy + h, canopyY, canopyR };
   S.trees.push(rec);
   S.platforms.push({ x, z, r: canopyR * 0.92, y: canopyY - 0.55 });
-  S.solids.push({ x, z, r: 0.62 });
+  S.solids.push({ x, z, r: 0.62, minY: gy - 0.2, maxY: gy + h });
 }
 
 // Bushes + grass tufts: the squirrel-height detail layer. At 25cm eye height
@@ -309,7 +309,7 @@ function buildHollowTree(scene) {
   const t = { x, z, r: 1.15, gy, trunkTop: gy + h, canopyY: gy + h + 0.8, canopyR: 4.6, hollow: true };
   S.trees.push(t);
   S.platforms.push({ x, z, r: 4.2, y: t.canopyY - 0.55 });
-  S.solids.push({ x, z, r: 1.3 });
+  S.solids.push({ x, z, r: 1.3, minY: gy - 0.2, maxY: t.trunkTop });
   S.hollowTreePos = new THREE.Vector3(x, gy, z);
   S.hollowEntrance = new THREE.Vector3(x, gy + 0.3, z + 1.6);
   hollowVisual = { trunk, leaves, hole, rim, rec: t };

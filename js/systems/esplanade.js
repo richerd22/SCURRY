@@ -398,6 +398,7 @@ export function buildEsplanade(scene) {
   S.solidBoxes.push({
     minX: ESP.x + SHELL.cx - 17.6, maxX: ESP.x + SHELL.cx + 17.6,
     minZ: ESP.z + SHELL.cz - 13.2, maxZ: ESP.z + SHELL.cz + 13.2,
+    minY: LAND_Y - 1, maxY: LAND_Y + 17,
   });
 
   // ---- elms: composed, climbable, registered like the park's own
@@ -429,7 +430,7 @@ export function buildEsplanade(scene) {
     const canopyY = gy + h + 0.6;
     S.trees.push({ x: wx, z: wz, r: 0.5, gy, trunkTop: gy + h, canopyY, canopyR });
     S.platforms.push({ x: wx, z: wz, r: canopyR * 0.92, y: canopyY - 0.55 });
-    S.solids.push({ x: wx, z: wz, r: 0.62 });
+    S.solids.push({ x: wx, z: wz, r: 0.62, minY: gy - 0.2, maxY: gy + h });
     TREE_SPOTS.push({ lx, lz, gy, canopyY });
   }
   for (const x of [-120, -84, -48, 48, 84, 120]) elm(x, -28, 5.6 + trnd() * 1.2, 4.4);
