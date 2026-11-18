@@ -47,16 +47,44 @@ export function initPlayer(scene, camera) {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) clearPlayerInput();
   });
-  document.addEventListener('mousemove', (e) => {
-    if (document.pointerLockElement !== document.body && document.pointerLockElement !== S.renderer.domElement) return;
-    if (S.paused || !S.started) return;
-    P.yaw -= e.movementX * 0.0021;
-    P.pitch -= e.movementY * 0.0021;
+  // Pointer lock is preferred, but desktop browsers may deny it. In that
+  // case drag on the game canvas to look and click to bite, no dead camera.
+  let lookDrag = null;
+  const lookBy = (dx, dy, sensitivity) => {
+    P.yaw -= dx * sensitivity;
+    P.pitch -= dy * sensitivity;
     P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch));
+  };
+  document.addEventListener('mousemove', (e) => {
+    if (S.paused || !S.started || S.isTouch) return;
+    const locked = document.pointerLockElement === document.body ||
+      document.pointerLockElement === S.renderer.domElement;
+    if (locked) { lookBy(e.movementX, e.movementY, 0.0021); return; }
+    if (!lookDrag || !(e.buttons & 1)) return;
+    const dx = e.clientX - lookDrag.x, dy = e.clientY - lookDrag.y;
+    lookDrag.x = e.clientX; lookDrag.y = e.clientY;
+    if (Math.hypot(e.clientX - lookDrag.startX, e.clientY - lookDrag.startY) > 5)
+      lookDrag.moved = true;
+    if (lookDrag.moved) lookBy(dx, dy, 0.004);
   });
   document.addEventListener('mousedown', (e) => {
-    if (!S.started || S.paused) return;
-    if (e.button === 0) tryBite();
+    if (!S.started || S.paused || S.isTouch || e.button !== 0) return;
+    const locked = document.pointerLockElement === document.body ||
+      document.pointerLockElement === S.renderer.domElement;
+    if (locked) { tryBite(); return; }
+    lookDrag = { x:e.clientX, y:e.clientY,
+      startX:e.clientX, startY:e.clientY, moved:false };
+  });
+  window.addEventListener('mouseup', (e) => {
+    if (e.button !== 0 || !lookDrag) return;
+    if (!lookDrag.moved && S.started && !S.paused) tryBite();
+    lookDrag = null;
+  });
+  const endDrag = () => { lookDrag = null; };
+  window.addEventListener('blur', endDrag);
+  window.addEventListener('pagehide', endDrag);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) endDrag();
   });
 }
 

@@ -95,7 +95,7 @@ async function checkGameplay() {
   page.on('console', m => { if (m.type() === 'error') faults.push(title + ': console ' + m.text()); });
   const get = () => page.evaluate(() => window.__scurryQA.state());
   try {
-    const response = await page.goto(base + '/?qa=1&lowq=1', {waitUntil:'domcontentloaded',timeout:60000});
+    const response = await page.goto(base + '/?qa=1&lowq=1&nolock=1', {waitUntil:'domcontentloaded',timeout:60000});
     assert.equal(response?.status(),200);
     await page.waitForFunction(() => !!window.__scurryQA && !!window.__scurryQA.state().pos,
       null,{timeout:120000});
@@ -111,6 +111,15 @@ async function checkGameplay() {
     await page.keyboard.up('w');
     const afterWalk=await get();
     assert.ok(afterWalk.started&&!afterWalk.paused,'must remain in live play');
+    // Explicit fallback mode: no pointer lock, but ordinary mouse dragging
+    // must rotate the live squirrel camera (without causing a bite).
+    await page.mouse.move(260,250);
+    const yawBefore=(await get()).yaw;
+    await page.mouse.down();
+    await page.mouse.move(370,255,{steps:5});
+    await page.mouse.up();
+    const yawAfter=(await get()).yaw;
+    assert.ok(Math.abs(yawAfter-yawBefore)>.1,'desktop mouse-drag fallback must rotate camera');
     // On a low-FPS software renderer a press-and-release in one browser
     // event task could be over before the next physics frame sees Space.
     await page.keyboard.down('Space');
@@ -170,7 +179,7 @@ async function checkGameplay() {
       await page.keyboard.press('e');
       await page.waitForFunction(() => !window.__scurryQA.state().inBurrow,null,{timeout:10000});
     }
-    results.push({title,status:'PASS',routes:'walk/jump/pause + burrow + four destinations'});
+    results.push({title,status:'PASS',routes:'walk/jump/mouse-drag/pause + burrow + four destinations'});
     await page.screenshot({path:out+'/'+title+'.png'});
     console.log(title+': PASS walk, jump, pause, burrow and destination return routes');
   } catch(e) {

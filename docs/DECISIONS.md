@@ -171,3 +171,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Cache a 12m grid of the immutable authored PATHS segments, expanded by a 2.5m search radius; use local clamped segment math for bounded physics and burial queries, with full fallback for wider requests. Keep the legacy unbounded distance helper and seeded world layout unchanged.
 
 **Consequence:** Fewer unrelated path segments in common ground contact, without shifting terrain ribbons or their visible surfaces; new path geometry would require rebuilding the immutable cache. Validate with seeded full-scan parity tests and manual path-transition QA.
+
+
+## ADR-020 — pointer-lock failure must not trap the player in PAUSE
+
+**Context:** Automated actual browser gameplay exposed an immediate re-pause after clicking Resume. The game treated any unlocked pointerlockchange as a lock-loss event, and had no implemented mouse-drag fallback despite claiming one in comments.
+
+**Decision:** Track whether the game really held pointer lock; pause only on transition from locked to unlocked. If lock acquisition is unavailable/denied, stay in gameplay and use primary-mouse drag for camera aim, while a short click still boops. Add localhost-only no-lock browser coverage and clear drag state on backgrounding.
+
+**Consequence:** Desktop permission-denied contexts (embedded browsers, browser automation, privacy settings) remain playable without sacrificing normal Escape-to-pause behavior. The CI scenario explicitly verifies fallback aim and pause/resume input recovery.

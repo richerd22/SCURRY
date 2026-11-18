@@ -170,3 +170,12 @@ Movement keys are no longer latched while the title or pause overlay is up. `cle
 ## v0.6.47 — indexed path contact without visual terrain changes
 
 `visibleGroundHeight` used to scan the entire PATHS polyline network for each physics ground probe; `isGrass` did likewise for burial checks. Both only need exact nearest-segment distances inside small known bounds (2.15m for path ribbons, 2.4m for grass exclusions). A new pure `world/path-index.js` indexes all static segments in 12m XZ cells, conservatively extended by 2.5m. Foot probes test only local candidates using unchanged clamped segment projection math. Queries outside the index radius fall back to the original full scan; broader `distToPaths` callers (including tree placement) remain untouched. Four Node regressions compare 5,000 seeded bounded cases to brute-force, negative/endpoint/degenerate boundaries, wide fallback and candidate reduction. No geometry, textures, seeds or physics constants changed.
+
+
+## v0.6.48 — actual browser failure uncovered pointer-lock fallback flaw
+
+The first **real play** browser smoke passed all three still poses and walked/jumped, but failed when clicking RESUME after a pause: `S.paused` became true again. The previous `pointerlockchange` handler treated *any* unlocked change as lost gameplay, even if the browser had denied pointer lock and **never acquired it**. Meanwhile its comment promised a mouse-drag fallback that player.js did not actually implement.
+
+Now the game tracks whether it **previously held** a real desktop pointer lock. Only an actual loss of that lock pauses play; a denied request leaves the game running in fallback mode. When unlocked, dragging the game canvas with primary mouse button rotates the squirrel's view, and a short click triggers BITE on release, not on drag-start. Pointer-locked controls retain their existing mouse-delta aim and instant click-bite. Drag state clears on blur/pagehide/hidden.
+
+Browser CI uses `?qa=1&nolock=1` (still strictly localhost) to deliberately exercise this permission-denied scenario: click PLAY, walk, mouse-drag aim, jump, pause/resume, burrow and destination routes. QA suspend releases any held lock just as a real hidden tab would. The original failure and subsequent fix are now a permanent regression test, not a screenshot assumption.

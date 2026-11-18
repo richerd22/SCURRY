@@ -35,6 +35,8 @@ import { groundHeight, visibleGroundHeight } from './world/world.js';
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
 const Q = new URLSearchParams(location.search);
+// Diagnostic placement controls must never appear on the public site.
+const qaLocal = Q.has('qa') && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
 S.isTouch = (window.matchMedia && matchMedia('(pointer: coarse)').matches)
   || 'ontouchstart' in window || Q.has('touch');
 
@@ -166,7 +168,7 @@ function startGame() {
   pauseEl.style.display = 'none';
   // pointer lock is desktop-only; touch devices play without it (and iOS
   // Safari / in-app browsers would throw or silently fail the request)
-  if (!S.isTouch && renderer.domElement.requestPointerLock) {
+  if (!S.isTouch && !(qaLocal && Q.has('nolock')) && renderer.domElement.requestPointerLock) {
     try {
       const p = renderer.domElement.requestPointerLock();
       if (p && p.catch) p.catch(() => {});
@@ -175,16 +177,24 @@ function startGame() {
 }
 titleEl.addEventListener('click', startGame);
 pauseEl.addEventListener('click', startGame);
+// Only *losing a lock we actually held* pauses desktop play. Browsers
+// can deny requestPointerLock (privacy, embedded tabs, automation). An
+// unsuccessful request must keep play alive with mouse-drag camera fallback.
+let previouslyLocked = false;
 document.addEventListener('pointerlockchange', () => {
   if (S.debugShot || S.isTouch) return;
   const locked = document.pointerLockElement === renderer.domElement;
-  if (!locked && S.started) {
-    clearPlayerInput();
-    S.paused = true;
-    pauseEl.style.display = 'flex';
-  } else if (locked) {
+  if (locked) {
+    previouslyLocked = true;
     S.paused = false;
     pauseEl.style.display = 'none';
+  } else if (previouslyLocked) {
+    previouslyLocked = false;
+    if (S.started) {
+      clearPlayerInput();
+      S.paused = true;
+      pauseEl.style.display = 'flex';
+    }
   }
 });
 
@@ -342,7 +352,6 @@ if (Q.has('shot')) {
 // Browser E2E observability lives ONLY on a local host with ?qa=1.
 // The deployed public game cannot call these helpers; the tests still use
 // actual keyboard/touch inputs and real interaction callbacks for actions.
-const qaLocal = Q.has('qa') && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
 if (qaLocal) {
   window.__scurryQA = Object.freeze({
     state: () => {
@@ -371,8 +380,9 @@ if (qaLocal) {
       scanInteractions();
     },
     suspend: () => {
-      // Simulates the same lifecycle method called by hidden/pagehide.
-      // The input-clear and resume behavior under test is not mocked.
+      // A real background/visibility transition also exits pointer lock.
+      if (document.pointerLockElement && document.exitPointerLock)
+        document.exitPointerLock();
       clearPlayerInput();
       S.paused = true;
       pauseEl.style.display = 'flex';

@@ -1278,3 +1278,8 @@ Additional gameplay corrections: `clearPlayerInput()` on pause/resume, pointerlo
 ## v0.6.47 — path ground-contact broad phase (Nov 18 2026)
 
 Added `js/world/path-index.js` and four parity tests. Static PATHS segments are indexed into conservative 12m buckets with 2.5m bounds. `visibleGroundHeight` now probes nearest squared distance within 2.15m; `isGrass` checks within 2.4m; all other source calls to full `distToPaths` are unchanged, preserving seeded tree and environment placement. Node tests include 5,000 seeded equality queries, boundary and negative-coordinate cases. Real-phone performance remains unmeasured; math equivalence is not a GPU benchmark.
+
+
+## v0.6.48 — pointer-lock denied/pause fallback fixed from browser CI
+
+The first live-play browser test revealed a real bug: after a paused screenshot-run resumed, `pointerlockchange` could re-pause the game even when pointer lock had never been held. The claimed unlocked click-drag fallback was missing. Main now tracks `previouslyLocked`; only actual lock loss pauses the squirrel. Player.js now supports left-mouse dragging to aim when unlocked, with click-to-bite only on release if drag distance stayed within 5px. Locked mode keeps mousemove aim and immediate left-click BITE. QA flag `&nolock=1` is honored only on localhost with `?qa=1`, allowing browser CI to verify denied-lock gameplay. QA suspend exits any existing pointer lock to emulate app hiding. All input/portal E2E checks remain in the reusable browser harness.

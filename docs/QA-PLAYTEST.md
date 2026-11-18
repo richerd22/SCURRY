@@ -149,3 +149,11 @@ The headless WebGL workflow now runs `?qa=1&lowq=1` on a local HTTP server, clic
 - Traverse the wet ribbons and Mall apron at multiple headings; look at 0.25m eye height to make sure foot contact matches the rendered pathway without sudden 2–6cm drops.
 - Check BURY on lawn immediately adjacent to the Garden and Common path network; crossing a path edge should toggle bury eligibility at the same distance as earlier builds.
 - Seeded canopy/tree placements must remain identical: this optimization affects bounded path contact queries only, not the placement distance function.
+
+
+## Desktop pointer-lock denial / fallback (v0.6.48)
+
+- Deny pointer-lock permissions or use a privacy-restricted desktop browser; clicking PLAY must NOT instantly put the game back into PAUSE.
+- Drag with primary mouse on the scene: camera should turn; a stationary click still BITE, but drag-start should not fire a BITE.
+- In normal pointer-lock mode, mouse aim works and pressing Escape (genuine lock loss) pauses; RESUME should re-lock or remain playable in fallback.
+- On either path, holding W and losing focus or pausing must not leave movement stuck after resuming. CI's `?qa=1&nolock=1` test reproduces the locked-denied path only on localhost.
