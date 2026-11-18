@@ -7,7 +7,7 @@ import { S } from '../state.js';
 import { visibleGroundHeight, inWater } from '../world/world.js';
 import { walkSurface, resolveHorizontal, createSurfaceIndex, createObstacleIndex } from './collision.js';
 import { advanceJumpIntent, resetJumpIntent } from './jump.js';
-import { mayAttachToTrunk } from './climb-gate.js';
+import { mayAttachToTrunk, mayTransferToCanopy } from './climb-gate.js';
 import { sfx } from './audio.js';
 
 const EYE = 0.25;
@@ -382,6 +382,7 @@ export function updatePlayer(dt, camera) {
         const toward = ((t.x - P.pos.x) * wx + (t.z - P.pos.z) * wz) / wl;
         if (mayAttachToTrunk(P, t, toward)) {
           P.climbing = t;
+          P.grounded = false; // climbing is not standing on the lawn
           P.climbAngle = Math.atan2(P.pos.x - t.x, P.pos.z - t.z);
           P.vel.set(0, 0, 0);
         }
@@ -434,11 +435,20 @@ function updateClimb(dt, fwd, str, wantsJump) {
     return;
   }
   if (P.pos.y >= t.canopyY - 0.6) {
-    // scramble onto the canopy platform
-    P.pos.y = surfaceAt(P.pos.x, P.pos.z, P.pos.y, 1.6);
-    P.climbing = null;
-    P.grounded = true;
-    P.vel.set(0, 0, 0);
+    // A missing/too-distant platform must NEVER turn a 7m climb into an
+    // instant teleport back to the park lawn. Stay attached at the top so
+    // the player can rotate or leap off, until real canopy support exists.
+    const top = surfaceAt(P.pos.x, P.pos.z, P.pos.y, 1.6);
+    if (mayTransferToCanopy(P.pos.y, top, t.canopyY)) {
+      P.pos.y = top;
+      P.climbing = null;
+      P.grounded = true;
+      P.vel.set(0, 0, 0);
+    } else {
+      P.pos.y = t.canopyY - 0.6;
+      P.grounded = false;
+      P.vel.set(0, 0, 0);
+    }
   } else if (P.pos.y <= t.gy + 0.02) {
     P.pos.y = t.gy;
     P.climbing = null;

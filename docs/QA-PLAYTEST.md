@@ -252,3 +252,9 @@ Before replacing a GLB, glTF, BIN or texture, check that the `gitBlobs[path]` id
 ## Screenshot determinism (v0.6.64)
 
 Reload identical `?shot=spawn&t=17.6&lowq=1` and Garden/Charles Street screenshot poses several times. Ground-speckle/flower patch distribution and star coordinates should be stable; any geometry or asset difference must be attributable to a code/asset revision, not new random layout. Environmental animation or model-load timing can still vary, so inspect those separately. Do not use deterministic static layer appearance as an FPS or mobile-performance claim.
+
+## Targeted climb-top safety: canopy not guaranteed (v0.6.69)
+
+- Climb to the lip of a tall elm and hold forward while rotating around it. The squirrel must only leave climbing when a **registered elevated canopy platform** is reachable; an absent platform may hold the squirrel at the top, but must never teleport its feet down to the lawn.
+- Jump sideways off a tree near a missing/small canopy platform; expect normal ballistic descent, never a one-frame snap to a much lower surface.
+- Repeat under a heavy mobile frame (physics substeps), then real iPhone Safari. This targeted guard has pure tests but real canopy movement still requires manual signoff.
