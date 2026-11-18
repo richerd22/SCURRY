@@ -1058,7 +1058,11 @@ function buildWashington(scene) {
   g.add(horse);
   g.position.set(x, gy, z);
   scene.add(g);
-  solidBox(x, z, 2.4, 1.8);
+  solidBox(x, z, 2.4, 1.8, gy + 2.9, gy - 0.2);
+  // Two stepped pedestal caps instead of an infinite blocker through the sky.
+  S.platformBoxes.push({ minX: x - 2.2, maxX: x + 2.2, minZ: z - 1.6, maxZ: z + 1.6, y: gy + 2.2 });
+  S.platformBoxes.push({ minX: x - 1.8, maxX: x + 1.8, minZ: z - 1.3, maxZ: z + 1.3, y: gy + 2.9 });
+  S.solids.push({ x, z, r: 0.95, minY: gy + 2.9, maxY: gy + 7.0 });
 }
 
 // --- Gamewell alarm boxes: little red sentinels (Alarm Club canon) ---

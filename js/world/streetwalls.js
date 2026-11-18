@@ -341,7 +341,9 @@ export function buildTremontRow(scene, groundHeight) {
   const street = [], walks = [];
   for (let z = -96; z < 96; z += 16) {
     street.push({ p: [209.9, groundHeight(209.9, z + 8) + 0.02, z + 8], s: [13.2, 0.1, 16.4] });
-    walks.push({ p: [206.1, groundHeight(206.1, z + 8) + 0.09, z + 8], s: [3.0, 0.16, 16.4] });
+    const curbY = groundHeight(206.1, z + 8);
+    walks.push({ p: [206.1, curbY + 0.09, z + 8], s: [3.0, 0.16, 16.4] });
+    S.platformBoxes.push({ minX: 204.6, maxX: 207.6, minZ: z - 0.2, maxZ: z + 16.2, y: curbY + 0.17 });
   }
   scene.add(instanced(boxGeo(), asphaltMat, street));
   scene.add(instanced(boxGeo(), concrete, walks));
@@ -452,7 +454,9 @@ export function buildCharlesStreet(scene, groundHeight) {
   const walks = [];
   for (let z = -96; z < 96; z += 16) {
     for (const cx of [-59.9, -40.1]) {
-      walks.push({ p: [cx, groundHeight(cx, z + 8) + 0.06, z + 8], s: [2.7, 0.14, 16.4] });
+      const curbY = groundHeight(cx, z + 8);
+      walks.push({ p: [cx, curbY + 0.06, z + 8], s: [2.7, 0.14, 16.4] });
+      S.platformBoxes.push({ minX: cx - 1.35, maxX: cx + 1.35, minZ: z - 0.2, maxZ: z + 16.2, y: curbY + 0.13 });
     }
   }
   scene.add(instanced(boxGeo(), concrete, walks));
@@ -522,8 +526,11 @@ export function buildCharlesStreet(scene, groundHeight) {
   let cpaneSeq = 0;
   const FRONT = -63.8, DEPTH = 7.5, H = 7.8;
   for (const [z0, z1] of [[-58, -26], [-8, 22]]) {
-    S.solidBoxes.push({ minX: FRONT - DEPTH, maxX: FRONT, minZ: z0, maxZ: z1 });
     const segBase = groundHeight(FRONT - DEPTH / 2, (z0 + z1) / 2) - 0.4;
+    S.solidBoxes.push({ minX: FRONT - DEPTH, maxX: FRONT, minZ: z0, maxZ: z1,
+      minY: segBase, maxY: segBase + H });
+    S.platformBoxes.push({ minX: FRONT - DEPTH + 0.3, maxX: FRONT - 0.3,
+      minZ: z0 + 0.3, maxZ: z1 - 0.3, y: segBase + H });
     parapets.push({ p: [FRONT - DEPTH / 2, segBase + H + 0.18, (z0 + z1) / 2], s: [DEPTH + 0.3, 0.34, z1 - z0 + 0.3] });
     for (let z = z0; z + 6.2 <= z1 + 0.01; z += 6.2) {
       const cz = z + 3.1, v = (R() * 3) | 0;

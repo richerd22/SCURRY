@@ -24,7 +24,22 @@ let terrainGrid = null;
 // Match actual rendered triangle faces, rather than the interpolated math hill.
 export function visibleGroundHeight(x, z) {
   const h = meshTerrainHeight(terrainGrid, x, z, MAP.minX, MAP.maxX, MAP.minZ, MAP.maxZ, TERRAIN_X, TERRAIN_Z);
-  return h === null ? groundHeight(x, z) : h;
+  if (h === null) return groundHeight(x, z);
+  // The rendered wet path / plaza ribbons sit 2-6cm ABOVE the lawn mesh.
+  // Feet must follow those visible surfaces at a 25cm squirrel viewpoint.
+  const analytic = groundHeight(x, z);
+  const d = distToPaths(x, z);
+  let top = h;
+  if (d <= 2.15) top = Math.max(top, analytic + (d <= 1.8 ? 0.04 : 0.022));
+  // The Mall's broad gravel apron overlays the ordinary path ribbon.
+  if (x >= -36 && x <= 196 && Math.abs(z + 18) <= 5.4) {
+    top = Math.max(top, analytic + (Math.abs(z + 18) <= 4.7 ? 0.058 : 0.03));
+  }
+  for (const [px, pz, r] of [[140, 42, 13.6], [-25, -58, 10.6], [60, -45, 13.1]]) {
+    if (Math.hypot(x - px, z - pz) <= r)
+      top = Math.max(top, analytic + (Math.hypot(x - px, z - pz) <= r - 0.6 ? 0.045 : 0.028));
+  }
+  return top;
 }
 
 export function groundHeight(x, z) {
