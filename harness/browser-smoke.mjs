@@ -205,6 +205,34 @@ async function checkGameplay() {
       await page.keyboard.press('e');
       await page.waitForFunction(() => !window.__scurryQA.state().inBurrow,null,{timeout:10000});
     }
+    // Continuous open-world traversals. Real keyboard W is held through
+    // the actual player movement substeps, not simulated by teleporting
+    // between samples. Raycast against the REAL Three.js terrain triangles.
+    const routes=[
+      ['Common Mall',-18,-18,-Math.PI/2,620],
+      ['Garden north path',-188,-70,-Math.PI/2,620],
+      ['Frog Pond south path',66,42,-Math.PI/2,620],
+      ['Charles St Garden gate',-48,-66,Math.PI/2,470],
+      ['State House grade',170,-85,Math.PI/2,680],
+    ];
+    const traversals=[];
+    for(const [name,x,z,yaw,steps] of routes){
+      await page.evaluate(a=>window.__scurryQA.placeOnTerrain(a.x,a.z,a.yaw),{x,z,yaw});
+      await page.keyboard.down('w');
+      const walk=await page.evaluate(steps=>window.__scurryQA.traceTerrainWalk(steps),steps);
+      await page.keyboard.up('w');
+      traversals.push({name,...walk});
+      assert.ok(walk.horizontalDistance>1, name+' player must move through world');
+      assert.ok(walk.minClear>=-.03, name+' feet penetrated support '+walk.minClear);
+      assert.ok(walk.minMeshClear>=-.03,name+' feet under rendered mesh '+walk.minMeshClear);
+      assert.ok(walk.penetrations===0,name+' had terrain penetrations');
+      assert.ok(walk.nonGround<steps*.02,name+' left terrain while walking: '+walk.nonGround);
+      assert.equal(walk.climbs,0,name+' unintentionally grabbed a tree');
+      console.log('TERRAIN '+name+' '+JSON.stringify({metres:+walk.horizontalDistance.toFixed(1),
+        minClear:+walk.minClear.toFixed(4),minMeshClear:+walk.minMeshClear.toFixed(4),
+        airborne:walk.nonGround,meshSamples:walk.meshSamples}));
+    }
+    writeFileSync(out+'/terrain-traversal.json',JSON.stringify(traversals,null,2));
     // Actual shared fade code, not just relocation.js pure state tests.
     const transitions = await page.evaluate(() => [
       window.__scurryQA.tryRelocation(), window.__scurryQA.tryRelocation()
@@ -219,7 +247,7 @@ async function checkGameplay() {
     assert.ok(landing.catchGrace>0, 'landing must grant catch immunity');
     assert.equal(await page.evaluate(() => window.__scurryQA.tryRelocation()),false,
       'landing grace must refuse immediate catch');
-    results.push({title,status:'PASS',routes:'walk/jump/drag/pause + four destinations + relocation'});
+    results.push({title,status:'PASS',routes:'walk/jump/pause + four destinations + five continuous terrain traces + relocation'});
     await page.screenshot({path:out+'/'+title+'.png'});
     console.log(title+': PASS walk, jump, pause, burrow and destination return routes');
   } catch(e) {

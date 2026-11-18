@@ -232,6 +232,8 @@ export function buildWorld(scene) {
       .replace('#include <map_fragment>', '#include <map_fragment>\nfloat dtl = texture2D(uDetail, vWp.xz * 0.5).g;\ndiffuseColor.rgb *= 0.8 + dtl * 0.4;');
   };
   const ground = new THREE.Mesh(geo, groundMat);
+  // Independent triangle raycast target for localhost-only continuous walk QA.
+  ground.userData.scurryTerrainMesh = true;
   ground.position.set((MAP.minX + MAP.maxX) / 2, 0, (MAP.minZ + MAP.maxZ) / 2);
   ground.receiveShadow = true;
   scene.add(ground);

@@ -388,6 +388,57 @@ if (qaLocal) {
         touch: { ...S.touch }, audioPaused: isGameAudioPaused(),
       };
     },
+    // Deterministic *actual movement* traversal: W/Shift are still driven
+    // through browser key events. Each real player.js physics substep is
+    // sampled against both its support function and the independently
+    // raycast rendered Three.js terrain triangles. Localhost only.
+    placeOnTerrain: (x,z,yaw) => {
+      if (![x,z,yaw].every(Number.isFinite)) throw new TypeError('finite route');
+      const p=S.player;
+      if (p.inHollow||p.inBurrow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade)
+        throw new Error('terrain walk must start in home park');
+      clearPlayerInput();
+      p.pos.set(x,visibleGroundHeight(x,z),z);p.vel.set(0,0,0);
+      p.grounded=true;p.climbing=null;p.climbRegrab=0;
+      p.yaw=yaw;p.pitch=0;syncPlayerCamera(camera);
+    },
+    traceTerrainWalk: (steps = 540) => {
+      if (!S.started||S.paused||S.relocating) throw new Error('not playing');
+      if (!Number.isInteger(steps)||steps<1||steps>1200)throw new RangeError('steps');
+      const terrain=scene.children.find(o=>o.userData.scurryTerrainMesh);
+      if (!terrain) throw new Error('missing rendered terrain mesh');
+      const ray=new THREE.Raycaster();
+      const down=new THREE.Vector3(0,-1,0);
+      const rayOrigin=new THREE.Vector3();
+      const p=S.player, start={x:p.pos.x,y:p.pos.y,z:p.pos.z};
+      let minClear=Infinity,minMeshClear=Infinity,maxStepY=0;
+      let nonGround=0,climbs=0,penetrations=0,meshSamples=0;
+      const samples=[];
+      let prevY=p.pos.y;
+      for(let i=0;i<steps;i++){
+        updatePlayer(1/90,camera); // the real collision solver + held input
+        const floor=visibleGroundHeight(p.pos.x,p.pos.z);
+        const gap=p.pos.y-floor;
+        minClear=Math.min(minClear,gap);
+        maxStepY=Math.max(maxStepY,Math.abs(p.pos.y-prevY));prevY=p.pos.y;
+        if(gap<-.03)penetrations++;
+        if(!p.grounded)nonGround++;
+        if(p.climbing)climbs++;
+        if(i%20===0||i===steps-1){
+          rayOrigin.set(p.pos.x,60,p.pos.z);ray.set(rayOrigin,down);
+          const hit=ray.intersectObject(terrain,false)[0];
+          if(!hit)throw new Error('walk beyond rendered terrain');
+          minMeshClear=Math.min(minMeshClear,p.pos.y-hit.point.y);
+          meshSamples++;
+          samples.push({i,x:+p.pos.x.toFixed(2),z:+p.pos.z.toFixed(2),
+            feet:+p.pos.y.toFixed(3),mesh:+hit.point.y.toFixed(3),
+            floor:+floor.toFixed(3),grounded:p.grounded});
+        }
+      }
+      return {steps,start,end:{x:p.pos.x,y:p.pos.y,z:p.pos.z},
+        horizontalDistance:Math.hypot(p.pos.x-start.x,p.pos.z-start.z),
+        minClear,minMeshClear,maxStepY,nonGround,climbs,penetrations,meshSamples,samples};
+    },
     // Diagnostic control is localhost-only. No public QA API is exposed.
     tryRelocation: () => S.fadeCatch(0, {
       pos: new THREE.Vector3(0, visibleGroundHeight(0, 0), 0),

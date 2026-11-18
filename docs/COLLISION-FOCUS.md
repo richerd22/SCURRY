@@ -9,3 +9,7 @@ The v0.6.60 visual fence follows the hill in short panels, but its physical wall
 ## Still open
 
 A repeatable sustained real-player walk/jump route across the Common hill, Park Street gates, wet paths, Garden paths, fence ends, bridge and canopy. Report maximum feet penetration relative to the actual rendered surface during motion, including after horizontal collision pushes; do not substitute portal or screenshot tests. Native iPhone Safari and a user walktest remain required. Keep changes concentrated here instead of rewriting all wiki files.
+
+## v0.6.64 actual terrain walk evidence
+
+The localhost-only QA runner now starts five real park routes, holds browser keyboard W and steps the actual player.js substep solver 470–680 times per route. At each physics step it checks feet relative to visibleGroundHeight, state/airborne count and vertical displacement; every 20th step it independently raycasts the **rendered Three.js lawn triangles**, recording exact mesh Y and foot clearance. A JSON trace with position, floor, mesh and grounded flags is uploaded in the browser-smoke artifact, so a failed route has reproducible coordinates. The routes include the Common Mall, Garden north path, Frog Pond southern path, Charles St gate, and State House slope. These are physics-contact tests (synthetic clock, real held movement input), not physical iPhone performance. All route checks must pass on matching browser CI before using them as evidence; anything that fails is a defect to investigate, not a reason to weaken constraints.
