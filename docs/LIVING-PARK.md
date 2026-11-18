@@ -142,3 +142,8 @@ Software WebGL can render less than 1fps in the CI environment, so the boarding 
 ## v0.6.92 — parallel browser acceptance, no screen-first delays
 
 The Playwright smoke used to spend several slow SwiftShader minutes rendering five scenes before testing desktop physics or touch. It now accepts SCURRY_TEST_MODE=gameplay, visuals or all; default all is backward-compatible. GitHub Actions launches two separate jobs in parallel with separate reports and artifacts: one runs full real-E, physics and mobile touch gameplay; the other verifies desktop/human-eye and mobile map screenshots. Existing QA routes and model/source tests remain intact; this is scheduling, never weakening a collision gate.
+
+
+## v0.6.93 — browser evidence: actual burrow population, not pre-frame snapshots
+
+The v0.6.90 browser run passed all requested 3AM/night ecology and MBTA staff shoo checks but failed after entering the underground because its QA snapshot read wildlife before a real frame had set realm visibility (headless SwiftShader often renders slower than real time). The E2E now explicitly waits for >2 visible UNDERGROUND actors after entering the burrow and, later, moves near a distinct SURFACE squirrel and waits for that realm to render before pressing E. The QA actor readout includes an underground boolean; no public hooks or simulated animal actions. A missing real resident will still fail after 30s rather than passing on stale actors. This closes a timing/data-isolation gap in test reliability, not a physics rule bypass.

@@ -265,8 +265,11 @@ async function checkGameplay() {
     await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
       null,{timeout:8000});
     await page.evaluate(()=>window.__scurryQA.advanceMBTA(3.6));
+    await page.waitForFunction(()=>
+      window.__scurryQA.wildlife().filter(a=>a.underground&&a.visible).length>2,
+      null,{timeout:30000,polling:200});
     const beforeResidents=await page.evaluate(()=>window.__scurryQA.wildlife()
-      .filter(a=>a.visible&&(a.kind==='rat'||a.kind==='squirrel')));
+      .filter(a=>a.underground&&a.visible));
     assert.ok(beforeResidents.length>2,'shared underground must have living NPCs');
     assert.match(await choose('take the rat passage'),/rat passage/i);
     await page.keyboard.press('e');
@@ -315,12 +318,27 @@ async function checkGameplay() {
 
     // At least one real squirrel interaction is rendered and keyboard
     // reachable; the same E handler handles passengers and wildlife.
+    // A burrow squirrel is not a surface squirrel. Start beside an
+    // authored surface resident, then wait for the real updateWildlife
+    // tick to make that realm visible before testing the actual E prompt.
+    const resident=await page.evaluate(()=>window.__scurryQA.wildlife()
+      .find(a=>a.kind==='squirrel'&&!a.underground));
+    assert.ok(resident,'a surface squirrel must exist');
+    await page.evaluate(a=>window.__scurryQA.place(a.x,a.y,a.z),resident);
+    await page.waitForFunction(()=>window.__scurryQA.wildlife().some(a=>
+      a.kind==='squirrel'&&!a.underground&&a.visible&&
+      Math.hypot(a.x-window.__scurryQA.state().pos.x,
+        a.z-window.__scurryQA.state().pos.z)<2),
+      null,{timeout:30000,polling:200});
     const critter=await page.evaluate(()=>window.__scurryQA.wildlife()
-      .find(a=>a.kind==='squirrel'&&a.visible));
-    assert.ok(critter,'nearby Public Garden squirrel should be present');
+      .find(a=>a.kind==='squirrel'&&!a.underground&&a.visible&&
+        Math.hypot(a.x-window.__scurryQA.state().pos.x,
+          a.z-window.__scurryQA.state().pos.z)<2));
+    assert.ok(critter,'living surface squirrel must appear after real update');
     await page.evaluate(a=>window.__scurryQA.place(a.x,a.y,a.z),critter);
-    await page.waitForTimeout(250);
-    assert.match((await get()).prompt,/chatter with squirrel|share your food with squirrel/i);
+    await page.waitForFunction(()=>/chatter with squirrel|share your food with squirrel/i
+      .test(window.__scurryQA.state().prompt||''),
+      null,{timeout:30000,polling:200});
     await page.keyboard.press('e');
 
     // Independent *rendered* sidewalk wedge parity, not merely shared

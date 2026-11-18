@@ -556,7 +556,7 @@ if (qaLocal) {
     }),
     finishSwanRide: qaFinishSwanRide,
     advanceSwanRide: qaAdvanceSwanRide,
-    wildlife: () => (S.wildlifeActors||[]).map(a=>({kind:a.kind,x:a.x,y:a.y,z:a.z,visible:a.mesh.visible})),
+    wildlife: () => (S.wildlifeActors||[]).map(a=>({kind:a.kind,underground:!!a.underground,x:a.x,y:a.y,z:a.z,visible:a.mesh.visible})),
     mbta: mbtaDebugState,
     advanceMBTA: qaAdvanceMBTA,
     // Simulation time only, local-only test hook. Never present on live URL.
