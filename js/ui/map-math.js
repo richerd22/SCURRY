@@ -11,6 +11,18 @@ export function mapPoint(x, z, bounds, width, height, padding = 18) {
 export function mapHeading(yaw) {
   return { x: -Math.sin(yaw), z: -Math.cos(yaw) };
 }
+// Body yaw 0 faces north (-Z), -PI/2 faces east (+X). A rightward
+// destination therefore has a negative relative bearing.
+export function waypointBearing(x,z,yaw,tx,tz) {
+  const dx=tx-x,dz=tz-z;
+  const distance=Math.hypot(dx,dz);
+  const targetYaw=Math.atan2(-dx,-dz);
+  const relative=Math.atan2(Math.sin(targetYaw-yaw),Math.cos(targetYaw-yaw));
+  const arrows=['↑','↖','←','↙','↓','↘','→','↗'];
+  const arrow=arrows[(Math.round(relative/(Math.PI/4))+8)%8];
+  return {distance,relative,arrow};
+}
+
 export function mapRealm(player) {
   if (player.inHollow) return 'HOLLOW TREE';
   if (player.inBurrow) return 'RAT TUNNELS';

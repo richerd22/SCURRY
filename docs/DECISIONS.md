@@ -180,3 +180,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Track whether the game really held pointer lock; pause only on transition from locked to unlocked. If lock acquisition is unavailable/denied, stay in gameplay and use primary-mouse drag for camera aim, while a short click still boops. Add localhost-only no-lock browser coverage and clear drag state on backgrounding.
 
 **Consequence:** Desktop permission-denied contexts (embedded browsers, browser automation, privacy settings) remain playable without sacrificing normal Escape-to-pause behavior. The CI scenario explicitly verifies fallback aim and pause/resume input recovery.
+
+
+## ADR-021 — user-selected compass waypoints instead of permanent quest arrows
+
+**Context:** At squirrel eye height a park map is helpful, but a static map still forces players to memorize route heading after closing it. An always-on mission arrow would clutter the intentionally minimal HUD.
+
+**Decision:** Let a player select any named map marker via semantic keyboard/touch-operable buttons. Only after selecting does a small arrow+metres cue appear; use pure yaw-relative world coordinates and update at 5Hz. Hide while paused, in remote realms, or while reading the map. Do not implement fake route navigation across fences and water.
+
+**Consequence:** Better player-led exploration without changing world placement or introducing another rendering pass. The cue is a direct bearing, not obstacle-aware pathfinding, and resets when the page reloads.

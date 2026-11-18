@@ -3,9 +3,10 @@
 // Uses the SAME map dimensions, paths and landmark positions as the world.
 import { S, MAP } from '../state.js';
 import { PATHS } from '../world/world.js';
-import { mapPoint, mapHeading, mapRealm } from './map-math.js';
+import { mapPoint, mapHeading, mapRealm, waypointBearing } from './map-math.js';
 
-let panel, canvas, note, legend, open = false, elapsed = 0;
+let panel, canvas, note, legend, route, toggle, selected = null,
+  open = false, elapsed = 0;
 const MARKERS = [
   { x:-132, z:0, label:'GARDEN BRIDGE' },
   { x:-132, z:74, label:'WASHINGTON' },
@@ -21,19 +22,41 @@ export function initParkMap() {
   canvas = document.getElementById('map-canvas');
   note = document.getElementById('map-note');
   legend = document.getElementById('map-legend');
-  const toggle = document.getElementById('map-toggle');
+  route = document.getElementById('map-route');
+  toggle = document.getElementById('map-toggle');
   const close = document.getElementById('map-close');
-  if (!panel || !canvas || !toggle || !close || !legend) return;
+  if (!panel || !canvas || !toggle || !close || !legend || !route) return;
   // Build an accessible, stable legend once—not new DOM objects every 5Hz.
   // Numbered pins replace the long inline labels that clipped on phones.
-  const entries = MARKERS.map((marker, i) => [String(i + 1), marker.label]);
-  if (S.hollowTreePos) entries.push(['H', 'HOLLOW TREE']);
-  for (const [number, label] of entries) {
-    const item = document.createElement('span');
-    item.textContent = number + '  ' + label;
-    item.setAttribute('aria-label', number + ': ' + label);
+  const entries = MARKERS.map((marker, i) => ({ ...marker, number: String(i + 1) }));
+  if (S.hollowTreePos) entries.push({
+    x:S.hollowTreePos.x, z:S.hollowTreePos.z,
+    number:'H',label:'HOLLOW TREE'
+  });
+  for (const entry of entries) {
+    const item = document.createElement('button');
+    item.type='button';
+    item.className='map-destination';
+    item.textContent = entry.number + '  ' + entry.label;
+    item.setAttribute('aria-label', 'Track ' + entry.label);
+    item.setAttribute('aria-pressed', 'false');
+    item.addEventListener('click', (event) => {
+      event.preventDefault(); event.stopPropagation();
+      selected = selected === entry ? null : entry;
+      for (const button of legend.querySelectorAll('button'))
+        button.setAttribute('aria-pressed', String(button === item && !!selected));
+      hide();
+      updateRoute();
+      toggle.focus();
+    });
     legend.appendChild(item);
   }
+  route.addEventListener('click', () => {
+    selected=null;
+    for(const button of legend.querySelectorAll('button'))
+      button.setAttribute('aria-pressed','false');
+    updateRoute();
+  });
   if (S.isTouch) toggle.textContent = 'MAP';
 
   const toggleMap = () => {
@@ -43,6 +66,7 @@ export function initParkMap() {
     panel.setAttribute('aria-hidden', String(!open));
     toggle.setAttribute('aria-expanded', String(open));
     if (open) draw();
+    updateRoute();
   };
   toggle.addEventListener('click', (event) => {
     event.preventDefault(); event.stopPropagation(); toggleMap();
@@ -62,14 +86,29 @@ export function initParkMap() {
 function hide() {
   open = false;
   if (panel) { panel.style.display = 'none'; panel.setAttribute('aria-hidden','true'); }
-  document.getElementById('map-toggle')?.setAttribute('aria-expanded','false');
+  toggle?.setAttribute('aria-expanded','false');
+  updateRoute();
 }
 export function updateParkMap(dt) {
-  if (!open) return;
+  if (!open && !selected) return;
   elapsed += dt;
   if (elapsed < 0.2) return;
   elapsed = 0;
-  draw();
+  if (open) draw();
+  updateRoute();
+}
+function updateRoute() {
+  if (!route) return;
+  const p=S.player;
+  const eligible=selected && p.pos && !mapRealm(p) && S.started && !S.paused && !open;
+  route.style.display=eligible?'block':'none';
+  route.setAttribute('aria-hidden',String(!eligible));
+  if (!eligible) return;
+  const nav=waypointBearing(p.pos.x,p.pos.z,p.yaw,selected.x,selected.z);
+  const nearby=nav.distance<4;
+  route.textContent=(nearby?'✓':nav.arrow)+'  '+selected.label+'  ·  '+
+    (nearby?'ARRIVED':Math.ceil(nav.distance)+'m')+'  ×';
+  route.setAttribute('aria-label','Clear waypoint to '+selected.label);
 }
 function draw() {
   if (!canvas || !open || !S.player.pos) return;
@@ -150,8 +189,10 @@ function draw() {
     ctx.font='700 9px ui-monospace,monospace';
     ctx.fillText(text,q.x,q.y+3);
   }
-  MARKERS.forEach((marker,i) => pin(marker.x,marker.z,String(i+1)));
-  if (S.hollowTreePos) pin(S.hollowTreePos.x,S.hollowTreePos.z,'H','#edb57d');
+  MARKERS.forEach((marker,i) => pin(marker.x,marker.z,String(i+1),
+    selected?.number===String(i+1)?'#fff8b2':'#e7cc87'));
+  if (S.hollowTreePos) pin(S.hollowTreePos.x,S.hollowTreePos.z,'H',
+    selected?.number==='H'?'#fff8b2':'#edb57d');
   // Squirrel marker: camera forward is (-sin(yaw), -cos(yaw)).
   const q=p(S.player.pos.x,S.player.pos.z), dir=mapHeading(S.player.yaw);
   const side={x:-dir.z,z:dir.x}, r=8;

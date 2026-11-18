@@ -1283,3 +1283,8 @@ Added `js/world/path-index.js` and four parity tests. Static PATHS segments are 
 ## v0.6.48 — pointer-lock denied/pause fallback fixed from browser CI
 
 The first live-play browser test revealed a real bug: after a paused screenshot-run resumed, `pointerlockchange` could re-pause the game even when pointer lock had never been held. The claimed unlocked click-drag fallback was missing. Main now tracks `previouslyLocked`; only actual lock loss pauses the squirrel. Player.js now supports left-mouse dragging to aim when unlocked, with click-to-bite only on release if drag distance stayed within 5px. Locked mode keeps mousemove aim and immediate left-click BITE. QA flag `&nolock=1` is honored only on localhost with `?qa=1`, allowing browser CI to verify denied-lock gameplay. QA suspend exits any existing pointer lock to emulate app hiding. All input/portal E2E checks remain in the reusable browser harness.
+
+
+## v0.6.49 — selectable map waypoint (Nov 18 2026)
+
+Six map legend entries and the runtime Hollow Tree pin are now accessible buttons. A chosen landmark creates an optional compact on-screen heading arrow and horizontal metre distance, recalculated at the existing 5Hz atlas cadence. The cue hides when the map is open, when paused or in another realm; tap it to clear. `waypointBearing` in map-math.js is pure yaw-relative XZ math (0 north, -PI/2 east). Three new tests cover cardinal orientation, camera rotation and diagonal distance. Browser smoke checks selecting/clearing from the simulated mobile atlas. No new assets, bundler or risky geometry changes. It is *compass-style*, not pathfinding through obstacles.

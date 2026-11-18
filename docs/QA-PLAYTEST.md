@@ -157,3 +157,11 @@ The headless WebGL workflow now runs `?qa=1&lowq=1` on a local HTTP server, clic
 - Drag with primary mouse on the scene: camera should turn; a stationary click still BITE, but drag-start should not fire a BITE.
 - In normal pointer-lock mode, mouse aim works and pressing Escape (genuine lock loss) pauses; RESUME should re-lock or remain playable in fallback.
 - On either path, holding W and losing focus or pausing must not leave movement stuck after resuming. CI's `?qa=1&nolock=1` test reproduces the locked-denied path only on localhost.
+
+
+## Map landmark waypoint (v0.6.49)
+
+- On desktop G and mobile MAP, select Garden Bridge, Frog Pond or Hollow Tree from the numbered legend. The atlas should close and show a compact waypoint cue under MAP with direction and metre distance.
+- Face north then rotate 90 degrees; a target east of the squirrel should point right before turning and straight ahead afterward. Walk toward the target and verify distance falls; at 4m it shows ARRIVED.
+- Tap the cue to clear it; the normal HUD returns uncluttered. Re-select a different landmark and enter the burrows or a destination: the Common waypoint cue should hide, reappearing on return.
+- Verify mobile buttons, legend touch targets, safe areas and suspended browser state; do not interpret the direct arrow as a safe obstacle-aware route.
