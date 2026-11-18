@@ -52,7 +52,14 @@ function buildBenches(scene) {
     benchGroups.push({ g, parts });
     BENCH_SPOTS.push({ x, z, rotY, gy });
     S.solids.push({ x, z, r: 0.8, minY: gy - 0.1, maxY: gy + 0.545 });
-    S.platforms.push({ x, z, r: 0.57, y: gy + 0.545 });
+    // The CC0 seat is 2.49m long: three overlapping support discs cover
+    // its actual orientation instead of only the centre of the bench.
+    for (const along of [-0.69, 0, 0.69]) {
+      S.platforms.push({
+        x: x + Math.cos(rotY) * along, z: z - Math.sin(rotY) * along,
+        r: 0.52, y: gy + 0.545,
+      });
+    }
   }
   swapBenches();
 }
