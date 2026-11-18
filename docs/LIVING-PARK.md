@@ -13,3 +13,17 @@ This pass turns the already-existing docked Public Garden Swan Boat into a funct
 Next: actor population with response states, breeding silhouettes, interactive scavengers; preserve collision-first walktest gate. Core park geometry and all existing portals remain untouched in this pass.
 
 Sources: https://swanboats.com/how-it-works/ , https://friendsofthepublicgarden.org/our-parks/the-garden/swan-boats/
+
+
+## v0.6.73 — small fauna and interaction ecology
+
+18 authored wildlife actors with no network assets: nine squirrels, four rabbits, one nocturnal surface rat, four separate tunnel rats. Small code-authored models with motion and proximity culling; tunnel creatures appear only in the burrows. Surface animals avoid water, streets and park bounds. They are NON-SOLID visual actors rather than adding a second collision system.
+- Nearby squirrels chatter (E) and respond to offered carried food; friendship follows for up to 25s and consumes the one-item food carried by the existing inventory.
+- Rabbits flee from loud nearby sprinting and dogs; approach slowly and E lets you watch them quietly.
+- Rats provide location-grounded market/storage guidance rather than an unlimited currency generator.
+- Bite near an unthreatened squirrel simply scares it briefly, never injures it.
+- New Node tests validate spawn geography and reaction priority.
+
+*Known limits*: These are authored plausible park encounters, not precise wildlife census data. NPCs currently pass through the other non-player actors; no new collision risk to the player. More varied dog types and human-wildlife interaction remain a follow-up.
+
+Ground truth for species in Massachusetts: https://www.mass.gov/info-details/mammals-in-massachusetts ; for actual park behavior and respect for wildlife: https://friendsofthepublicgarden.org/our-parks/visit/park-policies/

@@ -25,6 +25,7 @@ import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
 import { initSwanRide, updateSwanRide } from './systems/swan-ride.js';
+import { buildWildlife, updateWildlife, biteWildlife } from './systems/wildlife.js';
 import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
@@ -73,6 +74,7 @@ buildHawk(scene);
 buildHollow(scene);
 buildGeese(scene);
 buildCrows(scene);
+buildWildlife(scene);
 buildBurrows(scene);
 buildFenway(scene);
 buildFenwayHood(scene);
@@ -139,7 +141,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // bite: boop whatever is in range
-S.onBite = () => { biteDogs() || biteRanger() || biteHawk() || biteCrow(); };
+S.onBite = () => { biteDogs() || biteRanger() || biteHawk() || biteCrow() || biteWildlife(); };
 
 // ranger net catch: fade, relocate to the bandstand roof, stash raided.
 // Hawk Dua reuses the same fade with opts {pos, message, grounded}: a
@@ -690,6 +692,7 @@ function loop() {
     updateEsplanade(dt);
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
+    updateWildlife(dt);
     updateCanopy(dt);
     updateDiscoveries(dt);
     // Realm clamps, catches, and portals may move the feet after physics.
