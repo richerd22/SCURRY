@@ -65,6 +65,13 @@ async function checkScene(pose, mobile = false) {
       assert.equal(await page.locator('#map-panel').getAttribute('aria-hidden'), 'false');
       assert.ok(await page.locator('#map-legend button').count() >= 6,
         'numbered landmark legend must be visible on the phone');
+      await page.locator('#map-guide-toggle').tap();
+      assert.equal(await page.locator('#map-guide').isVisible(),true,
+        'Field Notes must open in map panel');
+      assert.equal(await page.locator('#map-guide [role="listitem"]').count(),14);
+      await page.locator('#map-guide-toggle').tap();
+      assert.equal(await page.locator('#map-canvas').isVisible(),true,
+        'Field Notes must return to the atlas');
       await page.screenshot({ path: out + '/' + title + '-atlas.png' });
       await page.locator('#map-legend button').first().tap();
       assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'),'false');
@@ -300,6 +307,10 @@ async function checkTouchGameplay() {
     await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
       null,{timeout:10000});
     assert.equal((await get()).inBurrow,true);
+    await page.waitForFunction(()=>{
+      try{ return JSON.parse(localStorage.getItem('scurry-field-notes-v1'))?.ids?.includes('burrows'); }
+      catch{return false;}
+    },null,{timeout:15000});
     await page.screenshot({path:out+'/'+title+'.png'});
     results.push({title,status:'PASS',
       routes:'live joystick + simultaneous jump + look + sprint + ACT burrow'});

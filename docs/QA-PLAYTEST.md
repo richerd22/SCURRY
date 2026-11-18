@@ -187,3 +187,11 @@ In desktop Safari/Chrome with pointer lock denied, click MAP and select or clear
 ## Simulated live touch test (v0.6.53)
 
 The browser workflow's `mobile-live-play` scenario now exercises a virtual joystick held while a second finger presses JUMP, both releases, a right-side look drag, SPRINT toggle, and ACT button burrow entry in live play. Inspect its screenshot and JSON test report. Then repeat on a **physical iPhone in Safari**, using real simultaneous fingers, home indicator gestures and app backgrounding. The Chromium synthetic-input test catches handler logic, not iOS touch policy/thermal issues.
+
+
+## Persistent Field Notes (v0.6.54)
+
+- Open MAP then FIELD NOTES: count begins from local save and lists 14 observations in a two-column panel. Toggle back to atlas; no player position or selected waypoint should change.
+- Approach Frog Pond, Bandstand, Washington, the Garden Bridge, Hollow Tree and a canopy above 4.5m; each observation should unlock exactly once and raise the count, with no artificial discoveries when teleporting into remote realms.
+- Enter burrows with ACT; note should unlock and persist across a browser reload. Save is independent of stash/caps/mute. Private browsing with blocked localStorage must remain playable and preserve current-session discoveries even if durable persistence is unavailable.
+- The screenshot-only poses must NOT mark places visited or mutate the Field Notes key. Mobile map/Notes controls must remain reachable with thumbs and safe areas.

@@ -28,6 +28,7 @@ import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } f
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
 import { initParkMap, updateParkMap } from './ui/park-map.js';
+import { initDiscoveries, updateDiscoveries } from './systems/discoveries.js';
 import { createMobileQualityState, advanceMobileQuality } from './systems/mobile-quality.js';
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
@@ -84,6 +85,7 @@ initEsplanade();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
+initDiscoveries();
 initParkMap();
 
 // ---------- interaction plumbing ----------
@@ -489,6 +491,7 @@ function loop() {
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateCanopy(dt);
+    updateDiscoveries(dt);
     // Realm clamps, catches, and portals may move the feet after physics.
     syncPlayerCamera(camera);
     scanInteractions();

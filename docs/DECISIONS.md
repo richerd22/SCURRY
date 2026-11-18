@@ -225,3 +225,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Add a separate real-play touch scenario using the site's actual touch event handlers and independent pointer IDs in Chromium mobile emulation. Verify movement, jump, look, button toggles, and an ACT burrow transition with local-only feet placement.
 
 **Consequence:** Earlier detection of touch-controller integration failures with no extra production runtime dependency. Synthetic PointerEvents still cannot establish native iOS Safari touch or safe-area correctness; keep the physical device gate open.
+
+
+## ADR-026 — separate lightweight exploration notes from stash progression
+
+**Context:** SCURRY already lets a player visit a large world, but apart from stash/caps there is no remembered record of exploration. Permanent mission arrows or full quest mode would hurt the uncluttered squirrel perspective.
+
+**Decision:** Reuse six atlas landmark locations as a pure Field Notes data source, plus eight additional world/realm discoveries; check them at 0.45s intervals in real play only, and save valid IDs under an independent localStorage v1 key. Show a compact optional checklist inside the existing MAP panel, not an always-visible HUD. Keep arrival and canopy checks spatially honest.
+
+**Consequence:** Exploration persists over sessions without save-schema migrations, extra textures or heavy per-frame work. The feature is deliberately a field notebook, not a quest/pathfinding engine; iPhone interface readability and persistence after reload still require device acceptance.

@@ -4,17 +4,12 @@
 import { S, MAP } from '../state.js';
 import { PATHS } from '../world/world.js';
 import { mapPoint, mapHeading, mapRealm, waypointBearing } from './map-math.js';
+import { LANDMARKS, FIELD_NOTES } from '../systems/discovery-rules.js';
+import { discoveryProgress } from '../systems/discoveries.js';
 
-let panel, canvas, note, legend, route, toggle, selected = null,
-  open = false, elapsed = 0;
-const MARKERS = [
-  { x:-132, z:0, label:'GARDEN BRIDGE' },
-  { x:-132, z:74, label:'WASHINGTON' },
-  { x:-25, z:-58, label:'FOUNTAIN' },
-  { x:60, z:-45, label:'MONUMENT' },
-  { x:95, z:12, label:'FROG POND' },
-  { x:140, z:42, label:'BANDSTAND' },
-];
+let panel, canvas, note, legend, route, toggle, guide, guideToggle,
+  selected = null, guideOpen=false, open = false, elapsed = 0;
+const MARKERS = LANDMARKS; // shared source of truth for atlas and Field Notes
 const PADD = 12;
 
 export function initParkMap() {
@@ -22,10 +17,41 @@ export function initParkMap() {
   canvas = document.getElementById('map-canvas');
   note = document.getElementById('map-note');
   legend = document.getElementById('map-legend');
+  guide = document.getElementById('map-guide');
+  guideToggle = document.getElementById('map-guide-toggle');
   route = document.getElementById('map-route');
   toggle = document.getElementById('map-toggle');
   const close = document.getElementById('map-close');
-  if (!panel || !canvas || !toggle || !close || !legend || !route) return;
+  if (!panel || !canvas || !toggle || !close || !legend || !route || !guide || !guideToggle) return;
+  for(const entry of FIELD_NOTES){
+    const note=document.createElement('div');
+    note.setAttribute('role','listitem');
+    note.dataset.noteId=entry.id;
+    note.textContent='○  '+entry.label;
+    guide.appendChild(note);
+  }
+  const refreshGuide=()=>{
+    const progress=discoveryProgress();
+    guideToggle.textContent='FIELD NOTES '+progress.count+'/'+progress.total;
+    for(const item of guide.children){
+      const complete=progress.unlocked.has(item.dataset.noteId);
+      item.dataset.found=String(complete);
+      item.textContent=(complete?'✓  ':'○  ')+
+        FIELD_NOTES.find(x=>x.id===item.dataset.noteId).label;
+    }
+  };
+  guideToggle.addEventListener('click',event=>{
+    event.preventDefault();event.stopPropagation();
+    guideOpen=!guideOpen;
+    guide.style.display=guideOpen?'grid':'none';
+    canvas.style.display=guideOpen?'none':'block';
+    note.style.display=guideOpen?'none':'block';
+    legend.style.display=guideOpen?'none':'grid';
+    guideToggle.setAttribute('aria-pressed',String(guideOpen));
+    refreshGuide();
+    if(!guideOpen)draw();
+  });
+  refreshGuide();
   // Build an accessible, stable legend once—not new DOM objects every 5Hz.
   // Numbered pins replace the long inline labels that clipped on phones.
   const entries = MARKERS.map((marker, i) => ({ ...marker, number: String(i + 1) }));
@@ -62,6 +88,14 @@ export function initParkMap() {
   const toggleMap = () => {
     if (!S.started || S.paused) return;
     open = !open;
+    if(open){
+      guideOpen=false;
+      guide.style.display='none';
+      canvas.style.display='block';
+      note.style.display='block';
+      guideToggle.setAttribute('aria-pressed','false');
+      refreshGuide();
+    }
     panel.style.display = open ? 'block' : 'none';
     panel.setAttribute('aria-hidden', String(!open));
     toggle.setAttribute('aria-expanded', String(open));
@@ -94,7 +128,20 @@ export function updateParkMap(dt) {
   elapsed += dt;
   if (elapsed < 0.2) return;
   elapsed = 0;
-  if (open) draw();
+  if (open) {
+    if (guideOpen) {
+      const progress=discoveryProgress();
+      guideToggle.textContent='FIELD NOTES '+progress.count+'/'+progress.total;
+      for(const item of guide.children){
+        const yes=progress.unlocked.has(item.dataset.noteId);
+        if(item.dataset.found!==String(yes)){
+          item.dataset.found=String(yes);
+          item.textContent=(yes?'✓  ':'○  ')+
+            FIELD_NOTES.find(x=>x.id===item.dataset.noteId).label;
+        }
+      }
+    } else draw();
+  }
   updateRoute();
 }
 function updateRoute() {
@@ -111,7 +158,7 @@ function updateRoute() {
   route.setAttribute('aria-label','Clear waypoint to '+selected.label);
 }
 function draw() {
-  if (!canvas || !open || !S.player.pos) return;
+  if (!canvas || !open || guideOpen || !S.player.pos) return;
   const w = Math.max(240, Math.round(canvas.clientWidth || 460));
   const h = Math.max(220, Math.round(w * 0.62));
   const dpr = Math.min(2, window.devicePixelRatio || 1);

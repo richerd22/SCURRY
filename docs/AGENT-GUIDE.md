@@ -1308,3 +1308,8 @@ Restricted unlocked primary-mouse bite/drag start to the Three.js canvas rather 
 ## v0.6.53 — mobile live interaction coverage (Nov 18 2026)
 
 The browser workflow now starts a live 390×844 simulated touch game and tests: virtual joystick forward movement, second simultaneous pointer holding JUMP, neutral stick release, right-side look yaw, SPRINT on/off, and ACT entering a rat tunnel. Events exercise the actual `ui/touch.js` handler paths; no direct function calls to game actions. Screenshots and failures are archived with the WebGL smoke artifact. This is Chromium touch emulation, not a substitute for real iPhone Safari QA. Keep the workflow ≤15 minutes, inspect failures instead of dropping touch assertions to make CI green.
+
+
+## v0.6.54 — Field Notes discovery record (Nov 18 2026)
+
+Optional map-panel FIELD NOTES now shows 14 exploration entries, updated on live play and stored in a separate `scurry-field-notes-v1` localStorage key, never modifying the v1 stash save. Pure `discovery-rules.js` owns shared atlas landmark positions and filters off-map coordinates; `discoveries.js` samples at 0.45s cadence. The Notes tab, its count and its checklist are only active when the map is opened, no extra primary HUD badges. New pure tests verify all keys/locations, remote realms, Hollow exterior and canopy height; browser simulated touch smoke tests toggling the Notes tab and checks the burrow observation persisted after ACT. Avoid adding a tutorial or massive quest HUD; discoveries are low-pressure world appreciation, not XP grind. Screenshot mode must never unlock notes.
