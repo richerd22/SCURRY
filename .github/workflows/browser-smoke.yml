@@ -8,6 +8,12 @@ on:
 permissions:
   contents: read
 
+# Rapid feature commits should not leave several old 15-minute WebGL jobs
+# competing for the same runner/network resources. Only newest main matters.
+concurrency:
+  group: scurry-browser-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   chromium-webgl:
     runs-on: ubuntu-24.04
@@ -17,6 +23,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Cache headless Chromium browser binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-scurry-playwright-1.57.0
       - name: Install browser test runner (CI only, no game build)
         run: |
           npm install --no-save --no-package-lock playwright@1.57.0

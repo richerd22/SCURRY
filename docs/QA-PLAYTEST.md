@@ -200,3 +200,8 @@ The browser workflow's `mobile-live-play` scenario now exercises a virtual joyst
 ## Field Notes persistence/readability (v0.6.55)
 
 Review `mobile-spawn-field-notes.png` and `mobile-live-play-saved-notes.png` from the browser smoke artifact. The first proves all fourteen notes fit inside a scrollable mobile panel; the second must show a checked Rat Burrows note after a full page reload, not just the immediate in-memory unlock. On physical iPhone verify map/notes/close targets do not overlap or hide under safe-area insets, and test reload/restoration in both regular and private browsing (private storage can deliberately be ephemeral).
+
+
+## CI run matching / canceled browser workflows
+
+The browser workflow now cancels older in-flight runs on the same branch when a new commit arrives. Before interpreting a green browser result, ensure its SHA matches the HEAD commit, and distinguish `cancelled` (superseded by new code) from `failure` (test or environment issue). Download screenshots/report.json from the newest completed matching run, not an older successful screenshot.

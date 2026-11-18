@@ -1318,3 +1318,8 @@ Optional map-panel FIELD NOTES now shows 14 exploration entries, updated on live
 ## v0.6.55 — persistence must survive a browser process reload (Nov 18 2026)
 
 The mobile live test checks Field Notes after a full `page.reload()`, not merely after `setItem`. It reopens the map/notes and verifies the rat-burrow item is still marked complete; captures both the fresh Field Notes panel screenshot and reloaded-note evidence. Responsive map header CSS leaves enough room for MAP / NOTES / × controls on 390px and narrow devices. README feature summary updated. Gameplay logic unchanged from v0.6.54; this release adds quality evidence and small responsive styling.
+
+
+## Browser smoke CI efficiency (Nov 18 2026)
+
+Added a pinned Playwright Chromium download cache and same-branch `cancel-in-progress` concurrency to the browser workflow. This avoids redundant 100MB browser downloads and reduces overlapping long-running runs from rapid pushes; the newest main commit gets priority. Unit/syntax tests and GitHub Pages remain separate. Inspect commit SHA before marking a browser result green. Cached Chromium versions must be bumped when Playwright is upgraded.

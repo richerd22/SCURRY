@@ -243,3 +243,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Revisit the site from the same browser profile, reopen FIELD NOTES after a full page reload, and assert the previous burrow observation is still checked. Archive screenshots of the guide before and after the reload in the existing browser CI artifact. Tighten mobile header flex layout without adding a new separate overlay.
 
 **Consequence:** The browser suite now validates the entire write/reload/read/UI path for discoveries. It still cannot guarantee native iOS Safari persistence policy, which depends on private browsing and platform storage limits.
+
+
+## ADR-028 — browser CI checks only the newest commit, and caches Chromium
+
+**Context:** Repeated rapid pushes created multiple simultaneous WebGL runs downloading identical Playwright browsers. An older success was easy to mistake for the current commit while newer checks were queued.
+
+**Decision:** Use GitHub Actions same-branch cancel-in-progress concurrency and cache Chromium binaries by runner OS/architecture and pinned Playwright version. Keep the game itself dependency-free and keep the fast Node/Pages gates separate.
+
+**Consequence:** Faster iterative signal and lower CI resource waste. Old workflow runs may show cancelled; only a matching green latest commit is acceptance evidence. A cold cache still has normal installation cost.
