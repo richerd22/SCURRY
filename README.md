@@ -10,6 +10,16 @@ Pages serves `main` at the root). Or serve this folder statically and open
 `index.html` (e.g. `python3 -m http.server`). No build step. Three.js loads
 from CDN via the import map in `index.html` (pinned: three@0.160.0).
 
+## Engineering & quality gates
+
+- [Engineering wiki](docs/ENGINEERING-WIKI.md): architecture, simulation invariants, collision contracts, world expansion, assets and mobile performance.
+- [Playtest & troubleshooting](docs/QA-PLAYTEST.md): repeatable desktop/iPhone collision routes, telemetry (`?diag=1`), evidence template and limitations.
+- [Engineering decisions](docs/DECISIONS.md): why the controller and mobile lifecycle work the way they do.
+- [Agent guide](docs/AGENT-GUIDE.md): the long-form implementation history, asset decisions and honest known state.
+- [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
+
+**Current version: v0.6.33.** The latest reliability sprint improves edge jumps, held-key behavior, touch ownership, Safari background recovery, and adds opt-in field diagnostics. These are code-level changes; physical iPhone and real-GPU playtests remain required.
+
 ## Controls
 
 Desktop:

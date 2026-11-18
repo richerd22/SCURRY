@@ -1190,3 +1190,19 @@ touch UI, and performance ladder remain in place. No imagery was added.
 Regression warning: avoid allocating new arrays in `visibleGroundHeight`,
 which is called multiple times per substep. The floor can be accurate
 without raycasting the entire scene each frame.
+
+
+## v0.6.33 (Nov 18 2026): input reliability, telemetry and permanent QA gates
+
+This pass follows the v0.6.32 collision overhaul (height-aware solids, mesh-terrain-aligned support, substep physics, continuous fences, branches/roofs). It deliberately *does not* change world geometry or seeded placement.
+
+- `js/systems/jump.js`: testable one-shot jump intent, 140 ms early-press buffer, 100 ms coyote grace. The player owns jump *velocity*; the helper decides whether a NEW press is valid. Holding Space/JUMP never auto-relaunches on landing or leaps off a trunk repeatedly. The same logic applies to keyboard and touch.
+- `js/systems/player.js`: consumes jump intent, resets it with keyboard state on blur/hidden, and uses one intentional press to leap from climbing.
+- `js/ui/touch.js`: joystick and lookzone each retain their first active pointer; added `pagehide`/`visibilitychange` control release in addition to blur. Existing iOS pointer capture for held buttons stays intact.
+- `js/main.js`: native keyboard interaction actions ignore key repeat; pointer lock loss never pauses touch players; backgrounding pauses a running non-debug game; touch perf ladder ignores paused frames. `?diag=1` provides a 6 Hz, pointer-ignoring local telemetry overlay: realm, squirrel feet coordinates, current terrain floor + gap, grounded/climbing/airborne, vertical velocity, instantaneous FPS and touch quality tier. The overlay is absent without the query parameter.
+- `js/state.js`: explicitly lists the Esplanade realm flag which earlier world modules already set dynamically.
+- `tests/jump-regressions.mjs`: seven portable Node tests (data-URL module import, no npm or WebGL).
+- `.github/workflows/ci.yml`: automatic Node 22 syntax checks for all JS/MJS, pure physics and jump regressions, plus static checks for the custom domain, import map, safe-area viewport and touch overlay. This is not a replacement for interactive/WebGL or physical-device checks; the CI bar must remain green before a quality claim.
+- Added `docs/ENGINEERING-WIKI.md`, `docs/QA-PLAYTEST.md`, and `docs/DECISIONS.md`. Notion SCURRY hub should link them rather than copy and fork the architecture.
+
+**Known limits still open:** The continuous world is visually detailed but colliders are still a *purpose-built registry*, not an automatically generated mesh collider. Roof facades, complex branch joins and realm-specific geometry need targeted playtesting. The lowq software harness can't establish frame-rate or color grading on a physical iPhone or real GPU. The unreleased TD Garden licensed interior is still gated. A passing unit test proves pure math, not 3D gameplay feel. Do not claim full 3D collision, device verification, or that the quality bar is met.

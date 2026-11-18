@@ -1,0 +1,42 @@
+name: SCURRY quality gates
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse every browser module and test (no npm install)
+        run: |
+          find js tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Pure physics and input regressions
+        run: node --test tests/*.mjs
+      - name: No-build, custom-domain, touch and Safari contracts
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const main = fs.readFileSync('js/main.js', 'utf8');
+          const touch = fs.readFileSync('js/ui/touch.js', 'utf8');
+          assert.equal(fs.readFileSync('CNAME', 'utf8').trim(), 'scurry.cold.fyi');
+          assert.match(html, /type="importmap"/);
+          assert.match(html, /viewport-fit=cover/);
+          assert.match(html, /id="touchui"/);
+          assert.match(html, /id="lookzone"/);
+          assert.match(html, /name="scurry-version" content="0\.6\.33"/);
+          assert.match(main, /visibilitychange/);
+          assert.match(touch, /pointercancel/);
+          assert.match(touch, /pagehide/);
+          console.log('CNAME, importmap, mobile controls, Safari lifecycle: OK');
+          NODE
