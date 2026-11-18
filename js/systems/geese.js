@@ -25,7 +25,8 @@
 // hurt the squirrel. Geese do not kill. Geese relocate.
 
 import * as THREE from 'three';
-import { S, MAP } from '../state.js';
+import { S } from '../state.js';
+import { GARDEN_BRIDGE, gardenBridgeDeck, gardenBridgeLanding } from '../world/garden-lagoon-layout.js';
 import { groundHeight } from '../world/world.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
@@ -33,9 +34,9 @@ import { setCarriedVisual } from './player.js';
 import { removeFoodItem } from './food.js';
 
 // ---------------------------------------------------------------- tuning
-const BRIDGE_X = MAP.lagoon.x;        // -132: the deck runs along Z here
-const DECK_HALF_W = 2.7;              // deck x: BRIDGE_X +/- 2.7
-const DECK_HALF_L = 18;               // deck z: -18..18
+const BRIDGE_X = GARDEN_BRIDGE.x;      // centre of the new east-west deck
+const DECK_HALF_W = GARDEN_BRIDGE.halfWidth; // deck z +/- 2.7
+const DECK_HALF_L = GARDEN_BRIDGE.halfLength; // deck x +/- 24
 const RAIL_OFF = 1.9;                 // stand-down / fed offset from centre
 
 const WARN_RANGE = 8;                 // on deck, this close = posture + honk
@@ -73,9 +74,9 @@ const CATCH_TOAST = 'GOOSE JUSTICE. deposited at the end of the bridge. stash in
 
 // posts on the deck: [x, z, facing yaw] - facing runs along the bridge
 const POSTS = [
-  [-132.9, -6.0, 0],
-  [-131.1, 0.5, Math.PI],
-  [-132.6, 6.5, 0],
+  [BRIDGE_X-9,-.8,Math.PI/2],
+  [BRIDGE_X,.7,-Math.PI/2],
+  [BRIDGE_X+9,-.8,Math.PI/2],
 ];
 
 let geese = [];
@@ -189,8 +190,8 @@ function makeGooseMesh() {
 
 // the rail a goose retires to: whichever side its post already leans to,
 // so the flock splits and the centre of the deck opens up
-function railX(g) {
-  return g.home.x < BRIDGE_X ? BRIDGE_X - RAIL_OFF : BRIDGE_X + RAIL_OFF;
+function railZ(g) {
+  return g.home.z<0?-RAIL_OFF:RAIL_OFF;
 }
 
 // ------------------------------------------------------------------ build
@@ -241,9 +242,7 @@ export function buildGeese(scene) {
 // are off-map anyway. Bypass is not an exploit; it is the design.
 function playerOnBridge(P) {
   if (!P || !P.pos || P.inHollow || P.inBurrow) return false;
-  return Math.abs(P.pos.x - BRIDGE_X) < 3.4 &&
-    Math.abs(P.pos.z) < 19.5 &&
-    Math.abs(P.pos.y - deckY) < 1.3;
+  return gardenBridgeDeck(P.pos.x,P.pos.z,P.pos.y);
 }
 
 function honk() {
@@ -266,8 +265,9 @@ function faceYaw(g, targetYaw, dt, rate) {
 // Geese never leave the deck: the target and the result are both clamped
 // to it, and pos.y is pinned to deckY no matter what.
 function moveToward(g, tx, tz, speed, dt) {
-  const cx = Math.max(BRIDGE_X - DECK_HALF_W + 0.2, Math.min(BRIDGE_X + DECK_HALF_W - 0.2, tx));
-  const cz = Math.max(-DECK_HALF_L + 0.3, Math.min(DECK_HALF_L - 0.3, tz));
+  const cx=Math.max(BRIDGE_X-DECK_HALF_L+.3,
+    Math.min(BRIDGE_X+DECK_HALF_L-.3,tx));
+  const cz=Math.max(-DECK_HALF_W+.2,Math.min(DECK_HALF_W-.2,tz));
   const dx = cx - g.pos.x, dz = cz - g.pos.z;
   const d = Math.hypot(dx, dz);
   if (d > 0.03) {
@@ -302,8 +302,8 @@ function feedFlock(seconds) {
 // shore, stash intact. The one allocation here is the destination - a
 // catch is a rare event, not a per-frame cost.
 function gooseJustice(P) {
-  const endZ = (P.pos.z >= 0 ? 1 : -1) * 22.5;
-  const dest = new THREE.Vector3(BRIDGE_X, groundHeight(BRIDGE_X, endZ), endZ);
+  const shore=gardenBridgeLanding(P.pos.x>=BRIDGE_X?1:-1);
+  const dest=new THREE.Vector3(shore.x,groundHeight(shore.x,shore.z),shore.z);
   flock.cooldown = FLOCK_COOLDOWN;
   flock.wait = 0;
   for (const g of geese) {
@@ -383,7 +383,7 @@ export function updateGeese(dt) {
         if (!f || !f.mesh) continue;
         const fp = f.mesh.position;
         if (Math.abs(fp.y - deckY) > 1.3) continue;              // not on the deck
-        if (Math.abs(fp.x - BRIDGE_X) >= 3 || Math.abs(fp.z) >= 18) continue;
+        if(!gardenBridgeDeck(fp.x,fp.z))continue;
         for (const g of geese) {
           if (g.state === 'charge' || g.cooldown > 0) continue;
           const d = Math.hypot(fp.x - g.pos.x, fp.z - g.pos.z);
@@ -559,7 +559,7 @@ export function updateGeese(dt) {
       }
     } else if (g.state === 'fed' || g.state === 'aside') {
       // at the rails: content (fed) or stood-down (aside), centre is open
-      const d = moveToward(g, railX(g), g.home.z, RETURN_SPEED, dt);
+      const d = moveToward(g, g.home.x, railZ(g), RETURN_SPEED, dt);
       moving = d > 0.1;
     } else if (g.state === 'return') {
       const d = moveToward(g, g.home.x, g.home.z, RETURN_SPEED, dt);

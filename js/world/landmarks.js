@@ -10,6 +10,7 @@ import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { GARDEN_ART } from './garden-art-facts.js';
 import { DUCKLING_COUNT, DUCKLING_YAW, MOTHER_RADIUS, DUCKLING_RADIUS, ducklingPose } from './ducklings-layout.js';
+import { GARDEN_BRIDGE, GARDEN_DOCK } from './garden-lagoon-layout.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -719,21 +720,33 @@ function buildBridge(scene) {
       sprite.scale.set(3.6, 3.6, 1);
       sprite.position.set(sx, 5.6, tz);
       g.add(sprite);
-      S.lamps.push({ sprite, bulbMat, light: null, x: x + sx, z: tz });
+      // Rotated/scaled bridge: lamp world locations must match real bulbs.
+      S.lamps.push({ sprite, bulbMat, light: null,
+        x:x+tz*GARDEN_BRIDGE.scaleLength,z:-sx });
     }
   }
-  g.position.set(x, 0, z);
-  scene.add(g);
-  S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: -18, maxZ: 18, y: 1.15 });
-  // entry ramps on both banks
-  S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: -21.5, maxZ: -17.5, y: 0.5 });
-  S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: 17.5, maxZ: 21.5, y: 0.5 });
-  // Guard the edge at deck level; allow a jump onto the upper bridge rail.
-  for (const side of [-2.6, 2.6]) {
-    S.walls.push({ x0: x + side, z0: -17.5, x1: x + side, z1: 17.5,
-      r: 0.05, minY: 1.15, maxY: 2.07 });
-    S.platformSegments.push({ x0: x + side, z0: -17.5, x1: x + side, z1: 17.5,
-      r: 0.18, y: 2.07, jumpOnly: true });
+  // The Garden's real Mall→Common central bridge runs east/west.
+  // Transform art AND its physical registry together; never rotate only
+  // the visible geometry while leaving a north/south invisible deck.
+  g.scale.z=GARDEN_BRIDGE.scaleLength;
+  g.rotation.y=Math.PI/2;
+  g.position.set(x,0,z);scene.add(g);
+  const B=GARDEN_BRIDGE,h=B.halfLength;
+  S.platformBoxes.push({
+    minX:x-h,maxX:x+h,minZ:-B.halfWidth,maxZ:B.halfWidth,y:B.deckY,
+  });
+  // Stone landings touch the narrow eastern and western shores. These
+  // low abutment supports preserve the existing step/jump semantics.
+  S.platformBoxes.push({minX:x-h-5,maxX:x-h+.8,
+    minZ:-B.halfWidth,maxZ:B.halfWidth,y:.5});
+  S.platformBoxes.push({minX:x+h-.8,maxX:x+h+5,
+    minZ:-B.halfWidth,maxZ:B.halfWidth,y:.5});
+  for(const side of [-2.6,2.6]){
+    const zEdge=-side;
+    S.walls.push({x0:x-h+.7,z0:zEdge,x1:x+h-.7,z1:zEdge,
+      r:.05,minY:B.deckY,maxY:B.railY});
+    S.platformSegments.push({x0:x-h+.7,z0:zEdge,x1:x+h-.7,z1:zEdge,
+      r:.18,y:B.railY,jumpOnly:true});
   }
 }
 
@@ -945,17 +958,18 @@ function buildSwanBoats(scene) {
     const vx = -d.rx * Math.sin(th) * d.w, vz = d.rz * Math.cos(th) * d.w;
     return { x, z, yaw: Math.atan2(-vx, -vz) };
   }
-  // west lobe + east lobe loops; both stay clear of the bridge deck
-  // (x -134.7..-129.3) and inside the lagoon ellipse with hull to spare
-  boat({ cx: MAP.lagoon.x - 22, cz: -12, rx: 8, rz: 4.5, w: (Math.PI * 2) / 170, ph: 0.6 });
-  boat({ cx: MAP.lagoon.x + 22, cz: 13, rx: 7, rz: 4, w: -(Math.PI * 2) / 190, ph: 3.4 });
+  // Two independent north-lobe traffic loops; the moored third craft
+  // stays south. None is routed under the bridge before clearance proof.
+  boat({cx:-140,cz:-27,rx:5,rz:8,w:(Math.PI*2)/170,ph:.6});
+  boat({cx:-125,cz:-27,rx:4,rz:8,w:-(Math.PI*2)/190,ph:3.4});
   // third boat MOORED at the dock (v0.6.28): the fleet at rest on the
   // south shore west of the bridge - canopy up, waiting on passengers.
   // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);
   // the bob + roll still apply, so she rides the water at her lines.
   // Hull spans x -147.8..-138.2 / z 17.2..20.8: inside the ellipse,
   // clear of the west loop (z <= -2.7 at its nearest) and the bridge.
-  boat({ cx: -143, cz: 19, rx: 0, rz: 0, w: 0, ph: 0, yaw: -Math.PI / 2 });
+  boat({cx:GARDEN_DOCK.boatX,cz:GARDEN_DOCK.boatZ,
+    rx:0,rz:0,w:0,ph:0,yaw:-Math.PI/2});
   // the dock: plank deck on posts from the south shore out to her side
   {
     const g = new THREE.Group();
@@ -983,12 +997,13 @@ function buildSwanBoats(scene) {
       new THREE.MeshBasicMaterial({ map: sTex }));
     board.position.set(0, 1.62, 0.02); g.add(board);
     const board2 = board.clone(); board2.rotation.y = Math.PI; board2.position.z = -0.02; g.add(board2);
-    g.position.set(-140.5, 0, 22.9);
+    g.position.set(GARDEN_DOCK.x,0,GARDEN_DOCK.z);
     scene.add(g);
     // the deck is standable (shore squirrels board here): one
     // platformBox at deck-top height. surfaceAt's step tolerance
     // keeps waders below from snapping up through it.
-    S.platformBoxes.push({ minX: -145.25, maxX: -135.75, minZ: 21.1, maxZ: 24.7, y: 0.45 });
+    S.platformBoxes.push({minX:GARDEN_DOCK.x-4.75,maxX:GARDEN_DOCK.x+4.75,
+      minZ:GARDEN_DOCK.z-1.8,maxZ:GARDEN_DOCK.z+1.8,y:GARDEN_DOCK.deckY});
   }
 }
 

@@ -86,10 +86,11 @@ export const PATHS = [
   // Frog pond loop feeders
   [[60, 12], [80, 12], [112, 12]],
   [[140, 42], [112, 42], [60, 42]],
-  // Garden: lagoon loop
-  [[-182, -34], [-132, -40], [-82, -34], [-76, 0], [-82, 34], [-132, 40], [-182, 34], [-188, 0], [-182, -34]],
-  // Garden: bridge crossing (over the deck, endpoints on the loop)
-  [[-132, -38], [-132, 38]],
+  // Garden: walk AROUND the north-south lagoon, outside the dry shore
+  [[-184,-53],[-166,-64],[-132,-64],[-96,-62],[-78,-45],[-79,0],
+   [-78,45],[-96,62],[-132,65],[-166,62],[-184,46],[-189,0],[-184,-53]],
+  // Garden: actual east-west historic central footbridge crossing
+  [[-161,0],[-103,0]],
   // Garden: western perimeter promenade to Washington at Arlington St
   [[-182, -34], [-193, 0], [-182, 34]],
   // Garden north path + Charles St crossings

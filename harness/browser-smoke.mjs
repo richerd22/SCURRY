@@ -293,7 +293,7 @@ async function checkGameplay() {
     // The real dock and real E prompt must mount the actual moving boat;
     // peeking/hiding and safe landing also run through E, not direct
     // internal action calls. Local QA only fast-forwards the tour clock.
-    await page.evaluate(()=>window.__scurryQA.place(-140.5,.45,22.9));
+    await page.evaluate(()=>window.__scurryQA.place(-140.5,.45,47.9));
     assert.match((await get()).prompt,/sneak aboard the Swan Boat/i);
     await page.keyboard.press('e');
     await page.waitForFunction(()=>window.__scurryQA.state().onSwanBoat,
