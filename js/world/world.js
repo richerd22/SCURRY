@@ -500,9 +500,9 @@ function buildPerimeter(scene) {
     }
     const top=(p.y0+p.y1)/2+.975;
     S.walls.push({x0:p.x0,z0:p.z0,x1:p.x1,z1:p.z1,
-      r:.055,minY:-2,maxY:top});
+      r:.055,minY:-2,maxY:top,maxY0:p.y0+.975,maxY1:p.y1+.975});
     S.platformSegments.push({x0:p.x0,z0:p.z0,x1:p.x1,z1:p.z1,
-      r:.19,y:top,jumpOnly:true});
+      r:.19,y:top,y0:p.y0+.975,y1:p.y1+.975,jumpOnly:true});
   }
   rail.instanceMatrix.needsUpdate=true;
   scene.add(rail);

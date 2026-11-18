@@ -73,22 +73,32 @@ export function createSurfaceIndex(platforms, boxes, segments, cellSize = 8) {
   };
 }
 
+// A graded rail's endpoints are also its visible endpoints. Flat legacy
+// rails retain .y, while new grades interpolate at the nearest point.
+export function segmentHeight(shape, t, a = 'y0', b = 'y1', fallback = 'y') {
+  return Number.isFinite(shape[a]) && Number.isFinite(shape[b])
+    ? shape[a] + (shape[b] - shape[a]) * t : shape[fallback];
+}
+
 // The same predicates as walkSurface's unindexed reference implementation.
 function indexedSurfaceCandidate(entry, x, z, refY, ceiling, best) {
   const s = entry.shape;
-  if (s.y > ceiling || s.y <= best) return best;
   if (entry.type === 0) {
+    if (s.y > ceiling || s.y <= best) return best;
     const dx = x - s.x, dz = z - s.z;
     return dx * dx + dz * dz <= s.r * s.r ? s.y : best;
   }
-  if (entry.type === 1)
+  if (entry.type === 1) {
+    if (s.y > ceiling || s.y <= best) return best;
     return x >= s.minX && x <= s.maxX && z >= s.minZ && z <= s.maxZ ? s.y : best;
-  if (s.jumpOnly && refY < s.y - 0.38) return best;
+  }
   const dx = s.x1 - s.x0, dz = s.z1 - s.z0;
   const t = Math.max(0, Math.min(1, ((x - s.x0) * dx + (z - s.z0) * dz) /
     (dx * dx + dz * dz || 1)));
+  const y = segmentHeight(s,t);
+  if (y > ceiling || y <= best || (s.jumpOnly && refY < y - .38)) return best;
   const ex = x - (s.x0 + dx * t), ez = z - (s.z0 + dz * t);
-  return ex * ex + ez * ez <= s.r * s.r ? s.y : best;
+  return ex * ex + ez * ez <= s.r * s.r ? y : best;
 }
 
 export function walkSurface(x, z, refY, stepTol, base, platforms, boxes, segments, index = null) {
@@ -111,12 +121,13 @@ export function walkSurface(x, z, refY, stepTol, base, platforms, boxes, segment
         && b.y <= ceiling && b.y > best) best = b.y;
   }
   for (const s of segments) {
-    if (s.jumpOnly && refY < s.y - 0.38) continue;
     const dx = s.x1 - s.x0, dz = s.z1 - s.z0;
     const t = Math.max(0, Math.min(1, ((x - s.x0) * dx + (z - s.z0) * dz) / (dx * dx + dz * dz || 1)));
+    const y = segmentHeight(s,t);
+    if (s.jumpOnly && refY < y - .38) continue;
     const px = s.x0 + t * dx, pz = s.z0 + t * dz;
     const ex = x - px, ez = z - pz;
-    if (ex * ex + ez * ez <= s.r * s.r && s.y <= ceiling && s.y > best) best = s.y;
+    if (ex * ex + ez * ez <= s.r * s.r && y <= ceiling && y > best) best = y;
   }
   return best;
 }
@@ -217,10 +228,12 @@ function settleHorizontal(pos, circles, boxes, walls, radius, climbing, sameCell
       if (sameCell && !sameCell()) return false;
     }
     for (const w of walls) {
-      if (!overlapsY(pos, w)) continue;
       const dx = w.x1 - w.x0, dz = w.z1 - w.z0;
       const length2 = dx * dx + dz * dz;
       const t = Math.max(0, Math.min(1, ((pos.x - w.x0) * dx + (pos.z - w.z0) * dz) / (length2 || 1)));
+      const top = segmentHeight(w,t,'maxY0','maxY1','maxY');
+      if (pos.y + BODY_HEIGHT <= (w.minY ?? -Infinity) ||
+          pos.y >= (top ?? Infinity) - .005) continue;
       const cx = w.x0 + dx * t, cz = w.z0 + dz * t;
       const ex = pos.x - cx, ez = pos.z - cz, rr = (w.r || 0.05) + radius;
       const d2 = ex * ex + ez * ez;
