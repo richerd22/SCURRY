@@ -137,3 +137,8 @@ Sources: https://friendsofthepublicgarden.org/our-parks/the-common/brewer-founta
 Follow-up on v0.6.90: a source audit located **three remaining visual ground paint layers at (-25,-58)** even though the actual Brewer Fountain, its collider and the walkable plaza top moved east. Both rendered wet/path-border discs AND the painted canvas path-plaza oval now read the same BREWER_FOUNTAIN position. An independent pure regression prevents the old footprint returning. This preserves physical/display parity instead of leaving a ghost plaza.
 
 Software WebGL can render less than 1fps in the CI environment, so the boarding movement acceptance test now advances the real boat update clock in fixed ≤50ms steps through a localhost-only QA helper, just as the existing final-tour QA clock does. E boarding, E peek/hide, and actual dock exit remain real browser events. Also removed an ambiguous bitwise skin-tone index in instanced Swan Boat passenger coloring: it now uses a simple explicitly bounded modulo, producing valid indices for all three boats.
+
+
+## v0.6.92 — parallel browser acceptance, no screen-first delays
+
+The Playwright smoke used to spend several slow SwiftShader minutes rendering five scenes before testing desktop physics or touch. It now accepts SCURRY_TEST_MODE=gameplay, visuals or all; default all is backward-compatible. GitHub Actions launches two separate jobs in parallel with separate reports and artifacts: one runs full real-E, physics and mobile touch gameplay; the other verifies desktop/human-eye and mobile map screenshots. Existing QA routes and model/source tests remain intact; this is scheduling, never weakening a collision gate.

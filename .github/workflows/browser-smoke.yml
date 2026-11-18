@@ -26,8 +26,13 @@ concurrency:
 
 jobs:
   chromium-webgl:
+    name: chromium-${{ matrix.suite }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [gameplay, visuals]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,6 +50,7 @@ jobs:
       - name: Run static web server and headless WebGL routes
         env:
           SCURRY_BASE_URL: http://127.0.0.1:8000
+          SCURRY_TEST_MODE: ${{ matrix.suite }}
         run: |
           python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/scurry-server.log 2>&1 &
           echo $! > /tmp/scurry-server.pid
@@ -54,7 +60,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scurry-webgl-smoke
+          name: scurry-webgl-${{ matrix.suite }}
           path: .ci/browser-smoke/
           retention-days: 7
           if-no-files-found: warn

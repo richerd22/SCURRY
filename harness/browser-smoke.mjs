@@ -7,6 +7,9 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 const base = process.env.SCURRY_BASE_URL || 'http://127.0.0.1:8000';
+const suite = process.env.SCURRY_TEST_MODE || 'all';
+if (!['gameplay','visuals','all'].includes(suite))
+  throw new RangeError('SCURRY_TEST_MODE must be gameplay, visuals, or all');
 const out = '.ci/browser-smoke';
 mkdirSync(out, { recursive: true });
 const faults = [];
@@ -566,18 +569,24 @@ async function checkTouchGameplay() {
 }
 
 try {
-  await checkScene('spawn');
-  await checkScene('garden');
-  await checkScene('charles'); // view of Charles St and Garden gate piers
-  await checkScene('charles', false, 1.7); // same XZ from human eye
-  await checkScene('spawn', true);
-  await checkGameplay();
-  await checkTouchGameplay();
+  // Each CI worker is independent: one performs actual gameplay, the other
+  // renders visual references. The default all still runs both in one call.
+  if (suite==='all'||suite==='gameplay') {
+    await checkGameplay();
+    await checkTouchGameplay();
+  }
+  if (suite==='all'||suite==='visuals') {
+    await checkScene('spawn');
+    await checkScene('garden');
+    await checkScene('charles');
+    await checkScene('charles',false,1.7);
+    await checkScene('spawn',true);
+  }
 } finally {
   await browser.close();
 }
-writeFileSync(out + '/report.json', JSON.stringify({ results, faults }, null, 2));
+writeFileSync(out + '/report.json', JSON.stringify({ suite,results,faults }, null, 2));
 if (faults.length) {
-  console.error('SCURRY browser smoke FAILED:\n' + faults.join('\n\n'));
+  console.error('SCURRY '+suite+' browser smoke FAILED:\n' + faults.join('\n\n'));
   process.exitCode = 1;
-} else console.log('SCURRY browser smoke: static scenes, live desktop routes and mobile touch actions passed.');
+} else console.log('SCURRY '+suite+' browser smoke passed.');
