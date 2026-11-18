@@ -28,7 +28,7 @@ import { initAudio, setMuted, isMuted } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
 import { whenModelsSettled } from './systems/models.js';
-import { groundHeight } from './world/world.js';
+import { groundHeight, visibleGroundHeight } from './world/world.js';
 
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
@@ -106,7 +106,7 @@ function scanInteractions() {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (!S.started || S.paused) return;
+  if (!S.started || S.paused || e.repeat) return; // actions should not auto-repeat
   if (e.code === 'KeyE' && currentE) currentE.action();
   if (e.code === 'KeyF' && currentF) currentF.action();
   if (e.code === 'KeyM') { setMuted(!isMuted()); toast(isMuted() ? 'sound off' : 'sound on', 1.2); }
@@ -157,7 +157,7 @@ function startGame() {
 titleEl.addEventListener('click', startGame);
 pauseEl.addEventListener('click', startGame);
 document.addEventListener('pointerlockchange', () => {
-  if (S.debugShot) return;
+  if (S.debugShot || S.isTouch) return;
   const locked = document.pointerLockElement === renderer.domElement;
   if (!locked && S.started) {
     S.paused = true;
@@ -167,6 +167,16 @@ document.addEventListener('pointerlockchange', () => {
     pauseEl.style.display = 'none';
   }
 });
+
+// Safari sometimes background-suspends without a blur or pointer-lock event.
+// Pause physics; each input module separately releases its held controls.
+const suspendGame = () => {
+  if (!S.started || S.debugShot) return;
+  S.paused = true;
+  pauseEl.style.display = 'flex';
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) suspendGame(); });
+window.addEventListener('pagehide', suspendGame);
 
 // ---------- touch controls (mobile requirement) ----------
 if (S.isTouch) {
@@ -310,13 +320,35 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// Opt-in field telemetry: ?diag=1. Ordinary play pays no overlay cost.
+const diagHud = Q.has('diag') ? document.createElement('pre') : null;
+if (diagHud) {
+  diagHud.id = 'scurry-diag';
+  diagHud.style.cssText = 'position:fixed;z-index:9;left:calc(8px + env(safe-area-inset-left));top:calc(95px + env(safe-area-inset-top));margin:0;padding:8px 10px;border:1px solid #ffffff60;border-radius:6px;background:#09100ce8;color:#eaffca;font:11px/1.4 ui-monospace,monospace;pointer-events:none;white-space:pre;max-width:80vw';
+  document.body.appendChild(diagHud);
+}
+let diagElapsed = 0;
+function updateDiagnostics(dt) {
+  if (!diagHud || !S.started) return;
+  diagElapsed += dt;
+  if (diagElapsed < 0.16) return; // 6 updates/sec, not per render frame
+  diagElapsed = 0;
+  const P = S.player, v = P.vel, pos = P.pos;
+  const realm = P.inHollow ? 'hollow' : P.inBurrow ? 'burrow' : P.inFenway ? 'fenway' :
+    P.inGarden ? 'garden' : P.inCityHall ? 'cityhall' : P.inEsplanade ? 'esplanade' : 'park';
+  const sample = S.realmGround[realm];
+  const ground = realm === 'park' ? visibleGroundHeight(pos.x, pos.z) :
+    (sample ? sample(pos.x, pos.z) : 0);
+  diagHud.textContent = `SCURRY DIAG | ${realm}\nfeet: ${pos.x.toFixed(2)} / ${pos.y.toFixed(2)} / ${pos.z.toFixed(2)}\nground: ${ground.toFixed(2)} | gap: ${(pos.y-ground).toFixed(2)}\n${P.climbing ? 'CLIMBING' : P.grounded ? 'GROUNDED' : 'AIRBORNE'} | vy: ${v.y.toFixed(2)}\nFPS: ${Math.round(1/Math.max(dt,.001))} | quality: ${perfTier} | touch: ${S.isTouch}`;
+}
+
 // ---------- the loop ----------
 const clock = new THREE.Clock();
 // mobile perf ladder: if a phone GPU can't hold ~40fps, step quality down
 // (pixel ratio, then shadow resolution, then shadows + grass density)
 let fpsEma = 60, perfTimer = 0, perfTier = 0;
 function perfLadder(dt) {
-  if (!S.isTouch || S.debugShot || !S.started) return;
+  if (!S.isTouch || S.debugShot || !S.started || S.paused) return;
   fpsEma = fpsEma * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
   perfTimer += dt;
   if (perfTimer > 3 && fpsEma < 40 && perfTier < 3) {
@@ -366,6 +398,7 @@ function loop() {
     scanInteractions();
     const prompt = currentE ? currentE.label : (currentF ? currentF.label : '');
     updateHUD(prompt, warnings());
+    updateDiagnostics(dt);
   }
   renderer.render(scene, camera);
 }

@@ -26,6 +26,7 @@ export function initTouch({ onInteract, onBury }) {
     S.touch.y = ny / R;
   }
   base.addEventListener('pointerdown', (e) => {
+    if (stickId !== null) return; // the first thumb owns this stick
     stickId = e.pointerId;
     const r = base.getBoundingClientRect();
     stickCx = r.left + r.width / 2; stickCy = r.top + r.height / 2;
@@ -43,16 +44,20 @@ export function initTouch({ onInteract, onBury }) {
   };
   window.addEventListener('pointerup', stickEnd);
   window.addEventListener('pointercancel', stickEnd);
-  window.addEventListener('blur', () => {
+  const resetStick = () => {
     stickId = null;
     nub.style.transform = 'translate(0px,0px)';
     S.touch.x = 0; S.touch.y = 0;
-  });
+  };
+  window.addEventListener('blur', resetStick);
+  window.addEventListener('pagehide', resetStick);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetStick(); });
 
   // ---- look drag (right side of the screen) ----
   const look = document.getElementById('lookzone');
   let lookId = null, lx = 0, ly = 0;
   look.addEventListener('pointerdown', (e) => {
+    if (lookId !== null) return; // a second finger cannot steal camera aim
     lookId = e.pointerId; lx = e.clientX; ly = e.clientY;
     e.preventDefault();
   });
@@ -68,6 +73,8 @@ export function initTouch({ onInteract, onBury }) {
   window.addEventListener('pointerup', lookEnd);
   window.addEventListener('pointercancel', lookEnd);
   window.addEventListener('blur', () => { lookId = null; });
+  window.addEventListener('pagehide', () => { lookId = null; });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) lookId = null; });
 
   // ---- buttons ----
   function holdButton(id, down, up) {
@@ -97,6 +104,8 @@ export function initTouch({ onInteract, onBury }) {
       if (!el.hasPointerCapture || !el.hasPointerCapture(e.pointerId)) release(e);
     });
     window.addEventListener('blur', () => release(null));
+    window.addEventListener('pagehide', () => release(null));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) release(null); });
   }
   holdButton('btn-jump', () => setTouchKey('Space', true), () => setTouchKey('Space', false));
   holdButton('btn-bite', () => pressBite());
@@ -109,9 +118,12 @@ export function initTouch({ onInteract, onBury }) {
   });
   // The shared keyboard state also clears on focus loss. Reset the toggle
   // badge with it or iOS can display SPRINT ON while actually walking.
-  window.addEventListener('blur', () => {
+  const resetSprint = () => {
     S.touch.sprint = false;
     setTouchKey('ShiftLeft', false);
     document.getElementById('btn-sprint')?.classList.remove('on');
-  });
+  };
+  window.addEventListener('blur', resetSprint);
+  window.addEventListener('pagehide', resetSprint);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetSprint(); });
 }

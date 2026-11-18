@@ -38,6 +38,7 @@ export const S = {
     inFenway: false,    // popped up at Fenway Park (systems/fenway.js)
     inGarden: false,    // popped up at TD Garden (systems/garden.js)
     inCityHall: false,  // popped up at City Hall Plaza (systems/cityhall.js)
+    inEsplanade: false, // emerged at the Charles River Esplanade (systems/esplanade.js)
     moving: false,
     sprinting: false,
   },

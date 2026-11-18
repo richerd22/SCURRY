@@ -6,11 +6,14 @@ import * as THREE from 'three';
 import { S } from '../state.js';
 import { visibleGroundHeight, inWater } from '../world/world.js';
 import { walkSurface, resolveHorizontal } from './collision.js';
+import { advanceJumpIntent, resetJumpIntent } from './jump.js';
 import { sfx } from './audio.js';
 
 const EYE = 0.25;
 const RADIUS = 0.22;
 const keys = {};
+// Jump is a fresh press (never repeated on landing), with brief grace at edges.
+const jumpIntent = { held: false, buffer: 0, coyote: 0 };
 let paws, belly, bellyMat, hindMat, pawL, pawR, carriedMesh;
 let tailGroup, tailMat, tailTipMat;
 let runPhase = 0;
@@ -25,7 +28,12 @@ export function initPlayer(scene, camera) {
   buildPawRig(camera);
   document.addEventListener('keydown', (e) => { keys[e.code] = true; });
   document.addEventListener('keyup', (e) => { keys[e.code] = false; });
-  window.addEventListener('blur', () => { for (const code in keys) keys[code] = false; });
+  window.addEventListener('blur', () => { for (const code in keys) keys[code] = false; resetJumpIntent(jumpIntent); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    for (const code in keys) keys[code] = false;
+    resetJumpIntent(jumpIntent);
+  });
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== document.body && document.pointerLockElement !== S.renderer.domElement) return;
     if (S.paused || !S.started) return;
@@ -288,6 +296,7 @@ export function updatePlayer(dt, camera) {
   if (P.biteCooldown > 0) P.biteCooldown -= dt;
   if (P.biteAnim > 0) P.biteAnim -= dt;
   if (P.scramble > 0) P.scramble -= dt;
+  const wantsJump = advanceJumpIntent(jumpIntent, !!keys.Space, P.grounded, !!P.climbing, dt);
   if (P.begging > 0) {
     P.begging -= dt; syncPlayerCamera(camera); animatePaws(dt, camera); return;
   }
@@ -301,7 +310,7 @@ export function updatePlayer(dt, camera) {
   const water = inWater(P.pos.x, P.pos.z) && P.pos.y < 0.3;
 
   if (P.climbing) {
-    updateClimb(dt, fwd, str);
+    updateClimb(dt, fwd, str, wantsJump);
     P.moving = Math.abs(fwd) + Math.abs(str) > 0.12;
   } else {
     const sin = Math.sin(P.yaw), cos = Math.cos(P.yaw);
@@ -311,7 +320,7 @@ export function updatePlayer(dt, camera) {
     const speed = (P.sprinting ? 6.6 : 3.3) * (water ? 0.45 : 1) * mag;
     P.moving = mag > 0.12;
 
-    if (P.grounded && keys.Space) {
+    if (wantsJump) {
       P.vel.y = 6.1; P.grounded = false; sfx.squeak();
     }
     if (P.moving) {
@@ -326,7 +335,7 @@ export function updatePlayer(dt, camera) {
         }
       }
     }
-    if (P.climbing) updateClimb(dt, fwd, str);
+    if (P.climbing) updateClimb(dt, fwd, str, false);
     else {
       const steps = Math.max(1, Math.ceil(dt / PHYSICS_DT));
       const subDt = dt / steps;
@@ -349,7 +358,7 @@ export function syncPlayerCamera(camera) {
   camera.rotation.z = P.grounded && P.moving ? Math.sin(runPhase) * 0.006 : 0;
 }
 
-function updateClimb(dt, fwd, str) {
+function updateClimb(dt, fwd, str, wantsJump) {
   const P = S.player, t = P.climbing;
   const climbSpeed = 2.6;
   P.pos.y += fwd * climbSpeed * dt;
@@ -360,7 +369,7 @@ function updateClimb(dt, fwd, str) {
   P.pos.x = t.x + Math.sin(P.climbAngle) * rr;
   P.pos.z = t.z + Math.cos(P.climbAngle) * rr;
   P.yaw = P.climbAngle; // face the trunk (camera forward = (-sin yaw, -cos yaw))
-  if (keys.Space) {
+  if (wantsJump) {
     // leap off
     P.climbing = null;
     P.vel.set(Math.sin(P.climbAngle) * 4.5, 5.2, Math.cos(P.climbAngle) * 4.5);
