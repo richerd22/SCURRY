@@ -152,3 +152,8 @@ The v0.6.90 browser run passed all requested 3AM/night ecology and MBTA staff sh
 ## v0.6.94 — surface wildlife respects real colliders
 
 The old surface wildlife AI guarded water and streets but not park benches, trees, solid monument plinths or fence rails. Surface squirrels, rabbits and the nighttime rat now validate each proposed movement step against the SAME indexed player circles, solid boxes and terrain-following perimeter walls, at species-sized radii. If blocked they try one legal sideways path, then the other; if both fail they wait rather than clipping. Simple local wildlife-to-wildlife separation avoids visible interpenetration, without adding NPC meshes to player collision. All hidden/remote wildlife is skipped. Uses one lazily initialized obstacle index after build and one reusable probe + movement object rather than per-frame large allocations. Pure tests cover movement caps, obstacle tangents, invalid inputs, reuse, and 1000 iterations against a circular trunk. Physical iPhone FPS is still a separate acceptance gate.
+
+
+## v0.6.95 — park residents have social reactions, no rat invisibility
+
+Before this pass, civilian wanderers occasionally stopped only for squirrels while ignoring cottontails and visible surface rats. Passersby now use one pure distance/reaction policy: pause and look at squirrels, stop longer for quiet rabbit-watching, and turn away along their EXISTING safe footpath from a nearby rat. Pauses have a 17-21s cooldown per walker; inactive night crowd, remote or underground actors are not eligible. The model clip switches to idle briefly, then resumes walking. No new WebGL meshes, extra interactions, currency, or geometry. Pure tests enforce distances and no reaction to invalid/out-of-realm animals.

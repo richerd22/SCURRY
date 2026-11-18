@@ -12,6 +12,7 @@ import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.js';
 import { parkShift, actorVisible } from './park-shifts.js';
+import { civilianWildlifeReaction, civilianReactionSeconds } from './civilian-wildlife-rules.js';
 
 const SKIN = [0xe8b98f, 0xc98a5e, 0x8a5a34, 0xf0cba8, 0x6e4525];
 const SHIRT = [0xb84a4a, 0x4a6eb8, 0x4a9a5e, 0xd9c84a, 0x7a4a9a, 0xe8e4da, 0x3a8a9a, 0xd97f3b];
@@ -271,15 +272,22 @@ export function updateHumans(dt) {
     w.interactable.x=x;w.interactable.z=z;w.interactable.y=gy;
     w.mesh.position.set(x, gy + Math.abs(Math.sin(now * 7 + w.phase)) * 0.04, z);
     w.mesh.rotation.y = Math.atan2((b[0] - a[0]) * w.dir, (b[1] - a[1]) * w.dir);
-    // Passersby actually notice small park residents. Only a nearby
-    // squirrel can draw a short, cooldown-gated pause; other walkers
-    // continue their paths rather than freezing the whole crowd.
+    // Everyone now notices actual nearby animals: quiet curiosity at
+    // squirrels, longer stillness for cottontails and a slight path turn
+    // away from a close rat. No crowd teleport or extra actor spawning.
     if(w.mesh.visible&&w.pauseCooldown<=0&&w.pause<=0&&S.wildlifeActors){
-      const nearby=S.wildlifeActors.find(v=>v.kind==='squirrel'&&v.mesh.visible&&
-        Math.hypot(v.x-x,v.z-z)<1.55);
+      let nearby=null,best=Infinity,reaction=null;
+      for(const v of S.wildlifeActors){
+        if(v.underground||!v.mesh.visible)continue;
+        const dist=Math.hypot(v.x-x,v.z-z);
+        const observed=civilianWildlifeReaction(v.kind,dist);
+        if(observed&&dist<best){best=dist;nearby=v;reaction=observed;}
+      }
       if(nearby){
-        w.pause=1.8;w.pauseCooldown=18;
+        w.pause=civilianReactionSeconds(reaction,nearby.kind);
+        w.pauseCooldown=17+(wi%3)*2;
         w.mesh.rotation.y=Math.atan2(nearby.x-x,nearby.z-z);
+        if(reaction==='avoid')w.dir*=-1;
         setActorRole(w.mesh,'idle');
       }
     }
