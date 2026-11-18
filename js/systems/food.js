@@ -20,16 +20,21 @@ const FOOD_STYLE = {
 // stash value per food type when buried; everything is 1 except the
 // rat market's croissant - three caps of shinies buys three stash.
 const BURY_VALUES = { croissant: 3 };
+// A shared sphere and one material per type: repeated food pickups and
+// respawns shouldn't compile hundreds of identical GPU materials on iPhones.
 const geoCache = new THREE.SphereGeometry(1, 8, 6);
+const foodMats = {};
+const capGeo = new THREE.SphereGeometry(FOOD_STYLE.acorn.s * 0.95, 8, 5);
+const capMat = new THREE.MeshStandardMaterial({ color: 0x54331a, roughness: 1 });
 
 function makeFoodMesh(type) {
   const st = FOOD_STYLE[type];
-  const m = new THREE.Mesh(geoCache, new THREE.MeshStandardMaterial({ color: st.color, roughness: 0.9 }));
+  const mat = foodMats[type] || (foodMats[type] = new THREE.MeshStandardMaterial({ color: st.color, roughness: 0.9 }));
+  const m = new THREE.Mesh(geoCache, mat);
   m.scale.set(st.s, st.s * 0.75, st.s * 1.25);
   m.castShadow = true;
   if (type === 'acorn') {
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(st.s * 0.95, 8, 5),
-      new THREE.MeshStandardMaterial({ color: 0x54331a, roughness: 1 }));
+    const cap = new THREE.Mesh(capGeo, capMat);
     cap.position.y = st.s * 0.5; cap.scale.y = 0.5;
     m.add(cap);
   }
@@ -44,7 +49,8 @@ export function spawnFood(type, x, z, opts = {}) {
   // Preserve an explicitly placed floor (arena parquet, Esplanade lawn,
   // canopy cache). The old per-frame groundHeight() snap moved all those
   // foods to y=0 regardless of the destination's visible floor.
-  const item = { type, mesh, x, z, floorY: gy, steal: !!opts.steal,
+  const item = { type, mesh, x, z, floorY: gy,
+    source: opts.source || 'world', steal: !!opts.steal,
     blanket: opts.blanket || null, born: performance.now() };
   S.foods.push(item);
   return item;
@@ -68,7 +74,7 @@ const AMBIENT = [
 let respawnTimer = 8;
 
 export function initFood() {
-  for (const [type, x, z] of AMBIENT) spawnFood(type, x, z);
+  for (const [type, x, z] of AMBIENT) spawnFood(type, x, z, { source: 'ambient' });
   // blanket food: stealable
   for (const b of S.blankets) {
     spawnFood('sandwich', b.x + 0.4, b.z - 0.3, { steal: true, blanket: b, y: b.gy + 0.06 });
@@ -132,9 +138,15 @@ export function updateFood(dt) {
   respawnTimer -= dt;
   if (respawnTimer <= 0) {
     respawnTimer = 9;
-    if (S.foods.filter(f => !f.steal).length < 20) {
+    // Canopy caches, market croissants and destination snacks live in the
+    // same registry but must NOT exhaust the Common's ambient food budget.
+    // Cap the park's freely scattered ground food independently.
+    let ambientCount = 0;
+    for (const food of S.foods) if (food.source === 'ambient') ambientCount++;
+    if (ambientCount < 20) {
       const [type, x, z] = AMBIENT[(Math.random() * AMBIENT.length) | 0];
-      spawnFood(type, x + (Math.random() - 0.5) * 6, z + (Math.random() - 0.5) * 6);
+      spawnFood(type, x + (Math.random() - 0.5) * 6, z + (Math.random() - 0.5) * 6,
+        { source: 'ambient' });
     }
   }
   for (const it of S.interactables) if (it.tick) it.tick(dt);

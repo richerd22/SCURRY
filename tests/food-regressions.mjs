@@ -13,7 +13,8 @@ class Vector3 {
   lerpVectors(a,b,t) { return this.set(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t); }
 }
 class Mesh {
-  constructor() {
+  constructor(geometry, material) {
+    this.geometry = geometry; this.material = material;
     this.position = new Vector3(); this.scale = new Vector3(1,1,1);
     this.rotation = {x:0,y:0,z:0}; this.children = [];
   }
@@ -107,4 +108,24 @@ test('stale bury actions cannot increment stash twice or after leaving grass', a
   stale.action();
   assert.equal(h.S.stash,3);
   assert.equal(h.S.carried,'acorn');
+});
+
+test('home park ambient food restocks even when many realm/cache items exist', async () => {
+  const h = await harness();
+  h.initFood();
+  assert.equal(h.S.foods.filter(f => f.source === 'ambient').length, 16);
+  for (let i = 0; i < 30; i++) h.spawnFood('peanut', 3000 + i, 3000 + i, { y: 0.05 });
+  h.updateFood(9);
+  assert.equal(h.S.foods.filter(f => f.source === 'ambient').length, 17,
+    'non-home snacks must not suppress the Common ambient spawn loop');
+});
+test('repeat food spawns share material and acorn cap geometry', async () => {
+  const h = await harness();
+  const a = h.spawnFood('acorn', 1, 1), b = h.spawnFood('acorn', 2, 1);
+  const c = h.spawnFood('pretzel', 3, 1);
+  assert.equal(a.mesh.material, b.mesh.material);
+  assert.notEqual(a.mesh.material, c.mesh.material);
+  assert.equal(a.mesh.geometry, b.mesh.geometry);
+  assert.equal(a.mesh.children[0].geometry, b.mesh.children[0].geometry);
+  assert.equal(a.mesh.children[0].material, b.mesh.children[0].material);
 });

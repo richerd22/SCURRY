@@ -73,3 +73,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Alternative:** Treat all destination floors as home grass (unintended progression exploit); sample `groundHeight` on every frame (destroys authored height); accept stale interaction actions (inventory corruption).
 
 **Consequence:** Stable visible food across expansion levels, predictable stash economy and no false grass in concrete/underground areas. Adding Esplanade-specific buriable soil now requires an explicit physical mask and tests; it must not be inferred from a far-away coordinate.
+
+
+## ADR-009 — ambient food is a source category, not the whole global registry
+
+**Context:** The global food list holds cache loot and remote-map snacks as well as Common forage. A cap based on all non-stealable items can deadlock the Common restock loop after more locations are introduced.
+
+**Decision:** Tag true ambient park food at spawn and count that category for the existing 20-item restock target. Leave every authored cache or arena spawn untagged as world food. Also share immutable per-type food materials and base/cap geometry rather than creating GPU resource clones for identical food.
+
+**Consequence:** The Common can replenish independently from expansion content. A new system that wants the *same* ambient budget must explicitly use source:'ambient'; otherwise its items cannot affect the home refill logic. Mesh ownership remains per food item, but its material and geometry are shared, so callers must never dispose shared assets on individual removal.

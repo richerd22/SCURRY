@@ -83,3 +83,9 @@ The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead o
 - Trade for a croissant in the rat burrow market; try BURY inside the burrow and on remote concrete at Fenway, TD Garden and City Hall. BURY must not activate; return to grass in the Common and bury for +3 stash exactly once.
 - Check raised placed food at the Esplanade embankment and future licensed TD Garden seating. The food must remain on its authored floor before and after many `updateFood` ticks, rather than popping to y=0.
 - Walk away immediately after a food prompt appears and press E; a stale prompt must not grant a distant food item. Check touch ACT too.
+
+
+## Ambient forage and memory regression (v0.6.38)
+
+- Bury or collect most Common scattered snacks, then visit a realm/market and return. Over 9–18 game seconds the Common's freely scattered food should begin restocking even when cache/realm foods still exist elsewhere.
+- Repeat collecting/burying acorns for several minutes on an iPhone while monitoring memory and responsiveness; the materials for identical snack types now reuse the same GPU objects. A leak-free long session is still a physical-device observation, not proved by Node tests.
