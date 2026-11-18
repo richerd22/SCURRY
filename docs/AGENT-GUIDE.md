@@ -1323,3 +1323,8 @@ The mobile live test checks Field Notes after a full `page.reload()`, not merely
 ## Browser smoke CI efficiency (Nov 18 2026)
 
 Added a pinned Playwright Chromium download cache and same-branch `cancel-in-progress` concurrency to the browser workflow. This avoids redundant 100MB browser downloads and reduces overlapping long-running runs from rapid pushes; the newest main commit gets priority. Unit/syntax tests and GitHub Pages remain separate. Inspect commit SHA before marking a browser result green. Cached Chromium versions must be bumped when Playwright is upgraded.
+
+
+## v0.6.56 — no recurrent ambience work when muted/paused (Nov 18 2026)
+
+Audio now cancels its recurring birdsong/cricket timeout during pause and mute, restarting a single timer only on playable unmuted resume. AudioContext master gain honors mute loaded before any gesture; formerly it always started at .5 even if muted was already true. Enhanced pure WebAudio regressions cover timer lifecycle, one context, gain and pre-gesture behavior. No changes to the sound palette or loaded assets (everything remains procedural).

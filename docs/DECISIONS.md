@@ -252,3 +252,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Use GitHub Actions same-branch cancel-in-progress concurrency and cache Chromium binaries by runner OS/architecture and pinned Playwright version. Keep the game itself dependency-free and keep the fast Node/Pages gates separate.
 
 **Consequence:** Faster iterative signal and lower CI resource waste. Old workflow runs may show cancelled; only a matching green latest commit is acceptance evidence. A cold cache still has normal installation cost.
+
+
+## ADR-029 — paused/muted ambience must stop the timer, not merely skip sound creation
+
+**Context:** Pausing WebAudio and gating the oscillator creation did not cancel the recurring ambient setTimeout. Also, mute restored from localStorage before AudioContext creation did not set the initial master gain correctly.
+
+**Decision:** Give ambient scheduling one explicit timer owner, cancel it on pause and manual mute, and restart at most once only while playing and unmuted. Seed the initial gain from the current mute preference. Verify via fake clock/timer counts in Node, separately from audible iPhone acceptance.
+
+**Consequence:** Zero recurring ambient wakeups under pause/mute, correct persisted mute at the audio output gate, and no duplicate loops from repeated start/resume.

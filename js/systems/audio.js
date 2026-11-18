@@ -16,29 +16,34 @@ function changeContextState(action) {
 export function isGameAudioPaused() { return gameAudioPaused; }
 export function setGameAudioPaused(paused) {
   gameAudioPaused = !!paused;
+  if (gameAudioPaused) stopAmbience();
   if (!ctx) return;
   if (gameAudioPaused && ctx.state === 'running') changeContextState('suspend');
   if (!gameAudioPaused && ctx.state === 'suspended') changeContextState('resume');
+  if (!gameAudioPaused && !muted) startAmbience();
 }
 
 export function initAudio() {
   if (ctx) {
     if (!gameAudioPaused && ctx.state === 'suspended') changeContextState('resume');
+    if (!gameAudioPaused && !muted) startAmbience();
     return;
   }
   try {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
-    master.gain.value = 0.5;
+    master.gain.value = muted ? 0 : 0.5;
     master.connect(ctx.destination);
-    startAmbience();
+    if (!gameAudioPaused && !muted) startAmbience();
     if (gameAudioPaused) changeContextState('suspend');
   } catch (e) { ctx = null; }
 }
 
 export function setMuted(m) {
-  muted = m;
-  if (master) master.gain.value = m ? 0 : 0.5;
+  muted = !!m;
+  if (master) master.gain.value = muted ? 0 : 0.5;
+  if (muted) stopAmbience();
+  else if (ctx && !gameAudioPaused) startAmbience();
 }
 export function isMuted() { return muted; }
 
@@ -126,9 +131,16 @@ export const sfx = {
 
 // --- ambience: sparse synthesized birdsong by day, crickets by night ---
 let ambienceTimer = null;
+function stopAmbience() {
+  if (ambienceTimer !== null) {
+    clearTimeout(ambienceTimer);
+    ambienceTimer = null;
+  }
+}
 function startAmbience() {
-  if (ambienceTimer) return;
+  if (ambienceTimer !== null || !ctx || muted || gameAudioPaused) return;
   const tick = () => {
+    ambienceTimer = null;
     if (ctx && !muted && !gameAudioPaused) {
       try {
         const hour = window.__scurryHour ? window.__scurryHour() : 17.6;
@@ -143,7 +155,9 @@ function startAmbience() {
         }
       } catch (e) {}
     }
-    ambienceTimer = setTimeout(tick, 2500 + Math.random() * 5000);
+    // Never leave a recurring timer armed behind a pause/mute.
+    if (ctx && !muted && !gameAudioPaused)
+      ambienceTimer = setTimeout(tick, 2500 + Math.random() * 5000);
   };
   ambienceTimer = setTimeout(tick, 1500);
 }

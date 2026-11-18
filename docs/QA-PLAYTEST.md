@@ -205,3 +205,8 @@ Review `mobile-spawn-field-notes.png` and `mobile-live-play-saved-notes.png` fro
 ## CI run matching / canceled browser workflows
 
 The browser workflow now cancels older in-flight runs on the same branch when a new commit arrives. Before interpreting a green browser result, ensure its SHA matches the HEAD commit, and distinguish `cancelled` (superseded by new code) from `failure` (test or environment issue). Download screenshots/report.json from the newest completed matching run, not an older successful screenshot.
+
+
+## Ambient timer and saved MUTE (v0.6.56)
+
+Start with MUTE saved across reload, tap PLAY and verify silence. Unmute and listen for birds/crickets; pause/background for 30–60 seconds and confirm there are no ongoing chirps (and no ambient timeout rearmed in the browser perf profiler). Resume should restore exactly one ambience loop; repeated pause/resume cycles should not stack chirps. Node regression tests verify timer bookkeeping and gain; actual sound output and battery still need physical iPhone QA.
