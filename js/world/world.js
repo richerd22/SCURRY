@@ -21,6 +21,8 @@ function ellipseDip(x, z, e) {
 
 const TERRAIN_X = 150, TERRAIN_Z = 86;
 let terrainGrid = null;
+// Static plaza footprint cache: never allocate in the per-substep height query.
+const PLAZA_TOPS = [[140, 42, 13.6], [-25, -58, 10.6], [60, -45, 13.1]];
 // Match actual rendered triangle faces, rather than the interpolated math hill.
 export function visibleGroundHeight(x, z) {
   const h = meshTerrainHeight(terrainGrid, x, z, MAP.minX, MAP.maxX, MAP.minZ, MAP.maxZ, TERRAIN_X, TERRAIN_Z);
@@ -35,9 +37,9 @@ export function visibleGroundHeight(x, z) {
   if (x >= -36 && x <= 196 && Math.abs(z + 18) <= 5.4) {
     top = Math.max(top, analytic + (Math.abs(z + 18) <= 4.7 ? 0.058 : 0.03));
   }
-  for (const [px, pz, r] of [[140, 42, 13.6], [-25, -58, 10.6], [60, -45, 13.1]]) {
-    if (Math.hypot(x - px, z - pz) <= r)
-      top = Math.max(top, analytic + (Math.hypot(x - px, z - pz) <= r - 0.6 ? 0.045 : 0.028));
+  for (const [px, pz, r] of PLAZA_TOPS) {
+    const dist = Math.hypot(x - px, z - pz);
+    if (dist <= r) top = Math.max(top, analytic + (dist <= r - 0.6 ? 0.045 : 0.028));
   }
   return top;
 }
