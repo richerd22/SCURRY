@@ -138,8 +138,10 @@ async function checkGameplay() {
     await page.keyboard.down('w');
     await page.evaluate(() => window.__scurryQA.suspend());
     assert.equal((await get()).paused,true);
+    assert.equal((await get()).audioPaused,true,'pause must silence procedural audio');
     await page.locator('#pause').click();
     assert.equal((await get()).paused,false);
+    assert.equal((await get()).audioPaused,false,'resume must unpause audio');
     const resumed=await get();
     await page.waitForTimeout(650);
     const stopped=await get();

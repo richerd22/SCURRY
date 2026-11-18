@@ -24,7 +24,7 @@ import { buildEsplanade, initEsplanade, updateEsplanade, debugEnterEsplanade } f
 import { buildGeese, updateGeese } from './systems/geese.js';
 import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
-import { initAudio, setMuted, isMuted } from './systems/audio.js';
+import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
 import { initParkMap, updateParkMap } from './ui/park-map.js';
@@ -162,6 +162,7 @@ function startGame() {
   // Starting/resuming is a new input session: no keys held behind overlays.
   clearPlayerInput();
   initAudio();
+  setGameAudioPaused(false);
   S.started = true;
   S.paused = false;
   titleEl.style.display = 'none';
@@ -187,12 +188,14 @@ document.addEventListener('pointerlockchange', () => {
   if (locked) {
     previouslyLocked = true;
     S.paused = false;
+    setGameAudioPaused(false);
     pauseEl.style.display = 'none';
   } else if (previouslyLocked) {
     previouslyLocked = false;
     if (S.started) {
       clearPlayerInput();
       S.paused = true;
+      setGameAudioPaused(true);
       pauseEl.style.display = 'flex';
     }
   }
@@ -204,6 +207,7 @@ const suspendGame = () => {
   if (!S.started || S.debugShot) return;
   clearPlayerInput();
   S.paused = true;
+  setGameAudioPaused(true);
   pauseEl.style.display = 'flex';
 };
 document.addEventListener('visibilitychange', () => { if (document.hidden) suspendGame(); });
@@ -364,7 +368,7 @@ if (qaLocal) {
         inHollow: p.inHollow, inBurrow: p.inBurrow, inFenway: p.inFenway,
         inGarden: p.inGarden, inCityHall: p.inCityHall, inEsplanade: p.inEsplanade,
         prompt: currentE?.label || null, bury: currentF?.label || null,
-        touch: { ...S.touch },
+        touch: { ...S.touch }, audioPaused: isGameAudioPaused(),
       };
     },
     interactions: () => S.interactables.map(it => ({
@@ -385,6 +389,7 @@ if (qaLocal) {
         document.exitPointerLock();
       clearPlayerInput();
       S.paused = true;
+      setGameAudioPaused(true);
       pauseEl.style.display = 'flex';
     },
   });

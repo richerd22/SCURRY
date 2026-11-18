@@ -165,3 +165,10 @@ The headless WebGL workflow now runs `?qa=1&lowq=1` on a local HTTP server, clic
 - Face north then rotate 90 degrees; a target east of the squirrel should point right before turning and straight ahead afterward. Walk toward the target and verify distance falls; at 4m it shows ARRIVED.
 - Tap the cue to clear it; the normal HUD returns uncluttered. Re-select a different landmark and enter the burrows or a destination: the Common waypoint cue should hide, reappearing on return.
 - Verify mobile buttons, legend touch targets, safe areas and suspended browser state; do not interpret the direct arrow as a safe obstacle-aware route.
+
+
+## Audio pause/resume (v0.6.50)
+
+- Pause/background SCURRY during daytime chirps or night crickets. Audio should become silent and resume only after an intentional PLAY/RESUME gesture.
+- Mute before pause, then resume: mute should remain on and survive reload. Repeated resume must reuse one AudioContext, not allocate another.
+- An iOS Safari WebAudio permission rejection must never trap the player. Browser CI asserts internal audio pause state; real audible output requires physical-device QA.

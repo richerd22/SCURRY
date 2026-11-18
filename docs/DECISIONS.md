@@ -189,3 +189,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Let a player select any named map marker via semantic keyboard/touch-operable buttons. Only after selecting does a small arrow+metres cue appear; use pure yaw-relative world coordinates and update at 5Hz. Hide while paused, in remote realms, or while reading the map. Do not implement fake route navigation across fences and water.
 
 **Consequence:** Better player-led exploration without changing world placement or introducing another rendering pass. The cue is a direct bearing, not obstacle-aware pathfinding, and resets when the page reloads.
+
+
+## ADR-022 — WebAudio should be part of the game's pause contract
+
+**Context:** The scene stopped rendering on pause but WebAudio ambience continued generating bird and cricket events, wasting power behind overlays.
+
+**Decision:** Gate procedural effects/ambience on a separate gameplay audio pause flag and suspend/resume the existing AudioContext during input/visibility lifecycle changes. Preserve saved user MUTE independently and swallow expected autoplay-policy promise rejections.
+
+**Consequence:** Paused scenes are also silent and reduce audio CPU usage, without creating new contexts or changing the audio asset pipeline. Physical iOS audio and power must still be observed.

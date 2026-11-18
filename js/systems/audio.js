@@ -4,15 +4,35 @@
 let ctx = null;
 let master = null;
 let muted = false;
+let gameAudioPaused = false;
+
+function changeContextState(action) {
+  if (!ctx || typeof ctx[action] !== 'function') return;
+  try {
+    const operation = ctx[action]();
+    if (operation && operation.catch) operation.catch(() => {});
+  } catch (_) { /* browser audio policy cannot break movement */ }
+}
+export function isGameAudioPaused() { return gameAudioPaused; }
+export function setGameAudioPaused(paused) {
+  gameAudioPaused = !!paused;
+  if (!ctx) return;
+  if (gameAudioPaused && ctx.state === 'running') changeContextState('suspend');
+  if (!gameAudioPaused && ctx.state === 'suspended') changeContextState('resume');
+}
 
 export function initAudio() {
-  if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+  if (ctx) {
+    if (!gameAudioPaused && ctx.state === 'suspended') changeContextState('resume');
+    return;
+  }
   try {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
     master.gain.value = 0.5;
     master.connect(ctx.destination);
     startAmbience();
+    if (gameAudioPaused) changeContextState('suspend');
   } catch (e) { ctx = null; }
 }
 
@@ -30,7 +50,7 @@ function env(gainNode, t0, a, peak, d) {
 }
 
 function tone(freqA, freqB, dur, type, peak, when = 0) {
-  if (!ctx || muted) return;
+  if (!ctx || muted || gameAudioPaused) return;
   try {
     const t0 = ctx.currentTime + when;
     const o = ctx.createOscillator();
@@ -45,7 +65,7 @@ function tone(freqA, freqB, dur, type, peak, when = 0) {
 }
 
 function noiseBurst(dur, filterFreq, peak, when = 0, type = 'bandpass') {
-  if (!ctx || muted) return;
+  if (!ctx || muted || gameAudioPaused) return;
   try {
     const t0 = ctx.currentTime + when;
     const len = Math.max(1, (dur * ctx.sampleRate) | 0);
@@ -75,7 +95,7 @@ export const sfx = {
   screech() {
     // Hawk Dua: harsh descending FM cry - a carrier screamed down from
     // ~2.6kHz with a rasping modulator, plus a noise layer for the rasp.
-    if (!ctx || muted) return;
+    if (!ctx || muted || gameAudioPaused) return;
     try {
       const t0 = ctx.currentTime;
       const dur = 0.7;
@@ -109,7 +129,7 @@ let ambienceTimer = null;
 function startAmbience() {
   if (ambienceTimer) return;
   const tick = () => {
-    if (ctx && !muted) {
+    if (ctx && !muted && !gameAudioPaused) {
       try {
         const hour = window.__scurryHour ? window.__scurryHour() : 17.6;
         if (hour > 5.5 && hour < 19.5) {

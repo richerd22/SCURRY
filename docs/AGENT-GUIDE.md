@@ -1288,3 +1288,8 @@ The first live-play browser test revealed a real bug: after a paused screenshot-
 ## v0.6.49 — selectable map waypoint (Nov 18 2026)
 
 Six map legend entries and the runtime Hollow Tree pin are now accessible buttons. A chosen landmark creates an optional compact on-screen heading arrow and horizontal metre distance, recalculated at the existing 5Hz atlas cadence. The cue hides when the map is open, when paused or in another realm; tap it to clear. `waypointBearing` in map-math.js is pure yaw-relative XZ math (0 north, -PI/2 east). Three new tests cover cardinal orientation, camera rotation and diagonal distance. Browser smoke checks selecting/clearing from the simulated mobile atlas. No new assets, bundler or risky geometry changes. It is *compass-style*, not pathfinding through obstacles.
+
+
+## v0.6.50 (Nov 18 2026) — audio respects gameplay suspension
+
+The same browser lifecycle that freezes physics now silences synthesized birdsong/crickets and suspends the single WebAudio context via a guarded pause flag. On a real PLAY/RESUME gesture it resumes the context without overwriting user MUTE. Tests exercise a fake AudioContext with no browser timers and the actual browser QA snapshot. This reduces hidden audio work without adding sound assets or dependencies. Real iPhone volume/autoplay policy needs manual verification.
