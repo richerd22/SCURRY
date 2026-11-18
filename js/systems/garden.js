@@ -136,6 +136,8 @@ function gridGround(lx, lz) {
 let discovered = false;
 
 export function buildGarden(scene) {
+  // Give the controller the destination's true ground BEFORE motion occurs.
+  Object.assign(S.realmGround, { garden: (x, z) => gridGround(x - GDN.x, z - GDN.z) });
   if (typeof S.player.inGarden !== 'boolean') S.player.inGarden = false;
   const g = new THREE.Group();
   g.position.copy(GDN);

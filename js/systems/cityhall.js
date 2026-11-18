@@ -236,6 +236,8 @@ const plazaLights = [];   // PointLights driven by S.lampFactor
 let jetMat = null;        // the fountain jet's material (pulsed in update)
 
 export function buildCityHall(scene) {
+  // Give the controller the destination's true ground BEFORE motion occurs.
+  Object.assign(S.realmGround, { cityhall: (x, z) => cityGround(x - CH.x, z - CH.z) });
   if (typeof S.player.inCityHall !== 'boolean') S.player.inCityHall = false;
   const g = new THREE.Group();
   g.position.copy(CH);

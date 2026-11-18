@@ -348,6 +348,8 @@ function updateFenwaySky(dt) {
 let discovered = false;
 
 export function buildFenway(scene) {
+  // Give the controller the destination's true ground BEFORE motion occurs.
+  Object.assign(S.realmGround, { fenway: (x, z) => fenGround(x - FEN.x, z - FEN.z) });
   if (typeof S.player.inFenway !== 'boolean') S.player.inFenway = false;
   const g = new THREE.Group();
   g.position.copy(FEN);

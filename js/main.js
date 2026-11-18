@@ -8,7 +8,7 @@ import { buildTrees } from './world/trees.js';
 import { buildLandmarks } from './world/landmarks.js';
 import { buildProps } from './world/props.js';
 import { initDaycycle, updateDaycycle, setSunShadows, setShadowSize } from './systems/daycycle.js';
-import { initPlayer, updatePlayer } from './systems/player.js';
+import { initPlayer, updatePlayer, syncPlayerCamera } from './systems/player.js';
 import { buildHumans, updateHumans } from './systems/humans.js';
 import { initFood, updateFood, nearestFoodAction, buryAction } from './systems/food.js';
 import { buildDogs, updateDogs, biteDogs, nearestDogDist } from './systems/dogs.js';
@@ -91,7 +91,10 @@ function scanInteractions() {
     const label = it.label();
     if (!label) continue;
     const d = Math.hypot(P.x - it.x, P.z - it.z);
-    if (d < it.r && d < bd) { bd = d; bestLabel = label; bestAction = it.action; }
+    // Can't beg a tourist / interact with a burrow door from a roof 10m up.
+    if (d < it.r && d < bd && (!Number.isFinite(it.y) || Math.abs(P.y - it.y) < (it.heightRange || 1.8))) {
+      bd = d; bestLabel = label; bestAction = it.action;
+    }
   }
   const fa = nearestFoodAction();
   if (fa) {
@@ -327,7 +330,7 @@ function perfLadder(dt) {
   }
 }
 function warnings() {
-  if (S.player.inHollow || S.player.inBurrow || S.player.inFenway || S.player.inGarden) return '';
+  if (S.player.inHollow || S.player.inBurrow || S.player.inFenway || S.player.inGarden || S.player.inCityHall || S.player.inEsplanade) return '';
   if (S.ranger && S.ranger.state === 'chase') return '! THE RANGER IS AFTER YOU - CLIMB SOMETHING !';
   if (S.gooseWarn > 0) return '! THE GEESE ARE OBJECTING - WAIT, BRIBE THEM, OR GO AROUND !';
   if (S.hawkFlash > 0) return '! HAWK DUA HAS YOU MARKED - GET UNDER COVER !';
@@ -358,6 +361,8 @@ function loop() {
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateCanopy(dt);
+    // Realm clamps, catches, and portals may move the feet after physics.
+    syncPlayerCamera(camera);
     scanInteractions();
     const prompt = currentE ? currentE.label : (currentF ? currentF.label : '');
     updateHUD(prompt, warnings());

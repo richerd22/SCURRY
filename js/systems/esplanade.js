@@ -232,6 +232,8 @@ const espFoods = [];    // this zone's food items (re-pinned by tick)
 const TREE_SPOTS = [];  // filled in build; the canopy cap rides one
 
 export function buildEsplanade(scene) {
+  // Give the controller the destination's true ground BEFORE motion occurs.
+  Object.assign(S.realmGround, { esplanade: (x, z) => espGround(x - ESP.x, z - ESP.z) });
   if (typeof S.player.inEsplanade !== 'boolean') S.player.inEsplanade = false;
   const g = new THREE.Group();
   g.position.copy(ESP);
