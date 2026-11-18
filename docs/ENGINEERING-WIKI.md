@@ -91,3 +91,12 @@ Touch uses a left virtual stick, right lookzone, jump and action buttons; **poin
 ## v0.6.36: two-scale scene fidelity inspection
 
 The source gameplay camera stays 0.25 m above squirrel feet. Only `?shot=<pose>&eye=<metres>` enables a camera reference height from 0.15–2.0m, so the same authored pose can be judged at human height (1.7m) and squirrel height (0.25m). Paw meshes are hidden for human-height inspection; physics, interactions and actual player posture remain squirrel-sized. Screenshot pose feet now use the visible triangle/path terrain surface. Live diagnostic FPS uses real elapsed frame time rather than the simulation's 50ms timestep cap; this does not itself boost performance.
+
+
+## v0.6.37 — food, remote floors and interaction integrity
+
+The food system is shared by the home park, canopy caches, burrows and destination realms. A caller-supplied `spawnFood(..., {y})` is **the floor height**. Previously food with an explicit floor could spawn on the correct Esplanade/TD Garden surface and then be teleported to the analytic home park ground on the very next `updateFood` tick. We now retain `item.floorY` (explicit or initially sampled ground) and bob food above that consistent base. Dynamic canopy cache scripts may still reposition their own food after the food update.
+
+Food and burial prompts may be cached for one frame: stale double activation after another pickup, crow snatch or portal move must never remove the wrong array element or award stash twice. Food actions now revalidate proximity and membership, and `removeFood` returns false for already-consumed items rather than splicing index -1. Bury callbacks also revalidate their eligibility and carried item.
+
+The common's `isGrass()` must **not** authorize burying in far destination maps or the underground tunnels, where every unrelated coordinate previously looked like grass. Burying is limited to *actual Common/Public Garden grass* until other realms implement explicit grass masks. Six new permanent Node tests import the production food module with lightweight geometry/state mocks, and cover floor fidelity, duplicated/stale pickup and burial, and realm restrictions. No food geometry, textures or balance values are changed.

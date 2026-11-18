@@ -41,7 +41,11 @@ export function spawnFood(type, x, z, opts = {}) {
   const gy = opts.y !== undefined ? opts.y : groundHeight(x, z);
   mesh.position.set(x, gy + 0.05, z);
   S.scene.add(mesh);
-  const item = { type, mesh, x, z, steal: !!opts.steal, blanket: opts.blanket || null, born: performance.now() };
+  // Preserve an explicitly placed floor (arena parquet, Esplanade lawn,
+  // canopy cache). The old per-frame groundHeight() snap moved all those
+  // foods to y=0 regardless of the destination's visible floor.
+  const item = { type, mesh, x, z, floorY: gy, steal: !!opts.steal,
+    blanket: opts.blanket || null, born: performance.now() };
   S.foods.push(item);
   return item;
 }
@@ -117,10 +121,11 @@ export function updateFood(dt) {
       p.mesh.rotation.x += dt * 9;
     }
   }
-  // gentle bob/glint on ground food + pickup checks handled by interact system in main
+  // Gentle bob/glint on food. Static floors were sampled once at spawn;
+  // caller-provided ground heights must survive every frame (other realms).
   const now = performance.now() / 1000;
   for (const f of S.foods) {
-    f.mesh.position.y = (f.steal ? f.mesh.position.y : groundHeight(f.x, f.z) + 0.05 + Math.sin(now * 2 + f.x) * 0.008);
+    f.mesh.position.y = (f.steal ? f.mesh.position.y : f.floorY + 0.05 + Math.sin(now * 2 + f.x) * 0.008);
     f.mesh.rotation.y += dt * 0.7;
   }
   // ambient respawn keeps the park stocked
@@ -142,6 +147,8 @@ export function updateFood(dt) {
 // gate reads f.mesh.position.y, which is the live y at scan time: main's
 // loop runs scanInteractions after updateFood and updateCanopy, so cache
 // food has already been re-pinned to its branch for this frame.
+// Explicit spawn floors are stable and do not get overwritten by a home-park
+// height sample each frame (critical for Esplanade, TD Garden and roofs).
 // Per-source audit of intended dy (food mesh y minus feet y):
 //   ground spawns / respawns / drops / swaps / beg + trash-can tosses
 //     (all land via spawnFood with no y): groundHeight + 0.05, dy ~0.05
@@ -158,6 +165,11 @@ export function updateFood(dt) {
 // case needs a gate above 1.25. 1.5 clears it with margin and is still
 // far under the lowest ground-to-cache dy.
 const FOOD_REACH_Y = 1.5;
+const FOOD_REACH_XZ = 1.15;
+function canReachFood(f, pos) {
+  return S.foods.includes(f) && Math.abs(f.mesh.position.y - pos.y) <= FOOD_REACH_Y
+    && Math.hypot(pos.x - f.x, pos.z - f.z) <= FOOD_REACH_XZ;
+}
 export function nearestFoodAction() {
   const P = S.player.pos;
   let best = null, bd = 1e9;
@@ -166,13 +178,15 @@ export function nearestFoodAction() {
     const d = Math.hypot(P.x - f.x, P.z - f.z);
     if (d < bd) { bd = d; best = f; }
   }
-  if (!best || bd > 1.15) return null;
+  if (!best || bd > FOOD_REACH_XZ) return null;
   if (best.steal) {
     const b = best.blanket;
     return {
       label: b.lookingAway ? 'E - snatch it (they\'re not looking)' : 'E - snatch it (THEY ARE LOOKING)',
       action: () => {
-        removeFood(best);
+        // The crow, goose or another input may already have consumed it
+        // since the last prompt scan. Never remove a different inventory item.
+        if (!canReachFood(best, P) || !removeFood(best)) return;
         if (S.carried) spawnFood(S.carried, P.x - 0.4, P.z + 0.3);
         if (!b.lookingAway) {
           S.rangerAlert = 14;
@@ -189,8 +203,8 @@ export function nearestFoodAction() {
   return {
     label: S.carried ? 'E - swap for ' + best.type : 'E - take ' + best.type,
     action: () => {
+      if (!canReachFood(best, P) || !removeFood(best)) return;
       const old = S.carried;
-      removeFood(best);
       if (old) spawnFood(old, P.x + 0.4, P.z + 0.3);
       takeFood(best.type);
     },
@@ -203,24 +217,36 @@ function takeFood(type) {
   sfx.chomp();
 }
 function removeFood(f) {
+  const index = S.foods.indexOf(f);
+  if (index < 0) return false;
+  S.foods.splice(index, 1);
   S.scene.remove(f.mesh);
-  S.foods.splice(S.foods.indexOf(f), 1);
+  return true;
 }
 // shared removal for other systems (geese eating off the bridge deck)
-export function removeFoodItem(f) {
-  if (S.foods.indexOf(f) === -1) return;
-  removeFood(f);
-}
+export function removeFoodItem(f) { removeFood(f); }
 
+// The home park owns isGrass(): away from the Common/Garden its paths and
+// lagoon tests are undefined, so remote concrete and even burrow tunnels
+// previously passed as grass. Keep the rule local until a realm supplies its
+// own explicit buryable ground mask (never silently treat all land as grass).
+function canBuryHere() {
+  const player = S.player;
+  const P = player.pos;
+  if (!S.carried || !player.grounded || player.climbing) return false;
+  if (player.inHollow || player.inBurrow || player.inFenway || player.inGarden ||
+      player.inCityHall || player.inEsplanade) return false;
+  if (P.y - groundHeight(P.x, P.z) > FOOD_REACH_Y) return false;
+  return isGrass(P.x, P.z);
+}
 export function buryAction() {
-  const P = S.player.pos;
-  if (!S.carried) return null;
-  if (S.player.climbing || !S.player.grounded) return null;
-  if (P.y - groundHeight(P.x, P.z) > FOOD_REACH_Y) return null; // grounded on a canopy/bridge is not ground - no burying mid-air
-  if (!isGrass(P.x, P.z)) return null;
+  if (!canBuryHere()) return null;
   return {
     label: 'F - bury the ' + S.carried,
     action: () => {
+      // A prompt may be executed twice before the next render, or after
+      // teleport / jump. Reject stale actions instead of minting free stash.
+      if (!canBuryHere()) return;
       const type = S.carried;
       const value = BURY_VALUES[type] || 1;
       S.carried = null;

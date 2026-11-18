@@ -62,3 +62,14 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Add an optional eye-height parameter only to deterministic screenshot/shot-mode poses (0.15–2m); keep physical feet and collision behavior untouched. Compare the same pose at 0.25m and 1.7m; hide camera-attached paws in human-reference shots and place debug feet on the same visible-ground sampler as gameplay.
 
 **Consequence:** Repeatable two-scale visual evidence without the false implication that humans are playable or that full human-sized physics exists. Real-device light/perf still requires independent testing.
+
+
+## ADR-008 — explicit food floor and local burial policy
+
+**Context:** Every food item is in the global list regardless of realm, but the home park height/grass helpers are not meaningful thousands of metres away. The previous update loop overwrote destination food placement, and replaying cached actions could delete a different item or mint free stash.
+
+**Decision:** Store the food's original floor height (including a caller-specified realm height) and preserve it during bob animation; revalidate each consumable action at execution time. A food item can be removed only while it still belongs to the registry. Bury only on home park grass until a destination has an explicitly modeled vegetation/bury mask.
+
+**Alternative:** Treat all destination floors as home grass (unintended progression exploit); sample `groundHeight` on every frame (destroys authored height); accept stale interaction actions (inventory corruption).
+
+**Consequence:** Stable visible food across expansion levels, predictable stash economy and no false grass in concrete/underground areas. Adding Esplanade-specific buriable soil now requires an explicit physical mask and tests; it must not be inferred from a far-away coordinate.

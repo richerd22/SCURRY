@@ -1221,3 +1221,8 @@ The original save tests were in a temporary harness and were not part of the rep
 ## v0.6.36 (Nov 18 2026): two-scale visual evidence + truthful diagnostics
 
 Shot mode accepts `&eye=1.7` for an eye-height-only reference camera, alongside canonical `&eye=0.25`. Only `S.debugShot` reads this, not live play. A 1m+ shot hides the paws root so a squirrel paw doesn't levitate at human eye. Shot pose feet use `visibleGroundHeight`, matching rendered lawn/paths/plazas. Diagnostics FPS now divides by raw frame time (the simulation still clamps to <=50ms), avoiding the artificial 20fps floor under bad performance. Docs/QA-PLAYTEST.md includes paired example poses. No change to real physics or material quality; it only makes comparison evidence more reliable.
+
+
+## v0.6.37 (Nov 18 2026) — food world-height + action safety
+
+Audit found a real destination-placement fault: `spawnFood(opts.y)` initially placed items correctly on raised floors, but `updateFood` immediately reset all non-steal food to the home map's `groundHeight()`. Preserve `item.floorY` at spawn and bob relative to that stored base; canopy caches can still repin their own meshes. `removeFood` now safely checks registry membership before splicing, and pickup/bury actions revalidate reach/state on activation to defeat cached prompts and double taps. Home `isGrass` is invalid as a universal world classifier: burrows, hollow, Fenway, TD Garden, City Hall and Esplanade are explicitly not buriable pending authored soil masks. New `tests/food-regressions.mjs` imports the real food module with simple Three/state stubs; six tests cover raised placement, repeat/stale interactions, and burial policy. No build, extra assets or runtime dependency.

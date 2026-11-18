@@ -34,7 +34,7 @@ jobs:
           assert.match(html, /viewport-fit=cover/);
           assert.match(html, /id="touchui"/);
           assert.match(html, /id="lookzone"/);
-          assert.match(html, /name="scurry-version" content="0\.6\.36"/);
+          assert.match(html, /name="scurry-version" content="0\.6\.37"/);
           assert.match(main, /visibilitychange/);
           assert.match(touch, /pointercancel/);
           assert.match(touch, /pagehide/);

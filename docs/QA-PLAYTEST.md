@@ -75,3 +75,11 @@ Video / screenshot / console error:
 For any named screenshot pose, add `&eye=1.7` to inspect the same scene from a human's viewpoint without changing the squirrel's position, collisions, jumps, or camera during normal gameplay. Leave `eye` out for the canonical squirrel perspective (0.25 m). Example comparison: `?shot=beaconclose&t=17.6&eye=0.25` versus `?shot=beaconclose&t=17.6&eye=1.7`; test `garden`, `tremontclose`, `parkchurch`, `canopy` separately. Arbitrary values are allowed only from 0.15 to 2.0 m and only in shot mode. Screenshot poses now seat their feet on `visibleGroundHeight`, the rendered terrain sampling used by actual physics, instead of the analytic source function. The root paw rig hides above 1m for inspection only so it does not appear to float in the human-height frame. A reference shot is not a claim that geometry is to-scale at both heights: record where it fails.
 
 The opt-in `?diag=1` FPS line now uses the **uncapped frame interval** instead of the physics-clamped 50 ms interval, so phones running below 20 FPS do not misleadingly report exactly 20. Treat it as instantaneous and noisy, not a benchmark.
+
+
+## Food and stash integrity routes (v0.6.37)
+
+- Collect two nearby foods, then hit E/ACT twice before the next movement frame; the second item must remain, and the squirrel must carry exactly one item.
+- Trade for a croissant in the rat burrow market; try BURY inside the burrow and on remote concrete at Fenway, TD Garden and City Hall. BURY must not activate; return to grass in the Common and bury for +3 stash exactly once.
+- Check raised placed food at the Esplanade embankment and future licensed TD Garden seating. The food must remain on its authored floor before and after many `updateFood` ticks, rather than popping to y=0.
+- Walk away immediately after a food prompt appears and press E; a stale prompt must not grant a distant food item. Check touch ACT too.

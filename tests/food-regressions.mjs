@@ -1,0 +1,110 @@
+// Production food-system regression tests with a minimal geometry/DOM stub.
+// Pure Node: no external dependencies, WebGL, network or build step.
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { test } from 'node:test';
+
+const source = readFileSync(new URL('../js/systems/food.js', import.meta.url), 'utf8');
+class Vector3 {
+  constructor(x=0,y=0,z=0) { Object.assign(this,{x,y,z}); }
+  set(x,y,z) { Object.assign(this,{x,y,z}); return this; }
+  clone() { return new Vector3(this.x,this.y,this.z); }
+  copy(v) { return this.set(v.x,v.y,v.z); }
+  lerpVectors(a,b,t) { return this.set(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t); }
+}
+class Mesh {
+  constructor() {
+    this.position = new Vector3(); this.scale = new Vector3(1,1,1);
+    this.rotation = {x:0,y:0,z:0}; this.children = [];
+  }
+  add(x) { this.children.push(x); }
+}
+const THREE = { SphereGeometry: class {}, MeshStandardMaterial: class {}, Mesh, Vector3 };
+let moduleCounter = 0;
+async function harness() {
+  const S = {
+    scene: { meshes:new Set(), add(m){this.meshes.add(m);},remove(m){this.meshes.delete(m);} },
+    foods:[], interactables:[], blankets:[], stash:0, caps:0, carried:null,
+    player: { pos:new Vector3(1,0,1), grounded:true, climbing:null,
+      inHollow:false,inBurrow:false,inFenway:false,inGarden:false,
+      inCityHall:false,inEsplanade:false }
+  };
+  const audio = { dig(){},chomp(){},yelp(){} };
+  globalThis.__foodTest = { THREE, S, audio, toast(){}, setGossip(){},
+    setCarriedVisual(){}, groundHeight(){ return 0; },
+    isGrass(x,z){ return x>=0 && z>=0; } };
+  const body = source.replace("import * as THREE from 'three';", 'const THREE = globalThis.__foodTest.THREE;')
+    .replace("import { S } from '../state.js';", 'const S = globalThis.__foodTest.S;')
+    .replace("import { groundHeight, isGrass } from '../world/world.js';",
+      'const {groundHeight,isGrass} = globalThis.__foodTest;')
+    .replace("import { sfx } from './audio.js';", 'const sfx = globalThis.__foodTest.audio;')
+    .replace("import { toast, setGossip } from '../ui/hud.js';",
+      'const {toast,setGossip} = globalThis.__foodTest;')
+    .replace("import { setCarriedVisual } from './player.js';",
+      'const {setCarriedVisual} = globalThis.__foodTest;');
+  assert.ok(!body.includes('import '), 'all dependency imports must be replaced');
+  const mod = await import('data:text/javascript;base64,' +
+    Buffer.from(body+'\n// test-harness-'+(++moduleCounter)).toString('base64'));
+  return { S, ...mod };
+}
+
+test('explicit raised floor survives updateFood while home food stays on ground', async () => {
+  const h=await harness();
+  const raised=h.spawnFood('popcorn', 10,10,{y:5.2});
+  const ground=h.spawnFood('acorn',1,1);
+  h.updateFood(.016);
+  assert.ok(Math.abs(raised.mesh.position.y-5.25)<.009,'TD Garden popcorn should stay above parquet');
+  assert.ok(Math.abs(ground.mesh.position.y-.05)<.009,'Common acorn should stay on lawn');
+  assert.equal(raised.floorY,5.2);
+});
+test('double-activating a food pickup cannot delete another food', async () => {
+  const h=await harness();
+  const target=h.spawnFood('acorn',1,1);
+  const other=h.spawnFood('peanut',20,20);
+  const choice=h.nearestFoodAction();
+  assert.ok(choice);
+  choice.action(); choice.action();
+  assert.equal(h.S.carried,'acorn');
+  assert.deepEqual(h.S.foods,[other]);
+  assert.ok(h.S.scene.meshes.has(other.mesh));
+  assert.ok(!h.S.scene.meshes.has(target.mesh));
+});
+test('a food prompt that is no longer within reach does nothing', async () => {
+  const h=await harness();
+  const target=h.spawnFood('acorn',1,1);
+  const choice=h.nearestFoodAction();
+  h.S.player.pos.x=100;
+  choice.action();
+  assert.equal(h.S.carried,null);
+  assert.deepEqual(h.S.foods,[target]);
+});
+test('geese/crows can remove the same food safely more than once', async () => {
+  const h=await harness();
+  const target=h.spawnFood('acorn',1,1);
+  const other=h.spawnFood('peanut',20,20);
+  h.removeFoodItem(target);h.removeFoodItem(target);
+  assert.deepEqual(h.S.foods,[other]);
+});
+test('burrows, indoor hollow, arenas, concrete plazas and Esplanade cannot fake grass', async () => {
+  const h=await harness();
+  h.S.carried='croissant';
+  for (const flag of ['inHollow','inBurrow','inFenway','inGarden','inCityHall','inEsplanade']) {
+    h.S.player[flag]=true;
+    assert.equal(h.buryAction(),null,flag+' must not be burial ground');
+    h.S.player[flag]=false;
+  }
+  assert.ok(h.buryAction(),'actual park grass should allow burial');
+});
+test('stale bury actions cannot increment stash twice or after leaving grass', async () => {
+  const h=await harness();
+  h.S.carried='croissant';
+  const action=h.buryAction(); assert.ok(action);
+  action.action();action.action();
+  assert.equal(h.S.stash,3);
+  h.S.carried='acorn';
+  const stale=h.buryAction();
+  h.S.player.pos.x=-100;
+  stale.action();
+  assert.equal(h.S.stash,3);
+  assert.equal(h.S.carried,'acorn');
+});
