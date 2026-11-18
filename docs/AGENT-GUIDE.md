@@ -1143,7 +1143,7 @@ touch UI, and performance ladder remain in place. No imagery was added.
   and raised plaza discs. The analytic `groundHeight()` remains the
   AUTHORING equation; do not confuse it with the player's mesh support.
 - `player.js` moves in ≤1/90 s physics substeps; walks step up at most
-  1.3 m, snap DOWN only 0.25 m, and uses the previous foot Y to catch
+  1.3 m, snap DOWN 0.25 m on the lawn (0.9 m on elevated canopy links), and uses the previous foot Y to catch
   falling crossings of branch/roof/bridge top. Walls resolve AFTER a
   provisional landing and the controller resamples its final support.
   Trunk climbing and jump controls remain intact.
