@@ -255,7 +255,7 @@ const BRANCH_SNAP_DOWN = 0.9; // canopy links can intentionally descend ~0.75m
 
 function baseHeight(x, z) {
   const P = S.player;
-  if (P.inHollow || P.inBurrow) return 0;
+  if (P.inHollow || P.inBurrow || P.inMBTA) return 0;
   if (P.inFenway && S.realmGround.fenway) return S.realmGround.fenway(x, z);
   if (P.inGarden && S.realmGround.garden) return S.realmGround.garden(x, z);
   if (P.inCityHall && S.realmGround.cityhall) return S.realmGround.cityhall(x, z);
@@ -271,7 +271,7 @@ function surfaceAt(x, z, refY, stepTol = 0.55) {
 function collideWalls(pos) {
   const P = S.player;
   // The home park's outer clamp is NOT applied to separate destination maps.
-  if (!P.inHollow && !P.inBurrow && !P.inFenway && !P.inGarden && !P.inCityHall && !P.inEsplanade) {
+  if (!P.inHollow && !P.inBurrow && !P.inFenway && !P.inGarden && !P.inCityHall && !P.inEsplanade && !P.inMBTA) {
     resolveHorizontal(pos, S.solids, S.solidBoxes, S.walls, RADIUS, P.climbing, obstacleIndex);
     pos.x = Math.max(-208, Math.min(208, pos.x));
     pos.z = Math.max(-118, Math.min(118, pos.z));

@@ -26,6 +26,7 @@ import { buildCrows, updateCrows, biteCrow } from './systems/crows.js';
 import { updateCanopy } from './systems/canopy.js';
 import { initSwanRide, updateSwanRide, qaFinishSwanRide, swanRideStatus } from './systems/swan-ride.js';
 import { buildWildlife, updateWildlife, biteWildlife } from './systems/wildlife.js';
+import { buildMBTA, initMBTA, updateMBTA, mbtaDebugState } from './systems/mbta.js';
 import { initAudio, setMuted, isMuted, setGameAudioPaused, isGameAudioPaused } from './systems/audio.js';
 import { initHUD, updateHUD, toast } from './ui/hud.js';
 import { initTouch } from './ui/touch.js';
@@ -81,6 +82,7 @@ buildFenwayHood(scene);
 buildGarden(scene);
 buildCityHall(scene);
 buildEsplanade(scene);
+buildMBTA(scene);
 initFood();
 initHollowInteractables();
 initBurrows();
@@ -89,6 +91,7 @@ initFenway();
 initGarden();
 initCityHall();
 initEsplanade();
+initMBTA();
 initDaycycle(scene);
 initPlayer(scene, camera);
 initHUD();
@@ -390,7 +393,7 @@ if (qaLocal) {
         grounded: p.grounded, climbing: !!p.climbing, onSwanBoat:!!p.onSwanBoat,
         swan: swanRideStatus(),
         inHollow: p.inHollow, inBurrow: p.inBurrow, inFenway: p.inFenway,
-        inGarden: p.inGarden, inCityHall: p.inCityHall, inEsplanade: p.inEsplanade,
+        inGarden: p.inGarden, inCityHall: p.inCityHall, inEsplanade: p.inEsplanade, inMBTA:p.inMBTA,
         prompt: currentE?.label || null, bury: currentF?.label || null,
         touch: { ...S.touch }, audioPaused: isGameAudioPaused(),
       };
@@ -552,6 +555,7 @@ if (qaLocal) {
     }),
     finishSwanRide: qaFinishSwanRide,
     wildlife: () => (S.wildlifeActors||[]).map(a=>({kind:a.kind,x:a.x,y:a.y,z:a.z,visible:a.mesh.visible})),
+    mbta: mbtaDebugState,
     interactions: () => S.interactables.map(it => ({
       x: it.x, y: it.y, z: it.z, r: it.r, label: it.label(),
     })).filter(it => typeof it.label === 'string'),
@@ -659,7 +663,7 @@ function perfLadder(rawFrameDt) {
     t.count = tier === 3 ? Math.floor(S.grassTuftCount * 0.45) : S.grassTuftCount;
 }
 function warnings() {
-  if (S.player.inHollow || S.player.inBurrow || S.player.inFenway || S.player.inGarden || S.player.inCityHall || S.player.inEsplanade) return '';
+  if (S.player.inHollow || S.player.inBurrow || S.player.inFenway || S.player.inGarden || S.player.inCityHall || S.player.inEsplanade || S.player.inMBTA) return '';
   if (S.ranger && S.ranger.state === 'chase') return '! THE RANGER IS AFTER YOU - CLIMB SOMETHING !';
   if (S.gooseWarn > 0) return '! THE GEESE ARE OBJECTING - WAIT, BRIBE THEM, OR GO AROUND !';
   if (S.hawkFlash > 0) return '! HAWK DUA HAS YOU MARKED - GET UNDER COVER !';
@@ -693,6 +697,7 @@ function loop() {
     updateGarden(dt);
     updateCityHall(dt);
     updateEsplanade(dt);
+    updateMBTA(dt);
     updateGeese(dt);   // not frozen in shot mode: the bridge tableau is the warn pose
     updateCrows(dt);   // not frozen either: the crow tableau poses itself (see crows.js)
     updateWildlife(dt);

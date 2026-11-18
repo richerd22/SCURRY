@@ -10,7 +10,7 @@ let boat = null;
 let stage='idle', elapsed=0, exposed=0, hidden=true, cooldown=0, lastWarning=false;
 const remote=()=> {
   const p=S.player;
-  return p.inHollow||p.inBurrow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade;
+  return p.inHollow||p.inBurrow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade||p.inMBTA;
 };
 function dockBoat() {
   if(!boat)return;

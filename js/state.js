@@ -41,6 +41,7 @@ export const S = {
     inCityHall: false,  // popped up at City Hall Plaza (systems/cityhall.js)
     inEsplanade: false, // emerged at the Charles River Esplanade (systems/esplanade.js)
     onSwanBoat: false, // anchored to an actual moving deck, not terrain
+    inMBTA: false, // playable, clamped transit vignette, no actual track access
     moving: false,
     sprinting: false,
   },
