@@ -1165,6 +1165,10 @@ touch UI, and performance ladder remain in place. No imagery was added.
 - Interactables check vertical as well as horizontal distance (no talking
   through the canopy floor); key states clear on window blur; park-threat
   HUD no longer warns from the City Hall/Esplanade remote realms.
+- Mobile: the JUMP button captures its active pointer so drifting thumbs
+  do not silently cancel a held jump; stick/look/button pointers reset on
+  window blur (iOS app switch, focus loss). Existing gesture layouts and
+  pointer-lock-free Safari startup are unchanged.
 - `tests/collision-regressions.mjs` tests pure contact math on Node with
   `node --test tests/collision-regressions.mjs`.
 
