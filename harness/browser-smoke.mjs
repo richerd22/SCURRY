@@ -126,6 +126,12 @@ async function checkGameplay() {
     await page.mouse.up();
     const yawAfter=(await get()).yaw;
     assert.ok(Math.abs(yawAfter-yawBefore)>.1,'desktop mouse-drag fallback must rotate camera');
+    // A mouse click on MAP is interface interaction, never a squirrel BITE.
+    await page.locator('#map-toggle').click();
+    assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'),'true');
+    await page.locator('#map-close').click();
+    assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'),'false');
+    assert.ok((await get()).biteCooldown < .01,'UI clicks must not fire bite');
     // On a low-FPS software renderer a press-and-release in one browser
     // event task could be over before the next physics frame sees Space.
     await page.keyboard.down('Space');

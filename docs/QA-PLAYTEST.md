@@ -177,3 +177,8 @@ The headless WebGL workflow now runs `?qa=1&lowq=1` on a local HTTP server, clic
 ## Destination grounding (v0.6.51)
 
 In a normal non-shot play session enter each of Fenway, TD Garden, City Hall and Esplanade through the rat-market doors using E/ACT. The squirrel must appear standing on visible level with no 40cm pop/fall and no unwanted lingering climbing mode. Immediately walk, jump, and return to the burrows. The headless browser regression asserts `grounded` and a <0.1m sampled-floor gap at each entrance; a failure of this route gate is a release blocker, not a reason to weaken snap tolerances or mask with a fake grounded flag.
+
+
+## Unlocked desktop map click isolation (v0.6.52)
+
+In desktop Safari/Chrome with pointer lock denied, click MAP and select or clear a landmark, then close the panel; the squirrel should never BITE or turn during UI clicks. Click/drag on the actual game canvas to aim; a short canvas click should still BITE. CI asserts the bite cooldown stays zero through opening/closing MAP in unlocked live play.

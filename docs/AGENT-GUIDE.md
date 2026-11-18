@@ -1298,3 +1298,8 @@ The same browser lifecycle that freezes physics now silences synthesized birdson
 ## v0.6.51 — consistent feet at all four destinations (Nov 18 2026)
 
 Live browser E2E revealed a real transit bug at Fenway: portal feet were hard-coded 40cm above ground with P.grounded=true, greater than the controller's normal 25cm snap. Now Fenway, TD Garden, City Hall and Esplanade entry/paranoia placements sample their actual realm ground functions at entrance XZ, rather than starting airborne. QA test asserts arrival feet equal sampled floor within 10cm, P.grounded and !P.inBurrow after each true E portal. Regrab delay resets at entry. Source of truth: the same S.realmGround terrain callback used by player physics. Browser route test (not just Node math) is required for acceptance.
+
+
+## v0.6.52 — mouse UI clicks cannot bite (Nov 18 2026)
+
+Restricted unlocked primary-mouse bite/drag start to the Three.js canvas rather than any document target, so clicking HUD/map/waypoints does not accidentally boop something. Browser live-play now asserts MAP open/close leaves `biteCooldown` unchanged while unlocked. Canvas drag and canvas short-click still work normally. No changes to touch ACT/BITE buttons.

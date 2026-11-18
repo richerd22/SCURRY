@@ -207,3 +207,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** At each portal and out-of-bounds recovery, compute Y directly from the destination realm's actual ground sampler at the selected spawn XZ. Retain grounded and zero velocity, and assert both status and feet-floor closeness in browser CI for every remote realm.
 
 **Consequence:** No artificial fall on transit, no visual geometry change and no longer any divergence between transit bookkeeping and terrain. Future new realms should share their physics sampler for spawn placement instead of choosing a cosmetic Y offset.
+
+
+## ADR-024 — world click gestures must originate on the scene canvas
+
+**Context:** The new permission-denied mouse-drag fallback listened on document-level mousedown. HUD and map clicks reached the same handler and could trigger BITE on release, producing accidental attacks during navigation.
+
+**Decision:** Only begin desktop scene gestures when the mousedown target is the renderer canvas. Verify this in a real browser while opening/closing the atlas, using a test-only snapshot of bite cooldown. Keep touch and pointer-lock geometry unchanged.
+
+**Consequence:** UI controls cannot sneak into gameplay actions. The whole-document mousemove handler remains appropriate for tracking a drag already initiated on the canvas, including when the pointer temporarily leaves it.

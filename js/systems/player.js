@@ -69,6 +69,9 @@ export function initPlayer(scene, camera) {
   });
   document.addEventListener('mousedown', (e) => {
     if (!S.started || S.paused || S.isTouch || e.button !== 0) return;
+    // The canvas is the only bite/aim surface. Map controls and waypoint
+    // buttons must not trigger a bite in unlocked mouse-drag mode.
+    if (e.target !== S.renderer.domElement) return;
     const locked = document.pointerLockElement === document.body ||
       document.pointerLockElement === S.renderer.domElement;
     if (locked) { tryBite(); return; }
