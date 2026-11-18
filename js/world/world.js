@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
+import { meshTerrainHeight } from '../systems/collision.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
 
@@ -16,6 +17,14 @@ function ellipseDip(x, z, e) {
   const dx = (x - e.x) / e.rx, dz = (z - e.z) / e.rz;
   const d = dx * dx + dz * dz;
   return d >= 1 ? 0 : Math.cos(Math.min(1, Math.sqrt(d)) * Math.PI * 0.5);
+}
+
+const TERRAIN_X = 150, TERRAIN_Z = 86;
+let terrainGrid = null;
+// Match actual rendered triangle faces, rather than the interpolated math hill.
+export function visibleGroundHeight(x, z) {
+  const h = meshTerrainHeight(terrainGrid, x, z, MAP.minX, MAP.maxX, MAP.minZ, MAP.maxZ, TERRAIN_X, TERRAIN_Z);
+  return h === null ? groundHeight(x, z) : h;
 }
 
 export function groundHeight(x, z) {
@@ -162,13 +171,16 @@ function paintGround() {
 // ---------- build ----------
 export function buildWorld(scene) {
   // terrain mesh
-  const geo = new THREE.PlaneGeometry(MAP.maxX - MAP.minX, MAP.maxZ - MAP.minZ, 150, 86);
+  const geo = new THREE.PlaneGeometry(MAP.maxX - MAP.minX, MAP.maxZ - MAP.minZ, TERRAIN_X, TERRAIN_Z);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
+  terrainGrid = new Float32Array(pos.count);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + (MAP.minX + MAP.maxX) / 2;
     const z = pos.getZ(i) + (MAP.minZ + MAP.maxZ) / 2;
-    pos.setY(i, groundHeight(x, z));
+    const h = groundHeight(x, z);
+    pos.setY(i, h);
+    terrainGrid[i] = Math.fround(h);
   }
   geo.computeVertexNormals();
   const groundMat = new THREE.MeshStandardMaterial({ map: paintGround(), roughness: 1, envMapIntensity: 0.75 });
@@ -430,11 +442,10 @@ function buildPerimeter(scene) {
       r.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
       group.add(r);
     }
-    // collision approx: a few circles along the run
-    for (let i = 0; i <= n; i += 2) {
-      const t = i / n;
-      S.solids.push({ x: x0 + (x1 - x0) * t, z: z0 + (z1 - z0) * t, r: 1.15 });
-    }
+    // A continuous rail: no giant invisible bubbles along the fence.
+    const top = groundHeight((x0 + x1) / 2, (z0 + z1) / 2) + 0.975;
+    S.walls.push({ x0, z0, x1, z1, r: 0.055, minY: -2, maxY: top });
+    S.platformSegments.push({ x0, z0, x1, z1, r: 0.19, y: top, jumpOnly: true });
   }
   // Common fence (gaps at Park St corner + Charles St crossings are implied by short runs)
   fenceRun(-38, -100, 120, -100); fenceRun(150, -100, 203, -100);

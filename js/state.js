@@ -9,7 +9,9 @@ export const S = {
 
   // world registries
   solids: [],        // {x, z, r} horizontal push-out circles
-  solidBoxes: [],    // {minX, maxX, minZ, maxZ} horizontal push-out boxes
+  solidBoxes: [],    // {minX, maxX, minZ, maxZ, minY?, maxY?}
+  walls: [],         // continuous finite-height line barriers
+  platformSegments: [], // narrow fence/bridge rails
   platforms: [],     // {x, z, r, y} walkable discs (canopies, bandstand roof)
   platformBoxes: [], // {minX, maxX, minZ, maxZ, y} walkable box tops (bridge deck, monument steps)
   trees: [],         // {x, z, r, trunkTop, canopyY, canopyR, hollow?}
@@ -62,6 +64,7 @@ export const S = {
   debugShot: false,
   lowQ: false,         // shot-mode / perf fallback: skip PMREM rebakes
 
+  realmGround: {},    // world-specific floor samplers
   respawnPoint: null,  // bandstand roof (landmarks.js sets)
   hollowTreePos: null, // (trees.js sets)
 };
