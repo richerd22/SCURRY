@@ -6,6 +6,7 @@ import { S, MAP } from '../state.js';
 import { meshTerrainHeight } from '../systems/collision.js';
 import { createPathProximityIndex } from './path-index.js';
 import { makeParkFenceLayout } from './fence-layout.js';
+import { buildParkEntrances } from './gate-art.js';
 import { insideParkLawn } from './ground-rules.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
@@ -505,6 +506,9 @@ function buildPerimeter(scene) {
   }
   rail.instanceMatrix.needsUpdate=true;
   scene.add(rail);
+  // Landmarks at the *existing* breaks in the ironwork; entrance passages
+  // remain unobstructed and stone piers register real solid colliders.
+  buildParkEntrances(scene,groundHeight);
 
   // city backdrop: textured facade blocks with lit-window emissive maps
   // (windows come alive at dusk via daycycle), plus a few taller towers

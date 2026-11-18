@@ -297,3 +297,12 @@ Date: 18 Nov 2026 · Version: v0.6.33 · See [full wiki](ENGINEERING-WIKI.md).
 **Decision:** Preserve exactly the existing twelve runs and all crossing gaps. Build densely spaced slender iron pickets with spear-like finials and thicker uprights via five instanced mesh batches. Subdivide the rails into <=2.2m terrain-fitted panels, with a matching continuous 2D collision and jump-on rail segment per panel; use a pure exported layout function and permanent gate/height/math tests.
 
 **Consequence:** More distinctive Boston park ironwork at 25cm viewpoint and dramatically fewer fence draw calls, with tighter visual/physics alignment. Detailed geometry increases triangles while lowering draw-call overhead; measure true GPU/frame time on iPhone, and do not assume it is faster just because it is instanced.
+
+
+## ADR-034 — preserve passable gateway openings while giving them visible Boston architecture
+
+**Context:** Historic park entrance thresholds have substantial stone piers and ornate ironwork, described in Boston Common's official master plan. SCURRY's old perimeter simply ended at giant openings with no visual arrival markers, and adding false gate collisions could break the squirrel's navigation.
+
+**Decision:** Add simple authored granite entrance piers and small orientation plaques at the four previously defined fence gaps. Sample terrain Y for each shaft and expose exactly its occupied AABB as a gameplay solid. Keep the open middle of every passage clear, and assert it in pure unit tests. Add repeatable software-WebGL screenshots of the same Charles Street pose at squirrel and human reference heights.
+
+**Consequence:** A stronger park-specific visual identity and consistent physical obstruction at the piers without inventing inaccessible entrances. This is schematic historically inspired artwork, not faithful reconstruction; sources and approximations are documented.

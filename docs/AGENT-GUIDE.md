@@ -1348,3 +1348,8 @@ All 12 model packages / 24 committed binary+texture files are now enumerated in 
 ## v0.6.60 — Boston park ironwork and collision fit
 
 Replaced the old one-mesh-per-post perimeter with five shared instanced meshes: upright bars, spear caps, narrow pickets, picket tips and paired local gradient-following rails. All twelve original perimeter runs/gate gaps moved into pure `world/fence-layout.js` and are sampled at <=2.2m intervals; no extra invisible barriers close the gates. Each rail panel also writes a consistent finite-height wall and walkable jump-on top rail to the indexed collision registry. Four Node tests check gate gaps, fine layout, terrain Y and invalid heights. The new source supports realistic 0.25m iron silhouettes while keeping buildless ES modules. Needs real screenshot + actual mobile perf signoff; no downloaded model or AI imagery.
+
+
+## v0.6.61 — gateway architectural details, ground collision and inspection views
+
+From City of Boston master-plan references, code-built eight granite piers across four existing fence openings with correct ground Y, collidable solid AABBs, capped crowns/bronze collars and small canvas-text plaques (Garden 1837 / Boston Common). Pure entrance-layout.js and four tests ensure entrances stay open. Public model/texture inventory stays unchanged, as no licensed source image or downloaded model is introduced. Headless WebGL screenshot check now includes Charles Street same-XZ 0.25m squirrel and 1.7m human reference viewpoints. Distinguish historically inspired schematic art from measured site geometry, and manually review screenshots on real GPU.

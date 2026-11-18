@@ -235,3 +235,10 @@ For a new 3D asset: record the exact original item URL, author, license version 
 - Follow Beacon Street slope and State House terrace: spear pickets and top/mid bars should stay grounded across grade changes rather than float through/above the hill. From the 0.25m squirrel camera, bars should form a recognizable dense black-iron silhouette; no camera clipping through post bases.
 - Jump on the fence cap along several different grades and corners, turn and land on either side. Physical wall top/platform height should match the visible top rail rather than an unrelated long-fence midpoint plane.
 - Benchmark real iPhone Safari FPS, shade quality, texture pop-in and draw calls. Five instanced batches reduce draw calls but add detailed picket geometry; record actual metrics rather than inferring performance improvement.
+
+
+## Historic entrance piers (v0.6.61)
+
+- Inspect Charles Street scene in screenshots `desktop-charles.png` and `desktop-charles-human-eye.png`, and in physical iPhone Safari near Garden gate entries. Stone posts and dark ironwork should read at squirrel scale, plaques should remain restrained and not look like giant floating billboards.
+- Walk through all four original gaps, from both directions. The stone piers must have sensible physical hitboxes but **must not** create an invisible wall across a gateway. Jump against pier/cap, return to grass, check camera clipping and high-grade ground contact.
+- Compare architecture against official City of Boston park master plan; mark these procedural piers as simplified reference-inspired models, not exact original GPS/mesh geometry. Record photos before changing gate placements.

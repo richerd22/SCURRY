@@ -19,7 +19,7 @@ const browser = await chromium.launch({
     '--disable-gpu-sandbox',
   ],
 });
-async function checkScene(pose, mobile = false) {
+async function checkScene(pose, mobile = false, eye = 0.25) {
   const context = await browser.newContext({
     viewport: mobile ? { width: 390, height: 844 } : { width: 1024, height: 720 },
     deviceScaleFactor: 1,
@@ -27,13 +27,15 @@ async function checkScene(pose, mobile = false) {
     hasTouch: mobile,
   });
   const page = await context.newPage();
-  const title = (mobile ? 'mobile-' : 'desktop-') + pose;
+  const title = (mobile ? 'mobile-' : 'desktop-') + pose +
+    (eye!==0.25 ? '-human-eye' : '');
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
   page.on('console', m => {
     if (m.type() === 'error') faults.push(title + ': console ' + m.text());
   });
   try {
     const url = base + '/?shot=' + encodeURIComponent(pose) + '&lowq=1&t=17.6' +
+      '&eye=' + eye +
       (mobile ? '&touch=1' : '');
     const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     assert.equal(response?.status(), 200, title + ': static page must load');
@@ -363,6 +365,8 @@ async function checkTouchGameplay() {
 try {
   await checkScene('spawn');
   await checkScene('garden');
+  await checkScene('charles'); // view of Charles St and Garden gate piers
+  await checkScene('charles', false, 1.7); // same XZ from human eye
   await checkScene('spawn', true);
   await checkGameplay();
   await checkTouchGameplay();
