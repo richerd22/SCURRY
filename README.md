@@ -22,7 +22,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 - [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, still screenshots, real desktop PLAY/WALK/JUMP/PORTAL round trips, simulated mobile dual-touch controls, optional map/notes checks, and screenshots/console artifacts on pushes to main.
 
-**Current version: v0.7.1-preview.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. Native iPhone Safari and real-GPU/performance playtesting remain required.
+**Current version: v0.7.1.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. Native iPhone Safari and real-GPU/performance playtesting remain required.
 
 ## Controls
 

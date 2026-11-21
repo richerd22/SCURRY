@@ -499,8 +499,8 @@ const CAP_SPOTS = [
   [52, -20.5],   // a Mall bench
   [110, 8],      // Frog Pond bench edge
   [133, 36],     // bandstand knoll foot
-  [-132, -41],   // lagoon bridge, south end
-  [-132, 41],    // lagoon bridge, north end
+  [-163, 0],    // west dry bridge landing
+  [-101, 0],    // east dry bridge landing
   [140, 48],     // bandstand, other side
   [-20, -52],    // Brewer Fountain rise
   [-30, -76],    // Park St entrance area
@@ -584,7 +584,7 @@ export function initBurrows() {
     if (d < mallD) { mallD = d; mallTree = t; }
   }
   if (mallTree) defs.push({ key: 'mall', sx: mallTree.x + 1.6, sz: mallTree.z - 1.2, drain: false });
-  defs.push({ key: 'lagoon', sx: -118, sz: 31, drain: true });     // south lagoon shore drain
+  defs.push({ key: 'lagoon', sx: -95, sz: 45, drain: true });     // south lagoon shore drain
 
   for (const def of defs) {
     const ent = { key: def.key, sx: def.sx, sz: def.sz, chamber: CHAMBERS[def.key] };

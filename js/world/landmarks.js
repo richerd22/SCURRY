@@ -10,7 +10,7 @@ import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { GARDEN_ART } from './garden-art-facts.js';
 import { DUCKLING_COUNT, DUCKLING_YAW, MOTHER_RADIUS, DUCKLING_RADIUS, ducklingPose } from './ducklings-layout.js';
-import { GARDEN_BRIDGE, GARDEN_DOCK } from './garden-lagoon-layout.js';
+import { GARDEN_BRIDGE, GARDEN_DOCK, gardenBridgeRamp } from './garden-lagoon-layout.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -637,11 +637,12 @@ function buildBridge(scene) {
   const deckMat = new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.85 });
   const cableMat = new THREE.MeshStandardMaterial({ color: 0x3c4147, metalness: 0.75, roughness: 0.45 });
   // flat deck (the suspension dressing carries the look; flat keeps squirrel feet honest)
-  box(5.4, 0.5, 36, deckMat, 0, 0.9, 0, g);
+  const deckMesh=box(5.4,0.5,36,deckMat,0,.9,0,g);
+  deckMesh.userData.scurryGardenBridgeSurface=true;
   // deck fascia: a finished white edge so the slab reads as a built bridge, not a plank
   for (const sx of [-2.68, 2.68]) box(0.14, 0.36, 36.2, white, sx, 0.9, 0, g);
   // stone abutments grounding both ends
-  for (const az of [-18.6, 18.6]) box(6.4, 1.5, 2.6, granite, 0, 0.35, az, g);
+  for (const az of [-18.6,18.6]) box(6.4,1.0,2.6,granite,0,.18,az,g);
   // granite end posts with ball caps (v0.6.27): the real bridge lands
   // on ornamented pylons, not bare abutment corners
   for (const az of [-18.2, 18.2]) for (const sx of [-2.85, 2.85]) {
@@ -734,13 +735,32 @@ function buildBridge(scene) {
   const B=GARDEN_BRIDGE,h=B.halfLength;
   S.platformBoxes.push({
     minX:x-h,maxX:x+h,minZ:-B.halfWidth,maxZ:B.halfWidth,y:B.deckY,
+    isGardenBridgeSurface:true,
   });
-  // Stone landings touch the narrow eastern and western shores. These
-  // low abutment supports preserve the existing step/jump semantics.
-  S.platformBoxes.push({minX:x-h-5,maxX:x-h+.8,
-    minZ:-B.halfWidth,maxZ:B.halfWidth,y:.5});
-  S.platformBoxes.push({minX:x+h-.8,maxX:x+h+5,
-    minZ:-B.halfWidth,maxZ:B.halfWidth,y:.5});
+  // Each visible triangular ramp exactly matches the indexed graded
+  // boxSurfaceHeight() platform beneath it, from shore to deck.
+  for(const side of [-1,1]){
+    const ramp=gardenBridgeRamp(side);
+    const {minX,maxX,minZ,maxZ,y0,y1}=ramp;
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute([
+      minX,y0,minZ, minX,y0,maxZ,
+      maxX,y1,minZ, maxX,y1,maxZ,
+    ],3));
+    geo.setIndex([0,1,2,1,3,2]);
+    geo.computeVertexNormals();
+    const approach=new THREE.Mesh(geo,deckMat);
+    approach.receiveShadow=true;
+    approach.userData.scurryGardenBridgeSurface=true;
+    scene.add(approach);
+    S.platformBoxes.push({...ramp,isGardenBridgeSurface:true});
+    for(const zSide of [minZ-.22,maxZ+.22]){
+      const lip=new THREE.Mesh(new THREE.BoxGeometry(maxX-minX,.18,.22),granite);
+      lip.position.set((minX+maxX)/2,(y0+y1)/2-.16,zSide);
+      lip.rotation.z=Math.atan2(y1-y0,maxX-minX);
+      lip.castShadow=true;scene.add(lip);
+    }
+  }
   for(const side of [-2.6,2.6]){
     const zEdge=-side;
     S.walls.push({x0:x-h+.7,z0:zEdge,x1:x+h-.7,z1:zEdge,
@@ -1236,7 +1256,7 @@ function buildEtherMonument(scene) {
 // --- Gamewell alarm boxes: little red sentinels (Alarm Club canon) ---
 function buildGamewellBoxes(scene) {
   const red = new THREE.MeshStandardMaterial({ color: 0xa8232a, roughness: 0.5 });
-  const spots = [[-30, -66], [58, -14], [150, -14], [100, 88], [-70, -66], [-136, 44]];
+  const spots = [[-30, -66], [58, -14], [150, -14], [100, 88], [-70, -66], [-168, 46]];
   for (const [x, z] of spots) {
     const gy = groundHeight(x, z);
     const g = new THREE.Group();

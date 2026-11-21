@@ -6,7 +6,8 @@ export const GARDEN_LAGOON=Object.freeze({x:-132,z:0,rx:26,rz:54});
 export const GARDEN_BRIDGE=Object.freeze({
  x:GARDEN_LAGOON.x,z:0,axis:'east-west',
  halfLength:24,halfWidth:2.7,scaleLength:24/18,
- deckY:1.15,railY:2.07,shoreX:29,
+ deckY:1.15,railY:2.07,shoreX:31,
+ rampLength:6,shoreY:.28,
 });
 export const GARDEN_DOCK=Object.freeze({
  x:-140.5,z:47.9,boatX:-143,boatZ:43,deckY:.45,
@@ -26,4 +27,16 @@ export function gardenBridgeDeck(x,z,y=null){
 export function gardenBridgeLanding(side){
  const b=GARDEN_BRIDGE;
  return {x:b.x+(side<0?-b.shoreX:b.shoreX),z:b.z};
+}
+
+
+export function gardenBridgeRamp(side) {
+ if(side!==-1&&side!==1)throw new RangeError('side ±1');
+ const b=GARDEN_BRIDGE,inner=b.x+side*b.halfLength;
+ const outer=inner+side*b.rampLength;
+ return {
+   minX:Math.min(inner,outer),maxX:Math.max(inner,outer),
+   minZ:b.z-b.halfWidth,maxZ:b.z+b.halfWidth,
+   y0:side<0?b.shoreY:b.deckY,y1:side<0?b.deckY:b.shoreY,
+ };
 }
