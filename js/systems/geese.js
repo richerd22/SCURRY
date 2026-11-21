@@ -382,8 +382,7 @@ export function updateGeese(dt) {
       for (const f of S.foods) {
         if (!f || !f.mesh) continue;
         const fp = f.mesh.position;
-        if (Math.abs(fp.y - deckY) > 1.3) continue;              // not on the deck
-        if(!gardenBridgeDeck(fp.x,fp.z))continue;
+        if(!gardenBridgeDeck(fp.x,fp.z,fp.y))continue; // actual raised deck, not food in water
         for (const g of geese) {
           if (g.state === 'charge' || g.cooldown > 0) continue;
           const d = Math.hypot(fp.x - g.pos.x, fp.z - g.pos.z);

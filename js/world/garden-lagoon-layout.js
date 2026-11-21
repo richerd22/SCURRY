@@ -22,7 +22,10 @@ export function gardenBridgeDeck(x,z,y=null){
  const b=GARDEN_BRIDGE;
  return Number.isFinite(x)&&Number.isFinite(z)&&
    Math.abs(x-b.x)<=b.halfLength&&Math.abs(z-b.z)<=b.halfWidth&&
-   (y===null||Number.isFinite(y)&&Math.abs(y-b.deckY)<1.3);
+   // Feet below the deck or more than one squirrel-hop above it are
+   // outside the goose jurisdiction, even directly beneath the bridge.
+   (y===null||Number.isFinite(y)&&
+     y>=b.deckY-.12&&y<=b.deckY+.65);
 }
 export function gardenBridgeLanding(side){
  const b=GARDEN_BRIDGE;

@@ -99,3 +99,24 @@ test('old land-based park props and burrow entrances no longer spawn inside resh
  assert.match(burrow,/\[-163, 0\]/);
  assert.match(burrow,/\[-101, 0\]/);
 });
+
+
+test('geese guard only the actual deck, not water below or canopy above',()=>{
+ const b=GARDEN_BRIDGE,x=b.x,z=b.z;
+ assert.equal(gardenBridgeDeck(x,z),true);
+ assert.equal(gardenBridgeDeck(x,z,b.deckY),true);
+ assert.equal(gardenBridgeDeck(x,z,b.deckY-.08),true);
+ assert.equal(gardenBridgeDeck(x,z,b.deckY+.5),true);
+ for(const y of [-2,-.2,0,.3,b.deckY-.13,b.deckY+.8,b.deckY+2]){
+  assert.equal(gardenBridgeDeck(x,z,y),false,'wrong goose target at Y='+y);
+ }
+ assert.equal(gardenBridgeDeck(x,z,NaN),false);
+ const source=readFileSync(new URL('../js/systems/geese.js',import.meta.url),'utf8');
+ assert.match(source,/gardenBridgeDeck\(P\.pos\.x,P\.pos\.z,P\.pos\.y\)/);
+ assert.match(source,/gardenBridgeDeck\(fp\.x,fp\.z,fp\.y\)/);
+});
+test('dropped bridge snacks land on real raised planks, not submerged soil',()=>{
+ const food=readFileSync(new URL('../js/systems/food.js',import.meta.url),'utf8');
+ assert.match(food,/gardenBridgeDeck\(P\.x,P\.z,P\.y\)&&gardenBridgeDeck\(x,z\)/);
+ assert.match(food,/onDeck\?\{y:GARDEN_BRIDGE\.deckY\}:\{\}/);
+});
