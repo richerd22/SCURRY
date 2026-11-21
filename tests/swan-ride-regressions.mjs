@@ -12,17 +12,27 @@ test('swan boat tour is finite and returns exactly to its real dock',()=>{
   assert.ok(Number.isFinite(a.yaw)&&Number.isFinite(b.yaw));
   assert.throws(()=>swanRidePose(NaN),RangeError);
 });
-test('every boat centre stays in west lagoon, outside bridge and existing western boat lane',()=>{
+test('every boat centre stays in south lagoon, outside bridge and northern traffic lane',()=>{
   let length=0,prev=swanRidePose(0);
   for(let i=0;i<=2000;i++){
     const p=swanRidePose(i/2000);
     assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.z)&&Number.isFinite(p.yaw));
-    const lagoon=((p.x+132)/50)**2+(p.z/27)**2;
+    const lagoon=((p.x+132)/26)**2+(p.z/54)**2;
     assert.ok(lagoon<.87,'hull near shallow shore '+JSON.stringify(p));
-    assert.ok(p.x<-138.5,'tour may intersect centre bridge '+JSON.stringify(p));
-    assert.ok(p.z>3.0,'west loop drifting boat occupies north lagoon '+JSON.stringify(p));
+    assert.ok(p.z>12,'tour may cross east-west centre bridge '+JSON.stringify(p));
+    assert.ok(p.z>3,'north drifting boats occupy the other lagoon lobe');
     length+=Math.hypot(p.x-prev.x,p.z-prev.z);
     prev=p;
   }
   assert.ok(length>50&&length<150,'credible water circuit: '+length);
+});
+
+test('the entire moving swan hull remains inside rendered water, not only its centre',()=>{
+ const rx=26-5,rz=54-5;
+ for(let i=0;i<=2000;i++){
+   const p=swanRidePose(i/2000);
+   const envelope=((p.x+132)/rx)**2+(p.z/rz)**2;
+   assert.ok(envelope<1,
+     'swan body/canopy hits bank at '+JSON.stringify(p)+' envelope='+envelope);
+ }
 });

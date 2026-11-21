@@ -10,6 +10,7 @@ import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { GARDEN_ART } from './garden-art-facts.js';
 import { DUCKLING_COUNT, DUCKLING_YAW, MOTHER_RADIUS, DUCKLING_RADIUS, ducklingPose } from './ducklings-layout.js';
+import { GARDEN_BRIDGE, GARDEN_DOCK, gardenBridgeRamp } from './garden-lagoon-layout.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -636,11 +637,12 @@ function buildBridge(scene) {
   const deckMat = new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.85 });
   const cableMat = new THREE.MeshStandardMaterial({ color: 0x3c4147, metalness: 0.75, roughness: 0.45 });
   // flat deck (the suspension dressing carries the look; flat keeps squirrel feet honest)
-  box(5.4, 0.5, 36, deckMat, 0, 0.9, 0, g);
+  const deckMesh=box(5.4,0.5,36,deckMat,0,.9,0,g);
+  deckMesh.userData.scurryGardenBridgeSurface=true;
   // deck fascia: a finished white edge so the slab reads as a built bridge, not a plank
   for (const sx of [-2.68, 2.68]) box(0.14, 0.36, 36.2, white, sx, 0.9, 0, g);
   // stone abutments grounding both ends
-  for (const az of [-18.6, 18.6]) box(6.4, 1.5, 2.6, granite, 0, 0.35, az, g);
+  for (const az of [-18.6,18.6]) box(6.4,1.0,2.6,granite,0,.18,az,g);
   // granite end posts with ball caps (v0.6.27): the real bridge lands
   // on ornamented pylons, not bare abutment corners
   for (const az of [-18.2, 18.2]) for (const sx of [-2.85, 2.85]) {
@@ -719,21 +721,52 @@ function buildBridge(scene) {
       sprite.scale.set(3.6, 3.6, 1);
       sprite.position.set(sx, 5.6, tz);
       g.add(sprite);
-      S.lamps.push({ sprite, bulbMat, light: null, x: x + sx, z: tz });
+      // Rotated/scaled bridge: lamp world locations must match real bulbs.
+      S.lamps.push({ sprite, bulbMat, light: null,
+        x:x+tz*GARDEN_BRIDGE.scaleLength,z:-sx });
     }
   }
-  g.position.set(x, 0, z);
-  scene.add(g);
-  S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: -18, maxZ: 18, y: 1.15 });
-  // entry ramps on both banks
-  S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: -21.5, maxZ: -17.5, y: 0.5 });
-  S.platformBoxes.push({ minX: x - 2.7, maxX: x + 2.7, minZ: 17.5, maxZ: 21.5, y: 0.5 });
-  // Guard the edge at deck level; allow a jump onto the upper bridge rail.
-  for (const side of [-2.6, 2.6]) {
-    S.walls.push({ x0: x + side, z0: -17.5, x1: x + side, z1: 17.5,
-      r: 0.05, minY: 1.15, maxY: 2.07 });
-    S.platformSegments.push({ x0: x + side, z0: -17.5, x1: x + side, z1: 17.5,
-      r: 0.18, y: 2.07, jumpOnly: true });
+  // The Garden's real Mall→Common central bridge runs east/west.
+  // Transform art AND its physical registry together; never rotate only
+  // the visible geometry while leaving a north/south invisible deck.
+  g.scale.z=GARDEN_BRIDGE.scaleLength;
+  g.rotation.y=Math.PI/2;
+  g.position.set(x,0,z);scene.add(g);
+  const B=GARDEN_BRIDGE,h=B.halfLength;
+  S.platformBoxes.push({
+    minX:x-h,maxX:x+h,minZ:-B.halfWidth,maxZ:B.halfWidth,y:B.deckY,
+    isGardenBridgeSurface:true,
+  });
+  // Each visible triangular ramp exactly matches the indexed graded
+  // boxSurfaceHeight() platform beneath it, from shore to deck.
+  for(const side of [-1,1]){
+    const ramp=gardenBridgeRamp(side);
+    const {minX,maxX,minZ,maxZ,y0,y1}=ramp;
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute([
+      minX,y0,minZ, minX,y0,maxZ,
+      maxX,y1,minZ, maxX,y1,maxZ,
+    ],3));
+    geo.setIndex([0,1,2,1,3,2]);
+    geo.computeVertexNormals();
+    const approach=new THREE.Mesh(geo,deckMat);
+    approach.receiveShadow=true;
+    approach.userData.scurryGardenBridgeSurface=true;
+    scene.add(approach);
+    S.platformBoxes.push({...ramp,isGardenBridgeSurface:true});
+    for(const zSide of [minZ-.22,maxZ+.22]){
+      const lip=new THREE.Mesh(new THREE.BoxGeometry(maxX-minX,.18,.22),granite);
+      lip.position.set((minX+maxX)/2,(y0+y1)/2-.16,zSide);
+      lip.rotation.z=Math.atan2(y1-y0,maxX-minX);
+      lip.castShadow=true;scene.add(lip);
+    }
+  }
+  for(const side of [-2.6,2.6]){
+    const zEdge=-side;
+    S.walls.push({x0:x-h+.7,z0:zEdge,x1:x+h-.7,z1:zEdge,
+      r:.05,minY:B.deckY,maxY:B.railY});
+    S.platformSegments.push({x0:x-h+.7,z0:zEdge,x1:x+h-.7,z1:zEdge,
+      r:.18,y:B.railY,jumpOnly:true});
   }
 }
 
@@ -945,17 +978,18 @@ function buildSwanBoats(scene) {
     const vx = -d.rx * Math.sin(th) * d.w, vz = d.rz * Math.cos(th) * d.w;
     return { x, z, yaw: Math.atan2(-vx, -vz) };
   }
-  // west lobe + east lobe loops; both stay clear of the bridge deck
-  // (x -134.7..-129.3) and inside the lagoon ellipse with hull to spare
-  boat({ cx: MAP.lagoon.x - 22, cz: -12, rx: 8, rz: 4.5, w: (Math.PI * 2) / 170, ph: 0.6 });
-  boat({ cx: MAP.lagoon.x + 22, cz: 13, rx: 7, rz: 4, w: -(Math.PI * 2) / 190, ph: 3.4 });
+  // Two independent north-lobe traffic loops; the moored third craft
+  // stays south. None is routed under the bridge before clearance proof.
+  boat({cx:-140,cz:-27,rx:5,rz:8,w:(Math.PI*2)/170,ph:.6});
+  boat({cx:-125,cz:-27,rx:4,rz:8,w:-(Math.PI*2)/190,ph:3.4});
   // third boat MOORED at the dock (v0.6.28): the fleet at rest on the
   // south shore west of the bridge - canopy up, waiting on passengers.
   // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);
   // the bob + roll still apply, so she rides the water at her lines.
-  // Hull spans x -147.8..-138.2 / z 17.2..20.8: inside the ellipse,
-  // clear of the west loop (z <= -2.7 at its nearest) and the bridge.
-  boat({ cx: -143, cz: 19, rx: 0, rz: 0, w: 0, ph: 0, yaw: -Math.PI / 2 });
+  // Full hull is inset from the south bank; bow and stern stay inside
+  // the visible water, with the near edge 35cm from the dock planks.
+  boat({cx:GARDEN_DOCK.boatX,cz:GARDEN_DOCK.boatZ,
+    rx:0,rz:0,w:0,ph:0,yaw:-Math.PI/2});
   // the dock: plank deck on posts from the south shore out to her side
   {
     const g = new THREE.Group();
@@ -983,12 +1017,13 @@ function buildSwanBoats(scene) {
       new THREE.MeshBasicMaterial({ map: sTex }));
     board.position.set(0, 1.62, 0.02); g.add(board);
     const board2 = board.clone(); board2.rotation.y = Math.PI; board2.position.z = -0.02; g.add(board2);
-    g.position.set(-140.5, 0, 22.9);
+    g.position.set(GARDEN_DOCK.x,0,GARDEN_DOCK.z);
     scene.add(g);
     // the deck is standable (shore squirrels board here): one
     // platformBox at deck-top height. surfaceAt's step tolerance
     // keeps waders below from snapping up through it.
-    S.platformBoxes.push({ minX: -145.25, maxX: -135.75, minZ: 21.1, maxZ: 24.7, y: 0.45 });
+    S.platformBoxes.push({minX:GARDEN_DOCK.x-4.75,maxX:GARDEN_DOCK.x+4.75,
+      minZ:GARDEN_DOCK.z-1.8,maxZ:GARDEN_DOCK.z+1.8,y:GARDEN_DOCK.deckY});
   }
 }
 
@@ -1221,7 +1256,7 @@ function buildEtherMonument(scene) {
 // --- Gamewell alarm boxes: little red sentinels (Alarm Club canon) ---
 function buildGamewellBoxes(scene) {
   const red = new THREE.MeshStandardMaterial({ color: 0xa8232a, roughness: 0.5 });
-  const spots = [[-30, -66], [58, -14], [150, -14], [100, 88], [-70, -66], [-136, 44]];
+  const spots = [[-30, -66], [58, -14], [150, -14], [100, 88], [-70, -66], [-168, 46]];
   for (const [x, z] of spots) {
     const gy = groundHeight(x, z);
     const g = new THREE.Group();

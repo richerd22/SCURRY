@@ -124,6 +124,40 @@ async function checkGameplay() {
     await page.locator('#title').click({timeout:30000});
     await page.waitForFunction(() => window.__scurryQA.state().started, null, {timeout:15000});
     const start = await get();
+    const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
+    assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
+    assert.ok(bridge.maxAbsDiff<.015,
+      'real rendered bridge differs from registered support: '+JSON.stringify(bridge));
+    assert.ok(bridge.maxSolverDiff<.015,
+      'real player support disagrees with registered bridge: '+JSON.stringify(bridge));
+
+    // Two complete crossings, both shores, using the *actual* player
+    // movement solver and browser-held W/Shift. Goose logic is tested by
+    // the normal game loop; this tight synchronous traversal isolates
+    // player contact/support so a goose charge cannot conceal a bad ramp.
+    for(const fromWest of [true,false]){
+      const x=fromWest?-163:-101;
+      const yaw=fromWest?-Math.PI/2:Math.PI/2;
+      await page.evaluate(({x,yaw})=>
+        window.__scurryQA.placeOnTerrain(x,0,yaw),{x,yaw});
+      await page.keyboard.down('Shift');
+      await page.keyboard.down('w');
+      const crossing=await page.evaluate(()=>window.__scurryQA.traceTerrainWalk(1000));
+      await page.keyboard.up('w');
+      await page.keyboard.up('Shift');
+      assert.ok(crossing.horizontalDistance>57,
+        'physical bridge route blocked: '+JSON.stringify(crossing.end));
+      assert.ok(fromWest?crossing.end.x>-104:crossing.end.x<-159,
+        'squirrel failed to reach opposite dry shore: '+JSON.stringify(crossing.end));
+      assert.ok(crossing.minClear>-.03&&crossing.minMeshClear>-.03,
+        'feet clipped visible terrain while crossing: '+JSON.stringify(crossing));
+      assert.ok(crossing.nonGround<80,
+        'approach ramp launches squirrel into air: '+JSON.stringify(crossing));
+      const onDeck=crossing.samples.filter(s=>s.x>-147&&s.x<-117);
+      assert.ok(onDeck.length>8&&onDeck.every(s=>s.feet>1.07),
+        'squirrel did not really stand on bridge deck: '+JSON.stringify(onDeck));
+    }
+    await page.evaluate(()=>window.__scurryQA.placeOnTerrain(24,30,-2.2));
     await page.keyboard.down('w');
     await page.waitForFunction(initial => {
       const p=window.__scurryQA.state().pos;
@@ -293,7 +327,7 @@ async function checkGameplay() {
     // The real dock and real E prompt must mount the actual moving boat;
     // peeking/hiding and safe landing also run through E, not direct
     // internal action calls. Local QA only fast-forwards the tour clock.
-    await page.evaluate(()=>window.__scurryQA.place(-140.5,.45,22.9));
+    await page.evaluate(()=>window.__scurryQA.place(-140.5,.45,47.9));
     assert.match((await get()).prompt,/sneak aboard the Swan Boat/i);
     await page.keyboard.press('e');
     await page.waitForFunction(()=>window.__scurryQA.state().onSwanBoat,
@@ -609,6 +643,11 @@ try {
   if (suite==='all'||suite==='visuals') {
     await checkScene('spawn');
     await checkScene('garden');
+    // These are separate from the physics raycast: preserve visual
+    // evidence of the correctly oriented crossing and dry south dock.
+    await checkScene('bridge');
+    await checkScene('swanclose');
+    await checkScene('geese');
     await checkScene('charles');
     await checkScene('charles',false,1.7);
     await checkScene('spawn',true);

@@ -11,6 +11,13 @@ on:
       - 'assets/models/**'
       - 'harness/**'
       - '.github/workflows/browser-smoke.yml'
+  pull_request:
+    paths:
+      - 'js/**'
+      - 'index.html'
+      - 'harness/**'
+      - 'tests/**'
+      - '.github/workflows/browser-smoke.yml'
   workflow_dispatch:
 
 permissions:

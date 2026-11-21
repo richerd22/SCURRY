@@ -82,6 +82,6 @@ export const MAP = {
   charlesMinX: -58, charlesMaxX: -42,          // Charles Street asphalt band
   garden:  { minX: -205, maxX: -60, minZ: -98, maxZ: 98 },
   common:  { minX: -40,  maxX: 205, minZ: -102, maxZ: 102 },
-  lagoon:  { x: -132, z: 0, rx: 50, rz: 27 },
+  lagoon:  { x: -132, z: 0, rx: 26, rz: 54 },
   frogPond:{ x: 95, z: 12, rx: 21, rz: 13.5 },
 };

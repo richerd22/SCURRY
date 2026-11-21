@@ -33,12 +33,13 @@ import { initTouch } from './ui/touch.js';
 import { initParkMap, updateParkMap } from './ui/park-map.js';
 import { initDiscoveries, updateDiscoveries } from './systems/discoveries.js';
 import { createContactRecorder } from './systems/contact-recorder.js';
-import { boxSurfaceHeight } from './systems/collision.js';
+import { boxSurfaceHeight, walkSurface } from './systems/collision.js';
 import { beginRelocation, completeRelocation, advanceRelocation } from './systems/relocation.js';
 import { createMobileQualityState, advanceMobileQuality } from './systems/mobile-quality.js';
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
+import { GARDEN_BRIDGE } from './world/garden-lagoon-layout.js';
 
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
@@ -279,7 +280,7 @@ if (Q.has('shot')) {
     case 'down': pose(24, 30, 24, 20); P.pitch = -1.45; break;
     case 'garden': pose(-96, -27, -132, 0); break;
     case 'statehouse': pose(116, -36, 186, -92); break;
-    case 'bridge': pose(-110, 3, -132, 0); break; // lagoon bridge elevation from across the water
+    case 'bridge': pose(-91, 7, -132, 0); break; // east shore looking WEST along historic bridge
     case 'washington': pose(-180, 12, -193, 0); break; // west Arlington entrance, facing Washington
     case 'swanboats': // south shore of the lagoon, close on the west boat's drift loop
       pose(-141, -25, -154, -11);
@@ -293,7 +294,7 @@ if (Q.has('shot')) {
     case 'promenade': pose(2, -18, 150, -18); break; // ON the Mall apron (v0.6.27), east down the promenade
     case 'pondedge': pose(74.5, 21.5, 95, 12, -0.1); break; // Frog Pond SW shore (v0.6.27): curb stones + water at eye height
     case 'wade': pose(-132, 10, -132, -2); break; // IN the lagoon (v0.6.28): bed level, eye under the water plane, looking at the bridge
-    case 'swanclose': pose(-144.8, 23.2, -147.5, 18.8); P.pos.y = 0.45; break; // ON the swan-boat dock (v0.6.28): the moored boat's swan + canopy close
+    case 'swanclose': pose(-144.8, 49, -143, 43); P.pos.y = 0.45; break; // ON the swan-boat dock (v0.6.28): the moored boat's swan + canopy close
     case 'beacon': pose(40, -38, 40, -112); break; // the Mall looking north at the Beacon St row
     case 'beaconwest': pose(-120, -40, -140, -108); break; // Garden north edge, Beacon row west segment
     case 'beaconclose': pose(36, -93, 43, -111); break; // one Beacon unit at stoop distance
@@ -342,8 +343,8 @@ if (Q.has('shot')) {
     case 'esplanadecanopy': debugEnterEsplanade('canopy'); break; // up the path elm, river below
     case 'esplanadedoor': debugEnterEsplanade('door'); break;    // in the rat market, facing the new RIVERBOUND door
     case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
-    case 'geese': // on the deck, in warn range of the flock but outside charge range
-      pose(-132, 12, -132, 0); P.pos.y = 1.15; P.grounded = true;
+    case 'geese': // real east-west deck, with all three geese in view
+      pose(-114,0,-132,0);P.pos.y=GARDEN_BRIDGE.deckY;P.grounded=true;
       break;
     case 'crow': // by the pretzel cart; crows.js freezes crow #0 mid-swoop in front
       pose(124.5, 52.5, 128, 56);
@@ -481,6 +482,45 @@ if (qaLocal) {
       }
       return {count,maxAbsDiff,worst,minSurface,maxSurface};
     },
+    // Bridge acceptance: cast rays against the ACTUAL transformed deck
+    // and the two approach triangle meshes, never the schematic layout.
+    // Compare with the SAME walkSurface solver the squirrel uses.
+    surveyGardenBridge:()=>{
+      scene.updateMatrixWorld(true);
+      const meshes=[];
+      scene.traverse(o=>{
+        if(o.isMesh&&o.userData.scurryGardenBridgeSurface)meshes.push(o);
+      });
+      const supports=S.platformBoxes.filter(b=>b.isGardenBridgeSurface);
+      if(meshes.length!==3||supports.length!==3)
+        throw Error('Garden bridge meshes/supports not registered: '+meshes.length+'/'+supports.length);
+      const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
+      const origin=new THREE.Vector3();
+      let count=0,maxAbsDiff=0,maxSolverDiff=0,worst=null;
+      const b=GARDEN_BRIDGE;
+      for(let ix=0;ix<75;ix++){
+        const x=b.x-(b.halfLength+b.rampLength)+.15+
+          ix*(2*(b.halfLength+b.rampLength)-.3)/74;
+        for(const z of [-1.7,0,1.7]){
+          const eligible=supports.filter(s=>x>=s.minX&&x<=s.maxX&&
+            z>=s.minZ&&z<=s.maxZ);
+          if(!eligible.length)throw Error('missing bridge collider at '+x+','+z);
+          const declared=Math.max(...eligible.map(s=>boxSurfaceHeight(s,x)));
+          const solver=walkSurface(x,z,b.deckY,1.5,
+            visibleGroundHeight(x,z),S.platforms,S.platformBoxes,S.platformSegments);
+          origin.set(x,25,z);ray.set(origin,down);
+          const hit=ray.intersectObjects(meshes,false)[0];
+          if(!hit)throw Error('bridge has invisible registered ground at '+x+','+z);
+          const diff=Math.abs(hit.point.y-declared);
+          const solverDiff=Math.abs(solver-declared);
+          if(diff>maxAbsDiff){maxAbsDiff=diff;worst={x,z,visual:hit.point.y,declared,solver};}
+          maxSolverDiff=Math.max(maxSolverDiff,solverDiff);
+          count++;
+        }
+      }
+      return {count,meshes:meshes.length,supports:supports.length,
+        maxAbsDiff,maxSolverDiff,worst};
+    },
     // Global survey: an independent Three.js triangle raycast at hundreds
     // of park coordinates. Detect mismatches between visible-ground
     // physics and the actual mesh that could put feet inside polygons.
@@ -511,7 +551,7 @@ if (qaLocal) {
       const canopy=S.platforms.find(s=>s.y>5 && s.r>2 && S.trees.some(t=>
         Math.abs(t.x-s.x)<.001 && Math.abs(t.z-s.z)<.001));
       const bridge=S.platformBoxes.find(s=>Math.abs(s.y-1.15)<.001 &&
-        s.maxZ-s.minZ>25 && s.maxX-s.minX>4);
+        s.maxX-s.minX>40&&s.maxZ-s.minZ>4);
       const fence=S.platformSegments.find(s=>Number.isFinite(s.y0) &&
         Number.isFinite(s.y1) && Math.hypot(s.x1-s.x0,s.z1-s.z0)>1.4);
       if (!canopy || !bridge || !fence)throw new Error('missing real support registries');
@@ -519,7 +559,7 @@ if (qaLocal) {
       return [
         {name:'registered canopy',x:canopy.x,y:canopy.y,z:canopy.z,yaw:0,steps:30},
         {name:'Garden bridge',x:(bridge.minX+bridge.maxX)/2,y:bridge.y,
-          z:(bridge.minZ+bridge.maxZ)/2,yaw:0,steps:55},
+          z:(bridge.minZ+bridge.maxZ)/2,yaw:-Math.PI/2,steps:55},
         {name:'graded iron top',x:(fence.x0+fence.x1)/2,
           z:(fence.z0+fence.z1)/2,y:(fence.y0+fence.y1)/2,
           yaw:Math.atan2(-dx,-dz),steps:15},

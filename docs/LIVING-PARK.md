@@ -182,3 +182,42 @@ Both **Make Way for Ducklings** (Nancy Schön, 1987, eight children of Mrs. Mall
 ## v0.7.0 — bronze Ducklings are actual eight obstacles, not one ghost circle
 
 The old Make Way for Ducklings scene had a 1.6m invisible cylinder blocking a large section while eight separate duckling meshes were completely non-solid. Replaced it with a 0.73m mother collider and **eight 24.5cm finite-height duckling circles**, each positioned by the EXACT pure local-to-world transform that builds the corresponding bronze mesh. Matching cobblestone pad follows the parade. No scene artwork or saved discovery migration. Pure regression tests verify eight unique poses, no extreme overlaps and world-space parity; live browser gameplay now requires actual E prompts at the Ducklings and Washington without bypassing the interaction handler. This is a source-geometry and physics fix, not a new unnecessary feature. Boston sculptures remain code-authored approximation.
+
+
+## Experimental v0.7.1 — east-west Garden bridge and north-south lagoon (isolated feature branch)
+
+The City historic Garden study identifies the bridge on the Commonwealth Mall↔Boston Common central east/west axis. The existing world instead drew a long east/west lagoon ellipse with a north/south bridge; swapping only the bridge would strand it in open water. This isolated feature branch **co-updates** the Garden lagoon to a stylized north/south ellipse, east/west bridge visual transform, registered walkable deck/landing/rail colliders, paths/terrain/water mesh/curbs, goose patrols and landing justice, two north-lobe drifting boats, south-lobe Swan Boat dock/stowaway loop, camera poses, and browser bridge support selector. A pure geometry suite checks deck width/span, dry endpoints, physical dock parity, complete CatmullRom route and source registration. No AI imagery or third-party models.
+
+**Limitations**: even with the axis corrected, this is still an elliptical approximation rather than the real Garden's irregular lobes. More importantly the existing bridge remains too low for the current exaggerated Swan Boat canopy; there is NO under-bridge cruise promise. A dedicated water/visible mesh/deck clearance rewrite and iPhone/desktop collision walktest is mandatory before considering production. This branch must stay isolated and NOT be merged to main if CI, playtest or visual parity fails.
+
+
+## v0.7.1 PR — bridge ramp parity and dry shoreline cleanup
+
+The initial draft PR passed desktop and mobile WebGL gameplay/visuals, but its quality gate caught an invalid semantic version suffix. The version is now numeric 0.7.1; prerelease status is represented by the draft PR. The bridge formerly had two flat invisible support slabs 0.65m below the visible deck. Now it has six-metre visual sloped triangular ramps registered as identical graded surface boxes, with stone edge cheeks and lowered end abutments. Playwright will independently raycast the visible ramps against player support heights.
+
+The reshaped north–south lagoon left some old-coordinates props submerged. Garden benches, lamps, a trash can, one Gamewell box, two bottle caps and a lagoon burrow entry are repositioned onto dry nearby paths and shore. The visual and collider registrations share the same position definitions. New pure tests validate dry surface props and physical ramps without overriding gameplay.
+
+
+## Branch acceptance: real bridge/approach triangle survey
+
+The localhost browser now traverses **225 separate world positions** across the physical bridge and two six-metre approaches (75 X coordinates, three Z offsets). A real Three.js raycast against the tagged visible deck and ramp meshes independently compares their rendered Y with (1) registered physical support and (2) the player walkSurface() solver. Either a missing triangle, a missing support, or a gap greater than 1.5 cm fails full WebGL. The visual suite also adds independent bridge-alignment, swan-dock and on-deck geese screenshot poses. Additional pure tests verify exact ramp end continuity, slopes, old submerged prop relocation and source coupling. The feature remains isolated from main until verified.
+
+
+## Bridge route acceptance and hull envelope
+
+The full north/south lagoon forced an extra physical boat check: the original moored Swan Boat (-143,43) was inside the ellipse at its center but grazed the waterline with its 10m-long hull. The moored craft is now (-140,44), 35cm from the dock's near plank edge; stowaway Catmull-Rom waypoints are eased to avoid the shallow southern turn. 2,001 independent route samples enforce a whole-boat five-metre margin inside water, not just the center point. The branch's localhost browser also performs two complete real-player W+Shift crossings from both dry banks (1,000 physics steps apiece), requiring 57m travel, dry opposite shore, feet above rendered ground, a continuous deck top and at most brief ramp-air transitions. This is in addition to the 225 registered-support/visual raycasts. Goose actions stay independently checked by the normal update loop.
+
+
+## v0.7.1 PR — goose territory is the walkable deck, not the water beneath
+
+The old broad bridge-height tolerance accepted feet up to 1.3m below the raised platform, so near-surface swimmers could trigger goose threats and submerged snacks could be mistaken for deck offerings. The shared deck predicate now accepts feet 12cm below through 65cm above the actual deck top. A grounded squirrel, small hop and plank food qualify; water below or canopy above do not. Both warning and food collection use that same 3D predicate. The dropCarried flow now places dropped food on the exact bridge deck if squirrel and snack are inside the rails, while off-bridge snacks retain normal ground-fall behavior. Pure tests enforce height and source coupling. Existing ramps, moving boat, dry landings and Atlas are unchanged.
+
+
+## Real food regression harness updated for the shared Garden layout
+
+The first goose-height tightening commit failed fast CI (not browser) because tests/food-regressions.mjs embeds production food.js as an in-memory module and did not stub the new pure Garden layout import. Rather than weakening/removing that regression, the harness now loads the true garden-lagoon-layout.js module into its existing test fixture and replaces the food import with exact pure functions. Added a runtime production-food test for released snacks on the planks, over the rail, and from the water below: deck food Y1.15, off-deck food groundY0; also asserts floorY survives updateFood. The previous food/market/bury tests remain.
+
+
+## One exact food-bob regression adjustment
+
+The additional runtime food-on-planks test initially failed 1 of 171 checks because the assertion required rendered food to remain *exactly* 1.200 metres after updateFood. Production intentionally adds a sinusoidal ±8 mm pickup-glint bob; the dedicated mesh-visual test now asserts the actual tight ≤8.001 mm envelope while separately keeping floorY fixed at exactly 1.15m. This fixes a wrong expected rendered pose without changing gameplay, lowering floor accuracy or deleting a test.

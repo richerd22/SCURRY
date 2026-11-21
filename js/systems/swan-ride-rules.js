@@ -2,10 +2,10 @@
 // The west-lagoon loop avoids the bridge's still-unverified overhead clearance.
 // Duration is intentionally game-scaled; the real ride is ~15 minutes.
 export const SWAN_RIDE_SECONDS = 56;
-export const SWAN_DOCK = Object.freeze({ x:-143, z:19, boardX:-140.5, boardZ:22.9, deckY:0.45 });
+export const SWAN_DOCK = Object.freeze({x:-140,z:44,boardX:-140.5,boardZ:47.9,deckY:.45});
 const POINTS = Object.freeze([
-  [-143,19],[-152,18],[-162,14],[-170,9],
-  [-168,5],[-155,6],[-145,10],[-141.5,15],
+  [-140,44],[-144,36],[-146,27],[-139,19],
+  [-128,19],[-120,27],[-121,37],[-133,42],
 ]);
 const wrap = (i) => POINTS[(i + POINTS.length) % POINTS.length];
 function curve(a,b,c,d,t) {

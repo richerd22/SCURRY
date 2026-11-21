@@ -21,7 +21,7 @@ const BENCHES = [
   [196, 20, -1.57], [40, 88, 0.1], [150, 88, -0.2], [86, -50, 2.9],
   // Garden benches face the lagoon
   [-96, -20, 1.9], [-96, 22, 1.4], [-168, -22, -1.8], [-168, 20, -1.2],
-  [-120, -46, 3.1], [-146, 48, 0.2], [-86, -52, 2.6], [-180, 44, -0.9],
+  [-120, -62, 3.1], [-146, 59, 0.2], [-86, -52, 2.6], [-180, 44, -0.9],
 ];
 
 export function buildProps(scene) {
@@ -97,7 +97,7 @@ function buildLamps(scene) {
   for (let x = -20; x <= 180; x += 26) lampSpots.push([x, 88]);
   for (let z = -80; z <= 80; z += 26) { lampSpots.push([106, z]); lampSpots.push([-96, z + 8]); lampSpots.push([-168, z]); }
   for (let z = -70; z <= 70; z += 24) lampSpots.push([54, z]);
-  lampSpots.push([-132, -52], [-132, 52], [-44, -40], [-44, 40], [140, 28], [126, 54]);
+  lampSpots.push([-132, -67], [-132, 67], [-44, -40], [-44, 40], [140, 28], [126, 54]);
   const glowTexture = glowTex();
   // volumetric-feel light cones: additive gradient cones under each bulb,
   // opacity driven by the daycycle lamp factor via S.lampConeMat
@@ -158,7 +158,7 @@ function swapLampPosts() {
 
 function buildTrashCans(scene) {
   const canGeo = new THREE.CylinderGeometry(0.42, 0.38, 0.95, 10);
-  const spots = [[46, -20], [108, -24], [156, -20], [64, 44], [116, 46], [-16, -52], [136, 36], [-92, -16], [-136, -44], [-172, 16], [24, -84], [184, 60]];
+  const spots = [[46, -20], [108, -24], [156, -20], [64, 44], [116, 46], [-16, -52], [136, 36], [-92, -16], [-168, -43], [-172, 16], [24, -84], [184, 60]];
   for (const [x, z] of spots) {
     const gy = groundHeight(x, z);
     const can = new THREE.Mesh(canGeo, canMat);
