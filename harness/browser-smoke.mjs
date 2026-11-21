@@ -124,6 +124,12 @@ async function checkGameplay() {
     await page.locator('#title').click({timeout:30000});
     await page.waitForFunction(() => window.__scurryQA.state().started, null, {timeout:15000});
     const start = await get();
+    const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
+    assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
+    assert.ok(bridge.maxAbsDiff<.015,
+      'real rendered bridge differs from registered support: '+JSON.stringify(bridge));
+    assert.ok(bridge.maxSolverDiff<.015,
+      'real player support disagrees with registered bridge: '+JSON.stringify(bridge));
     await page.keyboard.down('w');
     await page.waitForFunction(initial => {
       const p=window.__scurryQA.state().pos;
@@ -609,6 +615,11 @@ try {
   if (suite==='all'||suite==='visuals') {
     await checkScene('spawn');
     await checkScene('garden');
+    // These are separate from the physics raycast: preserve visual
+    // evidence of the correctly oriented crossing and dry south dock.
+    await checkScene('bridge');
+    await checkScene('swanclose');
+    await checkScene('geese');
     await checkScene('charles');
     await checkScene('charles',false,1.7);
     await checkScene('spawn',true);
