@@ -172,7 +172,12 @@ test('actual bridge plank drops stay raised but food over a rail lands below',as
  assert.equal(deck.floorY,1.15,'food released on bridge stays on planks');
  assert.ok(Math.abs(deck.mesh.position.y-1.2)<.001);
  h.updateFood(.016);
- assert.ok(Math.abs(deck.mesh.position.y-1.2)<.001);
+ // updateFood intentionally applies a ±8mm pickup-glint bob to ALL
+ // non-stolen food. Preserve that visible motion while never losing
+ // the real raised support sampled at spawn.
+ assert.ok(Math.abs(deck.mesh.position.y-1.2)<=.008001,
+   'raised bridge food must only move within intentional 8mm visual glint');
+ assert.equal(deck.floorY,1.15,'food physics floor never changes with bob');
  b.set(-132,1.15,2.9);h.S.carried='peanut';
  const outside=h.dropCarried();
  assert.equal(outside.floorY,0,'over-rail food falls to ground, never floats');

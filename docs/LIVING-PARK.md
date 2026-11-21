@@ -216,3 +216,8 @@ The old broad bridge-height tolerance accepted feet up to 1.3m below the raised 
 ## Real food regression harness updated for the shared Garden layout
 
 The first goose-height tightening commit failed fast CI (not browser) because tests/food-regressions.mjs embeds production food.js as an in-memory module and did not stub the new pure Garden layout import. Rather than weakening/removing that regression, the harness now loads the true garden-lagoon-layout.js module into its existing test fixture and replaces the food import with exact pure functions. Added a runtime production-food test for released snacks on the planks, over the rail, and from the water below: deck food Y1.15, off-deck food groundY0; also asserts floorY survives updateFood. The previous food/market/bury tests remain.
+
+
+## One exact food-bob regression adjustment
+
+The additional runtime food-on-planks test initially failed 1 of 171 checks because the assertion required rendered food to remain *exactly* 1.200 metres after updateFood. Production intentionally adds a sinusoidal ±8 mm pickup-glint bob; the dedicated mesh-visual test now asserts the actual tight ≤8.001 mm envelope while separately keeping floorY fixed at exactly 1.15m. This fixes a wrong expected rendered pose without changing gameplay, lowering floor accuracy or deleting a test.
