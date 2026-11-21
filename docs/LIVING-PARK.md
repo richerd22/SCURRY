@@ -211,3 +211,8 @@ The full north/south lagoon forced an extra physical boat check: the original mo
 ## v0.7.1 PR — goose territory is the walkable deck, not the water beneath
 
 The old broad bridge-height tolerance accepted feet up to 1.3m below the raised platform, so near-surface swimmers could trigger goose threats and submerged snacks could be mistaken for deck offerings. The shared deck predicate now accepts feet 12cm below through 65cm above the actual deck top. A grounded squirrel, small hop and plank food qualify; water below or canopy above do not. Both warning and food collection use that same 3D predicate. The dropCarried flow now places dropped food on the exact bridge deck if squirrel and snack are inside the rails, while off-bridge snacks retain normal ground-fall behavior. Pure tests enforce height and source coupling. Existing ramps, moving boat, dry landings and Atlas are unchanged.
+
+
+## Real food regression harness updated for the shared Garden layout
+
+The first goose-height tightening commit failed fast CI (not browser) because tests/food-regressions.mjs embeds production food.js as an in-memory module and did not stub the new pure Garden layout import. Rather than weakening/removing that regression, the harness now loads the true garden-lagoon-layout.js module into its existing test fixture and replaces the food import with exact pure functions. Added a runtime production-food test for released snacks on the planks, over the rail, and from the water below: deck food Y1.15, off-deck food groundY0; also asserts floorY survives updateFood. The previous food/market/bury tests remain.

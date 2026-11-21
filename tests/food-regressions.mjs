@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 const source = readFileSync(new URL('../js/systems/food.js', import.meta.url), 'utf8');
+const gardenLayout = readFileSync(new URL('../js/world/garden-lagoon-layout.js', import.meta.url),'utf8');
 class Vector3 {
   constructor(x=0,y=0,z=0) { Object.assign(this,{x,y,z}); }
   set(x,y,z) { Object.assign(this,{x,y,z}); return this; }
@@ -31,13 +32,20 @@ async function harness() {
       inCityHall:false,inEsplanade:false }
   };
   const audio = { dig(){},chomp(){},yelp(){} };
+  // This is the REAL pure shared bridge predicate, not a permissive
+  // fake that could let dropped food pass without deck collision truth.
+  const lagoon=await import('data:text/javascript;base64,'+
+    Buffer.from(gardenLayout).toString('base64'));
   globalThis.__foodTest = { THREE, S, audio, toast(){}, setGossip(){},
     setCarriedVisual(){}, groundHeight(){ return 0; },
-    isGrass(x,z){ return x>=0 && z>=0; } };
+    isGrass(x,z){ return x>=0 && z>=0; },
+    GARDEN_BRIDGE:lagoon.GARDEN_BRIDGE,gardenBridgeDeck:lagoon.gardenBridgeDeck };
   const body = source.replace("import * as THREE from 'three';", 'const THREE = globalThis.__foodTest.THREE;')
     .replace("import { S } from '../state.js';", 'const S = globalThis.__foodTest.S;')
     .replace("import { groundHeight, isGrass } from '../world/world.js';",
       'const {groundHeight,isGrass} = globalThis.__foodTest;')
+    .replace("import { GARDEN_BRIDGE, gardenBridgeDeck } from '../world/garden-lagoon-layout.js';",
+      'const {GARDEN_BRIDGE,gardenBridgeDeck} = globalThis.__foodTest;')
     .replace("import { sfx } from './audio.js';", 'const sfx = globalThis.__foodTest.audio;')
     .replace("import { toast, setGossip } from '../ui/hud.js';",
       'const {toast,setGossip} = globalThis.__foodTest;')
@@ -153,4 +161,22 @@ test('nearest food reports actual distance for prompt priority', async () => {
   h.spawnFood('pretzel',1.1,1);
   choice=h.nearestFoodAction();
   assert.ok(Math.abs(choice.distance-.1)<1e-9);
+});
+
+
+test('actual bridge plank drops stay raised but food over a rail lands below',async()=>{
+ const h=await harness();
+ const b=h.S.player.pos;
+ b.set(-132,1.15,0);h.S.carried='acorn';
+ const deck=h.dropCarried();
+ assert.equal(deck.floorY,1.15,'food released on bridge stays on planks');
+ assert.ok(Math.abs(deck.mesh.position.y-1.2)<.001);
+ h.updateFood(.016);
+ assert.ok(Math.abs(deck.mesh.position.y-1.2)<.001);
+ b.set(-132,1.15,2.9);h.S.carried='peanut';
+ const outside=h.dropCarried();
+ assert.equal(outside.floorY,0,'over-rail food falls to ground, never floats');
+ b.set(-132,0,0);h.S.carried='peanut';
+ const underwater=h.dropCarried();
+ assert.equal(underwater.floorY,0,'a swimmer below bridge cannot spawn deck offerings');
 });
