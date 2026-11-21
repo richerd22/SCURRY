@@ -26,3 +26,13 @@ test('every boat centre stays in south lagoon, outside bridge and northern traff
   }
   assert.ok(length>50&&length<150,'credible water circuit: '+length);
 });
+
+test('the entire moving swan hull remains inside rendered water, not only its centre',()=>{
+ const rx=26-5,rz=54-5;
+ for(let i=0;i<=2000;i++){
+   const p=swanRidePose(i/2000);
+   const envelope=((p.x+132)/rx)**2+(p.z/rz)**2;
+   assert.ok(envelope<1,
+     'swan body/canopy hits bank at '+JSON.stringify(p)+' envelope='+envelope);
+ }
+});

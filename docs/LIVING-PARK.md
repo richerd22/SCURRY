@@ -201,3 +201,8 @@ The reshaped north–south lagoon left some old-coordinates props submerged. Gar
 ## Branch acceptance: real bridge/approach triangle survey
 
 The localhost browser now traverses **225 separate world positions** across the physical bridge and two six-metre approaches (75 X coordinates, three Z offsets). A real Three.js raycast against the tagged visible deck and ramp meshes independently compares their rendered Y with (1) registered physical support and (2) the player walkSurface() solver. Either a missing triangle, a missing support, or a gap greater than 1.5 cm fails full WebGL. The visual suite also adds independent bridge-alignment, swan-dock and on-deck geese screenshot poses. Additional pure tests verify exact ramp end continuity, slopes, old submerged prop relocation and source coupling. The feature remains isolated from main until verified.
+
+
+## Bridge route acceptance and hull envelope
+
+The full north/south lagoon forced an extra physical boat check: the original moored Swan Boat (-143,43) was inside the ellipse at its center but grazed the waterline with its 10m-long hull. The moored craft is now (-140,44), 35cm from the dock's near plank edge; stowaway Catmull-Rom waypoints are eased to avoid the shallow southern turn. 2,001 independent route samples enforce a whole-boat five-metre margin inside water, not just the center point. The branch's localhost browser also performs two complete real-player W+Shift crossings from both dry banks (1,000 physics steps apiece), requiring 57m travel, dry opposite shore, feet above rendered ground, a continuous deck top and at most brief ramp-air transitions. This is in addition to the 225 registered-support/visual raycasts. Goose actions stay independently checked by the normal update loop.

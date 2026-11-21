@@ -986,8 +986,8 @@ function buildSwanBoats(scene) {
   // south shore west of the bridge - canopy up, waiting on passengers.
   // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);
   // the bob + roll still apply, so she rides the water at her lines.
-  // Hull spans x -147.8..-138.2 / z 17.2..20.8: inside the ellipse,
-  // clear of the west loop (z <= -2.7 at its nearest) and the bridge.
+  // Full hull is inset from the south bank; bow and stern stay inside
+  // the visible water, with the near edge 35cm from the dock planks.
   boat({cx:GARDEN_DOCK.boatX,cz:GARDEN_DOCK.boatZ,
     rx:0,rz:0,w:0,ph:0,yaw:-Math.PI/2});
   // the dock: plank deck on posts from the south shore out to her side

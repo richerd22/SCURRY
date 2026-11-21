@@ -130,6 +130,34 @@ async function checkGameplay() {
       'real rendered bridge differs from registered support: '+JSON.stringify(bridge));
     assert.ok(bridge.maxSolverDiff<.015,
       'real player support disagrees with registered bridge: '+JSON.stringify(bridge));
+
+    // Two complete crossings, both shores, using the *actual* player
+    // movement solver and browser-held W/Shift. Goose logic is tested by
+    // the normal game loop; this tight synchronous traversal isolates
+    // player contact/support so a goose charge cannot conceal a bad ramp.
+    for(const fromWest of [true,false]){
+      const x=fromWest?-163:-101;
+      const yaw=fromWest?-Math.PI/2:Math.PI/2;
+      await page.evaluate(({x,yaw})=>
+        window.__scurryQA.placeOnTerrain(x,0,yaw),{x,yaw});
+      await page.keyboard.down('Shift');
+      await page.keyboard.down('w');
+      const crossing=await page.evaluate(()=>window.__scurryQA.traceTerrainWalk(1000));
+      await page.keyboard.up('w');
+      await page.keyboard.up('Shift');
+      assert.ok(crossing.horizontalDistance>57,
+        'physical bridge route blocked: '+JSON.stringify(crossing.end));
+      assert.ok(fromWest?crossing.end.x>-104:crossing.end.x<-159,
+        'squirrel failed to reach opposite dry shore: '+JSON.stringify(crossing.end));
+      assert.ok(crossing.minClear>-.03&&crossing.minMeshClear>-.03,
+        'feet clipped visible terrain while crossing: '+JSON.stringify(crossing));
+      assert.ok(crossing.nonGround<80,
+        'approach ramp launches squirrel into air: '+JSON.stringify(crossing));
+      const onDeck=crossing.samples.filter(s=>s.x>-147&&s.x<-117);
+      assert.ok(onDeck.length>8&&onDeck.every(s=>s.feet>1.07),
+        'squirrel did not really stand on bridge deck: '+JSON.stringify(onDeck));
+    }
+    await page.evaluate(()=>window.__scurryQA.placeOnTerrain(24,30,-2.2));
     await page.keyboard.down('w');
     await page.waitForFunction(initial => {
       const p=window.__scurryQA.state().pos;

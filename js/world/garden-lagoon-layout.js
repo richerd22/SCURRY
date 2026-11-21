@@ -10,7 +10,7 @@ export const GARDEN_BRIDGE=Object.freeze({
  rampLength:6,shoreY:.28,
 });
 export const GARDEN_DOCK=Object.freeze({
- x:-140.5,z:47.9,boatX:-143,boatZ:43,deckY:.45,
+ x:-140.5,z:47.9,boatX:-140,boatZ:44,deckY:.45,
 });
 export function lagoonEllipse(x,z,marginX=0,marginZ=0){
  const a=GARDEN_LAGOON;

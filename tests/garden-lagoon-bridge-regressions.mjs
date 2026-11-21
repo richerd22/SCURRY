@@ -28,8 +28,10 @@ test('full boat CatmullRom course stays inside south lobe and clear of bridge',(
  let length=0,prev=swanRidePose(0);
  for(let i=0;i<=2000;i++){
   const p=swanRidePose(i/2000);
-  assert.ok(lagoonEllipse(p.x,p.z)<.87,
-   'shore clip at boat centre '+JSON.stringify(p));
+  // 5m in every direction covers the swan-decorated hull, not merely
+  // the centreline. Never fake an in-bounds route with a clipped stern.
+  assert.ok(lagoonEllipse(p.x,p.z,5,5)<1,
+   'full 5m hull envelope clips shoreline '+JSON.stringify(p));
   assert.ok(p.z>12,'boat route through real bridge '+JSON.stringify(p));
   length+=Math.hypot(p.x-prev.x,p.z-prev.z);prev=p;
  }
