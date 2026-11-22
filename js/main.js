@@ -790,7 +790,10 @@ if (qaLocal) {
       scene.updateMatrixWorld(true);
       const meshes=scene.children.filter(m=>m.userData.scurryGardenBridgePier);
       const solids=S.solids.filter(s=>s.isGardenBridgePier);
-      let maxYDiff=0,maxXZDiff=0,deepest=Infinity;
+      let maxYDiff=0,maxXZDiff=0,deepest=Infinity,minLakebedEmbed=Infinity;
+      const terrain=scene.children.find(m=>m.userData.scurryTerrainMesh);
+      if(!terrain)throw Error('no actual rendered Garden lakebed');
+      const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
       for(const mesh of meshes){
         const box=new THREE.Box3().setFromObject(mesh);
         const s=solids.find(p=>Math.abs(p.x-mesh.position.x)<.001&&
@@ -800,9 +803,13 @@ if (qaLocal) {
         maxXZDiff=Math.max(maxXZDiff,Math.abs(box.max.x-box.min.x-GARDEN_BRIDGE_PIER.width),
           Math.abs(box.max.z-box.min.z-GARDEN_BRIDGE_PIER.width));
         deepest=Math.min(deepest,box.min.y);
+        ray.set(new THREE.Vector3(mesh.position.x,35,mesh.position.z),down);
+        const bed=ray.intersectObject(terrain,false)[0];
+        if(!bed)throw Error('pier has no lakebed to be rooted in');
+        minLakebedEmbed=Math.min(minLakebedEmbed,bed.point.y-box.min.y);
       }
       return {meshes:meshes.length,solids:solids.length,
-        maxYDiff,maxXZDiff,deepest,
+        maxYDiff,maxXZDiff,deepest,minLakebedEmbed,
         pierRelativeHeight:GARDEN_BRIDGE_PIER.topAboveDeck,
         lampRelativeHeight:GARDEN_BRIDGE_PIER.lampAboveDeck};
     },

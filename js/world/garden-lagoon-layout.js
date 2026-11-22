@@ -86,7 +86,7 @@ export const GARDEN_BRIDGE=Object.freeze({
 // former five-metre cast-iron fantasy towers. These are photo-informed
 // ARTISTIC relative sizes, not surveyed engineering dimensions.
 export const GARDEN_BRIDGE_PIER=Object.freeze({
- offset:18,z:2.6,width:.86,submergedBase:-.42,
+ offset:18,z:2.6,width:.86,submergedBase:-.95,
  topAboveDeck:3.3,lampAboveDeck:3.53,
  cableAboveCrest:1.06,cableAbovePierDeck:3.08,
 });

@@ -147,3 +147,12 @@ test('photo-calibrated bridge pylons and sculpture have real geometry and collis
  assert.match(src,/s.scale.y=.55/);
  assert.match(main,/surveyGardenBridgePiers:\(\)=>/);
 });
+
+test('granite bridge pylon bases are sunk into rendered lakebed, not just water plane',()=>{
+ assert.equal(GARDEN_BRIDGE_PIER.submergedBase,-.95);
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const harness=readFileSync(new URL('../harness/browser-smoke.mjs',import.meta.url),'utf8');
+ assert.match(main,/pier has no lakebed to be rooted in/);
+ assert.match(main,/minLakebedEmbed/);
+ assert.match(harness,/piers\.minLakebedEmbed>\.12/);
+});

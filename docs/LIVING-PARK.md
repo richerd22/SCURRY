@@ -445,3 +445,10 @@ photo provides a dependable engineering measurement.
 - Photo calibration is qualitative and game-scale. Do not claim
   exact historical height, measured clearance, or native iPhone
   Safari hardware acceptance.
+
+- Pier grounding strengthened: water Y0.02m is NOT the actual lakebed.
+  All four stone columns now extend to Y−0.95m, and the browser
+  independently casts a downward Three.js ray against the ACTUAL
+  triangulated park terrain at each column. Acceptance requires the
+  physical/visual box heights match within 1mm and each stone base is
+  embedded at least 12cm into rendered soil, not only below water.

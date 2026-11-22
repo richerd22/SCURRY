@@ -171,8 +171,9 @@ async function checkGameplay() {
     const piers=await page.evaluate(()=>window.__scurryQA.surveyGardenBridgePiers());
     assert.equal(piers.meshes,4,'four visible granite bridge pylons');
     assert.equal(piers.solids,4,'each granite pylon must be fully physical');
-    assert.ok(piers.maxYDiff<.001&&piers.maxXZDiff<.001&&piers.deepest<-.4,
-      'bridge pylons are hovering, unphysical or mismatched: '+JSON.stringify(piers));
+    assert.ok(piers.maxYDiff<.001&&piers.maxXZDiff<.001&&piers.deepest<-.9&&
+      piers.minLakebedEmbed>.12,
+      'bridge pylons must root into ACTUAL rendered lakebed, not float: '+JSON.stringify(piers));
     assert.ok(piers.lampRelativeHeight<3.7&&piers.pierRelativeHeight<3.5,
       'game photo-proportion pass left the old five-metre decorative masts');
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
