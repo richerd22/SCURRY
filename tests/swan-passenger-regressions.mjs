@@ -48,3 +48,11 @@ test('actual game uses one instanced torso/head draw call per hull and live peda
  assert.match(day,/swanPedalPose\(seconds,1,feet\[1\]\.position\)/);
  assert.match(main,/passengers:passengers\?\.count\?\?0/);
 });
+
+test('operator axle uses a real module-scope material, never bridge-local cableMat',()=>{
+ const art=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
+ const boat=art.slice(art.indexOf('function buildSwanBoats(scene)'));
+ assert.match(art,/const greenMetal = new THREE\.MeshStandardMaterial/);
+ assert.match(boat,/const axle=cyl\(\.045,\.045,\.45,greenMetal/);
+ assert.doesNotMatch(boat,/\bcableMat\b/,'bridge-only material makes whole game boot fail');
+});

@@ -1005,7 +1005,7 @@ function buildSwanBoats(scene) {
     // historic pedal wheel is hidden under the swan; do not fabricate an
     // external wheel. Two shoes cycle opposite one another, anchored
     // to actual visible geometries via daycycle's shared pure crank rule.
-    const axle=cyl(.045,.045,.45,cableMat,0,.87,-.22,operator,8);
+    const axle=cyl(.045,.045,.45,greenMetal,0,.87,-.22,operator,8);
     axle.rotation.z=Math.PI/2;
     const pedalFeet=[];
     for(const side of [0,1]){

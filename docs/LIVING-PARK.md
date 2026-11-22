@@ -502,3 +502,12 @@ no game build step, and physical iOS Safari testing is still required.
   would have penetrated the wooden deck 5.5cm at the low crank
   extreme; corrected before release and covered by 100-step
   deterministic phase regression.
+
+- First full Chromium gameplay run caught a production boot blocker:
+  the operator crank axle accidentally referenced cableMat, a material
+  scoped only inside buildBridge(), from buildSwanBoats(). Node had
+  not executed scene construction, so its 195 static/pure regressions
+  missed the ReferenceError. This was corrected to module-scope
+  greenMetal (same scene color language), and a new cross-scope
+  source regression locks the fix. No merge while the latest real
+  browser scene boot/interaction suite is unverified.
