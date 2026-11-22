@@ -57,3 +57,14 @@ test('one physical shoreline drives terrain, water, fog, curb blocks, map and 3D
  assert.match(sources[2],/GARDEN_ISLAND_SHORE\.forEach/);
  assert.match(sources[3],/surveyGardenLagoon/);
 });
+
+test('rocky island tree and boulders are physically registered and separated from shore network',()=>{
+ const tree=readFileSync(new URL('../js/world/trees.js',import.meta.url),'utf8');
+ assert.match(tree,/buildCanopy\(scene\);\s*\/\/ Planted AFTER the network/);
+ assert.match(tree,/buildGardenIslandTree\(scene\)/);
+ assert.match(tree,/S\.solids\.push\(\{x,z,r:\.48,minY:gy-\.12,maxY:gy\+h\}\)/);
+ assert.match(tree,/S\.platforms\.push\(\{x,z,r:canopyR\*\.92,y:canopyY-\.55\}\)/);
+ assert.match(tree,/S\.solids\.push\(\{x:rx,z:rz,r:sx\*\.88/);
+ for(const [x,z] of [[-137,-31.5],[-131,-33],[-134,-27.8]])
+  assert.ok(isGardenIsland(x,z),'boulder is planted in water');
+});

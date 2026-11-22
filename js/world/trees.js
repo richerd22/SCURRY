@@ -7,6 +7,7 @@ import { groundHeight, distToPaths, inWater, isGrass } from './world.js';
 import { barkTex, leafTex, grassBladeTex } from './textures.js';
 import { loadModel, fitHeight, shadowify } from '../systems/models.js';
 import { buildCanopy } from '../systems/canopy.js';
+import { GARDEN_ISLAND,isGardenIsland } from './garden-lagoon-layout.js';
 
 // small deterministic rng so the park is the same park every load
 let seed = 1337;
@@ -155,6 +156,45 @@ export function buildTrees(scene) {
   // first (systems/canopy.js reads the finished registries, incl. the snag
   // it adds itself for the Charles Street crossing)
   buildCanopy(scene);
+  // Planted AFTER the network: no fabricated branch bridge over water.
+  buildGardenIslandTree(scene);
+}
+
+// A rocky, vegetated landmass that a swimming squirrel can explore. Its
+// trunk and boulders register real Y-bounded collision solids, and its
+// leaf crown registers an actual walkable platform; not decoration.
+// The standalone island canopy has no invented aerial bridge to shore.
+function buildGardenIslandTree(scene){
+ const x=GARDEN_ISLAND.x,z=GARDEN_ISLAND.z,gy=groundHeight(x,z);
+ if(!isGardenIsland(x,z)||inWater(x,z)||gy<.17)
+  throw Error('Garden island tree is not planted on exposed solid soil');
+ const h=4.5,canopyR=2.45,canopyY=gy+h+.65;
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.29,.44,h,8),trunkMat);
+ trunk.position.set(x,gy+h/2,z);trunk.castShadow=true;scene.add(trunk);
+ for(const [dx,dz,scale,mat] of [
+  [-.7,.2,1,leafDarkMats[0]],[.65,.4,.88,leafMats[1]],
+  [.1,-.7,1.05,leafMats[2]],[-.1,.1,.78,leafMats[3]]
+ ]){
+  const c=new THREE.Mesh(canopyGeos[1],mat);
+  c.scale.set(canopyR*scale,canopyR*.52*scale,canopyR*scale);
+  c.position.set(x+dx,canopyY,z+dz);c.castShadow=true;
+  scene.add(c);
+ }
+ S.trees.push({x,z,r:.44,gy,trunkTop:gy+h,canopyY,canopyR});
+ S.solids.push({x,z,r:.48,minY:gy-.12,maxY:gy+h});
+ S.platforms.push({x,z,r:canopyR*.92,y:canopyY-.55});
+ const rockMat=new THREE.MeshStandardMaterial({color:0x87847b,roughness:.98});
+ for(const [rx,rz,sx,sz] of [
+  [-137,-31.5,.51,.33],[-131,-33,.45,.31],[-134,-27.8,.48,.28]
+ ]){
+  if(!isGardenIsland(rx,rz)||inWater(rx,rz))
+   throw Error('Garden island boulder spawned in the lagoon');
+  const base=groundHeight(rx,rz),stone=new THREE.Mesh(
+   new THREE.DodecahedronGeometry(1,0),rockMat);
+  stone.scale.set(sx,sz,sx*.83);stone.position.set(rx,base+sz*.67,rz);
+  stone.rotation.y=(rx+rz)*.18;stone.castShadow=true;scene.add(stone);
+  S.solids.push({x:rx,z:rz,r:sx*.88,minY:base-.02,maxY:base+sz*1.35});
+ }
 }
 
 // The western Mall waypoint elm (v0.6.2): the two elms flanking the west

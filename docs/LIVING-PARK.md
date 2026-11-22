@@ -242,3 +242,8 @@ The additional runtime food-on-planks test initially failed 1 of 171 checks beca
   mesh samples against the water/island hit predicate and includes the
   new Garden island camera in visual CI. These checks are not a substitute
   for physical iOS Safari testing.
+
+- An isolated island tree and three natural boulders now sit on the
+  actual raised soil. Trunk/boulders use real height-bounded colliders;
+  its canopy is a walkable platform. It spawns after the canopy-route
+  planner so no impossible branch bridge gets invented across water.

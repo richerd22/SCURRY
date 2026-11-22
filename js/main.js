@@ -506,7 +506,9 @@ if (qaLocal) {
           throw Error('visible lake surface is at incorrect Y');
         count++;
       }
-      return {count,mismatches,waterHits,islandHits,worst};
+      return {count,mismatches,waterHits,islandHits,worst,
+        islandHeight:visibleGroundHeight(-134,-31),
+        islandSolids:S.solids.filter(s=>Math.hypot(s.x+134,s.z+31)<4.2).length};
     },
     surveyGardenBridge:()=>{
       scene.updateMatrixWorld(true);
