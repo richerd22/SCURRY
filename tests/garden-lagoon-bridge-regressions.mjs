@@ -136,8 +136,8 @@ test('elevated physics smoke selects actual registered 3.20m arch strip, not old
 test('photo-calibrated bridge pylons and sculpture have real geometry and collision',()=>{
  assert.equal(GARDEN_BRIDGE.archRise,2.05);
  assert.equal(GARDEN_BRIDGE.deckThickness,.35);
- assert.equal(gardenBridgeHeight(GARDEN_BRIDGE.x),3.2);
- assert.equal(gardenBridgeUnderClearance(GARDEN_BRIDGE.x),2.85);
+ assert.ok(Math.abs(gardenBridgeHeight(GARDEN_BRIDGE.x)-3.2)<1e-10);
+ assert.ok(Math.abs(gardenBridgeUnderClearance(GARDEN_BRIDGE.x)-2.85)<1e-10);
  assert.ok(GARDEN_BRIDGE_PIER.topAboveDeck<3.5);
  assert.ok(GARDEN_BRIDGE_PIER.lampAboveDeck<3.7);
  const src=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
