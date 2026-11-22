@@ -978,10 +978,10 @@ function buildSwanBoats(scene) {
     const vx = -d.rx * Math.sin(th) * d.w, vz = d.rz * Math.cos(th) * d.w;
     return { x, z, yaw: Math.atan2(-vx, -vz) };
   }
-  // Two independent north-lobe traffic loops; the moored third craft
+  // Island-cleared north-lobe traffic loops; the moored third craft
   // stays south. None is routed under the bridge before clearance proof.
-  boat({cx:-140,cz:-27,rx:5,rz:8,w:(Math.PI*2)/170,ph:.6});
-  boat({cx:-125,cz:-27,rx:4,rz:8,w:-(Math.PI*2)/190,ph:3.4});
+  boat({cx:-149,cz:-24,rx:2,rz:7,w:(Math.PI*2)/170,ph:.6});
+  boat({cx:-117,cz:-24,rx:2,rz:7,w:-(Math.PI*2)/190,ph:3.4});
   // third boat MOORED at the dock (v0.6.28): the fleet at rest on the
   // south shore west of the bridge - canopy up, waiting on passengers.
   // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);

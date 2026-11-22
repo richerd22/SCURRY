@@ -9,6 +9,7 @@ import { seededRandom } from './seeded-random.js';
 import { makeParkFenceLayout } from './fence-layout.js';
 import { buildParkEntrances } from './gate-art.js';
 import { insideParkLawn } from './ground-rules.js';
+import { GARDEN_LAGOON_SHORE,GARDEN_ISLAND_SHORE,lagoonContains,lagoonBasin } from './garden-lagoon-layout.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE } from './boston-landmark-layout.js';
 import { groundDetailTex, cityFacade, glassFacade, clockTex, cloudTex, graniteTex } from './textures.js';
 import { buildBeaconRow, buildCharlesStreet, buildRingBlocks, buildSouthWestRows, buildTremontRow } from './streetwalls.js';
@@ -62,7 +63,7 @@ export function groundHeight(x, z) {
   h += 8.0 * tx * tz;
   // Beacon St edge rises slightly along the north fence of the Common
   h += 1.1 * gauss(z, 0, -104, 0, 10) * smooth01((x + 30) / 60) * (1 - tx * tz);
-  h -= 0.6 * ellipseDip(x, z, MAP.lagoon);         // lagoon basin
+  h -= lagoonBasin(x,z);                           // single physical water boundary + dry island
   h -= 0.38 * ellipseDip(x, z, MAP.frogPond);      // frog pond basin
   return h;
 }
@@ -120,10 +121,9 @@ export function distToPaths(x, z) {
 }
 
 export function inWater(x, z) {
-  const L = MAP.lagoon, F = MAP.frogPond;
-  const dl = ((x - L.x) / (L.rx - 3)) ** 2 + ((z - L.z) / (L.rz - 2)) ** 2;
+  const F = MAP.frogPond;
   const df = ((x - F.x) / (F.rx - 2)) ** 2 + ((z - F.z) / (F.rz - 1.5)) ** 2;
-  return dl < 1 || df < 1;
+  return lagoonContains(x,z) || df < 1;
 }
 export function onRoad(x, z) { return x > MAP.charlesMinX - 1 && x < MAP.charlesMaxX + 1; }
 export function isGrass(x, z) {
@@ -166,7 +166,7 @@ function paintGround() {
   const bedCols = ['#b8546e', '#d9a441', '#e8e4da', '#a04a7a', '#c96f3b'];
   for (let i = 0; i < 26; i++) {
     const bx = MAP.garden.minX + 12 + rnd() * 120, bz = -88 + rnd() * 176;
-    if (ellipseDip(bx, bz, MAP.lagoon) > 0) continue;
+    if (lagoonContains(bx,bz)) continue;
     g.fillStyle = bedCols[i % bedCols.length];
     g.globalAlpha = 0.55;
     g.beginPath(); g.ellipse(px(bx), pz(bz), (3 + rnd() * 5) * m, (1.6 + rnd() * 2) * m, rnd(), 0, 7); g.fill();
@@ -198,10 +198,16 @@ function paintGround() {
     g.beginPath(); g.ellipse(px(cx), pz(cz), r * m, r * m * (H / W) * (MAP.maxX - MAP.minX) / (MAP.maxZ - MAP.minZ), 0, 0, 7); g.fill();
   }
   // pond/lagoon beds (sandy bottom under the water meshes)
-  for (const e of [MAP.lagoon, MAP.frogPond]) {
-    g.fillStyle = '#978a64';
-    g.beginPath(); g.ellipse(px(e.x), pz(e.z), e.rx * m, e.rz * m * 0.983, 0, 0, 7); g.fill();
-  }
+  // Brown substrate and green, above-water island are cut from
+  // the exact same shore rings as the Three.js water triangles.
+  g.fillStyle='#978a64';g.beginPath();
+  GARDEN_LAGOON_SHORE.forEach(([x,z],i)=>i?g.lineTo(px(x),pz(z)):g.moveTo(px(x),pz(z)));
+  g.closePath();g.fill();
+  g.fillStyle='#4d743b';g.beginPath();
+  GARDEN_ISLAND_SHORE.forEach(([x,z],i)=>i?g.lineTo(px(x),pz(z)):g.moveTo(px(x),pz(z)));
+  g.closePath();g.fill();
+  const e=MAP.frogPond;g.fillStyle='#978a64';g.beginPath();
+  g.ellipse(px(e.x),pz(e.z),e.rx*m,e.rz*m*.983,0,0,7);g.fill();
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
@@ -258,23 +264,29 @@ export function buildWorld(scene) {
   const waterMat = new THREE.MeshStandardMaterial({ color: 0x2a5a68, transparent: true, opacity: 0.93, roughness: 0.13, metalness: 0.05, envMapIntensity: 2.3, emissive: 0x1a2440, emissiveIntensity: 0.22, side: THREE.DoubleSide });
   S.waterMat = waterMat;
   for (const [e, y] of [[MAP.lagoon, 0.02], [MAP.frogPond, 0.06]]) {
-    const w = new THREE.Mesh(new THREE.CircleGeometry(1, 40), waterMat);
+    const isGarden=e===MAP.lagoon;
+    const waterShape=isGarden?new THREE.Shape(
+      GARDEN_LAGOON_SHORE.map(([x,z])=>new THREE.Vector2(x,-z))):null;
+    if(isGarden)waterShape.holes.push(new THREE.Path(
+      GARDEN_ISLAND_SHORE.map(([x,z])=>new THREE.Vector2(x,-z))));
+    const w = new THREE.Mesh(isGarden?new THREE.ShapeGeometry(waterShape):
+      new THREE.CircleGeometry(1,40),waterMat);
     w.rotation.x = -Math.PI / 2;
-    w.scale.set(e.rx - 1.5, e.rz - 1, 1);
-    w.position.set(e.x, y, e.z);
+    if(!isGarden)w.scale.set(e.rx-1.5,e.rz-1,1);
+    w.position.set(isGarden?0:e.x,y,isGarden?0:e.z);
+    if(isGarden)w.userData.scurryLagoonWater=true;
     w.userData.isWater = true;
     scene.add(w);
     S.waterMeshes = S.waterMeshes || [];
     S.waterMeshes.push(w);
-    // stone rim
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(1, 0.03, 6, 48),
-      new THREE.MeshStandardMaterial({ color: 0x9a958a, roughness: 0.9 })
-    );
-    rim.rotation.x = Math.PI / 2;
-    rim.scale.set(e.rx, e.rz, 6);
-    rim.position.set(e.x, 0.1, e.z);
-    scene.add(rim);
+    // Garden curb blocks follow the actual irregular polygon. The
+    // Frog Pond retains its circular torus.
+    if(!isGarden){
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(1,.03,6,48),
+        new THREE.MeshStandardMaterial({color:0x9a958a,roughness:.9}));
+      rim.rotation.x=Math.PI/2;rim.scale.set(e.rx,e.rz,6);
+      rim.position.set(e.x,.1,e.z);scene.add(rim);
+    }
   }
 
   buildPondCurbs(scene);
@@ -441,14 +453,17 @@ function buildPondCurbs(scene) {
   const curbMat = new THREE.MeshStandardMaterial({ map: graniteTex(), color: 0xbdb6a6, roughness: 0.95 });
   const blockGeo = new THREE.BoxGeometry(1.3, 0.24, 0.34);
   const spots = [];
-  for (const e of [MAP.lagoon, MAP.frogPond]) {
-    const n = Math.floor(Math.PI * (e.rx + e.rz) / 1.32);
-    for (let i = 0; i < n; i++) {
-      const t = (i / n) * Math.PI * 2;
-      const x = e.x + Math.cos(t) * e.rx, z = e.z + Math.sin(t) * e.rz;
-      const tx = -e.rx * Math.sin(t), tz = e.rz * Math.cos(t); // ellipse tangent
-      spots.push([x, z, Math.atan2(-tz, tx)]);
+  for(const ring of [GARDEN_LAGOON_SHORE,GARDEN_ISLAND_SHORE]){
+    for(let i=0;i<ring.length;i++){
+      const a=ring[i],b=ring[(i+1)%ring.length],dx=b[0]-a[0],dz=b[1]-a[1];
+      const n=Math.max(1,Math.ceil(Math.hypot(dx,dz)/1.3));
+      for(let j=0;j<n;j++)spots.push([a[0]+dx*j/n,a[1]+dz*j/n,Math.atan2(-dz,dx)]);
     }
+  }
+  const e=MAP.frogPond,n=Math.floor(Math.PI*(e.rx+e.rz)/1.32);
+  for(let i=0;i<n;i++){
+    const t=i/n*Math.PI*2,x=e.x+Math.cos(t)*e.rx,z=e.z+Math.sin(t)*e.rz;
+    spots.push([x,z,Math.atan2(-e.rz*Math.cos(t),-e.rx*Math.sin(t))]);
   }
   const mesh = new THREE.InstancedMesh(blockGeo, curbMat, spots.length);
   const d = new THREE.Object3D();

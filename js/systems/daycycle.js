@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
+import { lagoonContains } from '../world/garden-lagoon-layout.js';
 
 const DAY_LENGTH = 780; // seconds per full day (13 min) - a long golden evening
 
@@ -272,7 +273,8 @@ export function updateDaycycle(dt) {
       ? WATER_BODIES.concat(S.waterBodiesExtra) : WATER_BODIES;
     for (const [e, wy] of bodies) {
       const dx = (P.pos.x - e.x) / e.rx, dz = (P.pos.z - e.z) / e.rz;
-      if (dx * dx + dz * dz < 1 && eyeY < wy) { under = 1; break; }
+      const wet=e===MAP.lagoon?lagoonContains(P.pos.x,P.pos.z):dx*dx+dz*dz<1;
+      if(wet&&eyeY<wy){under=1;break;}
     }
     submergeK += ((under ? 1 : 0) - submergeK) * Math.min(1, dt * 6);
     if (submergeK < 0.004) submergeK = under ? submergeK : 0;
