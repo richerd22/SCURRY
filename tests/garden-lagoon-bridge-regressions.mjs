@@ -9,8 +9,8 @@ test('Garden water lobes run north-south; actual Mall↔Common bridge east-west'
  assert.ok(GARDEN_LAGOON.rz>GARDEN_LAGOON.rx*1.9);
  assert.equal(GARDEN_BRIDGE.axis,'east-west');
  assert.ok(GARDEN_BRIDGE.halfLength>GARDEN_BRIDGE.halfWidth*6);
- assert.ok(gardenBridgeDeck(GARDEN_BRIDGE.x,0,GARDEN_BRIDGE.deckY));
- assert.ok(gardenBridgeDeck(GARDEN_BRIDGE.x+20,1,GARDEN_BRIDGE.deckY));
+ assert.ok(gardenBridgeDeck(GARDEN_BRIDGE.x,0,gardenBridgeHeight(GARDEN_BRIDGE.x)));
+ assert.ok(gardenBridgeDeck(GARDEN_BRIDGE.x+20,1,gardenBridgeHeight(GARDEN_BRIDGE.x+20)));
  assert.equal(gardenBridgeDeck(GARDEN_BRIDGE.x,15),false);
  const e=gardenBridgeLanding(1),w=gardenBridgeLanding(-1);
  assert.ok(e.x>GARDEN_BRIDGE.x&&w.x<GARDEN_BRIDGE.x);
@@ -77,7 +77,7 @@ test('source registers exactly tagged collision boxes and visible triangle ramps
  assert.match(src,/S\.platformBoxes\.push\(\{\.\.\.ramp,isGardenBridgeSurface:true\}\)/);
  assert.match(main,/surveyGardenBridge:\(\)=>/);
  assert.match(main,/ray\.intersectObjects\(meshes,false\)/);
- assert.match(main,/walkSurface\(x,z,b\.deckY,1\.5/);
+ assert.match(main,/walkSurface\(x,z,declared,1\.5/);
 });
 test('old land-based park props and burrow entrances no longer spawn inside reshaped lagoon',()=>{
  const props=readFileSync(new URL('../js/world/props.js',import.meta.url),'utf8');

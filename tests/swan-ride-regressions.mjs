@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 const src=readFileSync(new URL('../js/systems/swan-ride-rules.js',import.meta.url),'utf8');
+const layoutSrc=readFileSync(new URL('../js/world/garden-lagoon-layout.js',import.meta.url),'utf8');
+const {lagoonWaterClearance}=await import('data:text/javascript;base64,'+Buffer.from(layoutSrc).toString('base64'));
 const {swanRidePose,SWAN_RIDE_SECONDS,SWAN_DOCK}=await import(
   'data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 test('swan boat tour is finite and returns exactly to its real dock',()=>{
@@ -12,27 +14,42 @@ test('swan boat tour is finite and returns exactly to its real dock',()=>{
   assert.ok(Number.isFinite(a.yaw)&&Number.isFinite(b.yaw));
   assert.throws(()=>swanRidePose(NaN),RangeError);
 });
-test('every boat centre stays in south lagoon, outside bridge and northern traffic lane',()=>{
-  let length=0,prev=swanRidePose(0);
+test('entire route goes south to north, UNDER bridge and circles island at 5m clearance',()=>{
+  let length=0,prev=swanRidePose(0),north=0,under=0,east=0,west=0;
   for(let i=0;i<=2000;i++){
     const p=swanRidePose(i/2000);
     assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.z)&&Number.isFinite(p.yaw));
-    const lagoon=((p.x+132)/26)**2+(p.z/54)**2;
-    assert.ok(lagoon<.87,'hull near shallow shore '+JSON.stringify(p));
-    assert.ok(p.z>12,'tour may cross east-west centre bridge '+JSON.stringify(p));
-    assert.ok(p.z>3,'north drifting boats occupy the other lagoon lobe');
-    length+=Math.hypot(p.x-prev.x,p.z-prev.z);
-    prev=p;
+    assert.ok(lagoonWaterClearance(p.x,p.z)>5,
+      'full boat hull hits actual irregular shore or island: '+JSON.stringify(p));
+    if(p.z<-40)north++;
+    if(Math.abs(p.z)<2.7&&Math.abs(p.x+132)<2.5)under++;
+    if(p.z<-20&&p.x>-125)east++;
+    if(p.z<-20&&p.x<-143)west++;
+    length+=Math.hypot(p.x-prev.x,p.z-prev.z);prev=p;
   }
-  assert.ok(length>50&&length<150,'credible water circuit: '+length);
+  assert.ok(north>10&&under>10&&east>10&&west>10,
+    'tour must pass under bridge both ways and circle ALL sides of dry island');
+  assert.ok(length>180&&length<230,'full two-lobe circuit: '+length);
 });
 
 test('the entire moving swan hull remains inside rendered water, not only its centre',()=>{
- const rx=26-5,rz=54-5;
  for(let i=0;i<=2000;i++){
    const p=swanRidePose(i/2000);
-   const envelope=((p.x+132)/rx)**2+(p.z/rz)**2;
-   assert.ok(envelope<1,
-     'swan body/canopy hits bank at '+JSON.stringify(p)+' envelope='+envelope);
+   assert.ok(lagoonWaterClearance(p.x,p.z)>5,
+     'actual boat swan head or stern intersects shoreline: '+JSON.stringify(p));
  }
+});
+
+test('independent moving ambient boats cannot strike passenger route at ANY phase',()=>{
+ let min=Infinity;
+ const locals=[{cx:-150,cz:15,rx:1,rz:2},{cx:-114,cz:14,rx:1,rz:2}];
+ for(let i=0;i<=2000;i++){
+  const p=swanRidePose(i/2000);
+  for(const d of locals)for(let k=0;k<72;k++){
+   const a=k/72*Math.PI*2;
+   const x=d.cx+d.rx*Math.cos(a),z=d.cz+d.rz*Math.sin(a);
+   min=Math.min(min,Math.hypot(p.x-x,p.z-z));
+  }
+ }
+ assert.ok(min>10,'two 5m full-hull envelopes can overlap: '+min);
 });

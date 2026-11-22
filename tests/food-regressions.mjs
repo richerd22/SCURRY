@@ -170,15 +170,16 @@ test('actual bridge plank drops stay raised but food over a rail lands below',as
  const crest=4.55;
  b.set(-132,crest,0);h.S.carried='acorn';
  const deck=h.dropCarried();
- assert.equal(deck.floorY,crest,'food released on actual arched planks');
- assert.ok(Math.abs(deck.mesh.position.y-crest-.05)<.001);
+ assert.ok(Math.abs(deck.floorY-crest)<.01,
+   'food released on actual curved planks, including forward hand offset');
+ assert.ok(Math.abs(deck.mesh.position.y-deck.floorY-.05)<.001);
  h.updateFood(.016);
  // updateFood intentionally applies a ±8mm pickup-glint bob to ALL
  // non-stolen food. Preserve that visible motion while never losing
  // the real raised support sampled at spawn.
- assert.ok(Math.abs(deck.mesh.position.y-(crest+.05))<=.008001,
+ assert.ok(Math.abs(deck.mesh.position.y-(deck.floorY+.05))<=.008001,
    'raised bridge food must only move within intentional 8mm visual glint');
- assert.equal(deck.floorY,crest,'food physics floor never changes with bob');
+ assert.ok(Math.abs(deck.floorY-crest)<.01,'food floor never changes with bob');
  b.set(-132,crest,2.9);h.S.carried='peanut';
  const outside=h.dropCarried();
  assert.equal(outside.floorY,0,'over-rail food falls to ground, never floats');
