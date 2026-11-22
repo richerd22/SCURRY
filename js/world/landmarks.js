@@ -773,62 +773,18 @@ function buildBridge(scene) {
 // --- swan boats on the lagoon ---
 // Rebuilt v0.6.11: the old boats were a slab hull, three bench backs and
 // a neck of stacked cylinders. Now: an extruded plan-view hull with a
-// raked bow, slatted bench rows under an arched canvas canopy, and the
+// raked bow, open red passenger bench rows, and the
 // full mute swan at the stern - S-curve neck (one swept tube), folded
 // wings, black knob + mask, orange beak. The boats DRIFT: each runs a
 // slow ellipse on its own lobe of the lagoon (daycycle owns the motion
 // via userData.drift), never crossing the bridge or the goose deck.
 const swanBlack = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.55 });
 const swanBeak = new THREE.MeshStandardMaterial({ color: 0xe07b28, roughness: 0.55 });
-// v0.6.31: the benches wear the same plank texture as the decks -
-// flat colour read as painted blocks at dock distance.
-const benchWood = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.85 });
-// scalloped canopy valance (v0.6.28): the real boats' canopy edge is a
-// scalloped skirt, and at lagoon distance that broken edge is half of
-// what makes a white box read as a swan boat. Canvas alpha, one texture.
-function valanceTex() {
-  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 48;
-  const c = cv.getContext('2d');
-  c.clearRect(0, 0, 256, 48);
-  c.fillStyle = '#f4f0e4';
-  c.fillRect(0, 0, 256, 26);
-  for (let x = 16; x <= 256; x += 32) { c.beginPath(); c.arc(x, 26, 16, 0, Math.PI); c.fill(); }
-  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
-  t.wrapS = THREE.RepeatWrapping; t.repeat.set(3, 1);
-  return t;
-}
-// canopy canvas (v0.6.31): the roof was one flat pale material -
-// at lagoon distance a swan boat is mostly canopy, and flat white
-// reads as a slab. Faint sewn-panel seams + a whisper of canvas
-// grain, drawn once. The seams run fore-aft: on the roof cylinder
-// (rotated so its height axis lies along the boat) constant-u
-// lines run along the length, so the texture's vertical stripes
-// land as lengthwise seams, ~0.75 m apart over the arc.
-function canopyTex() {
-  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
-  const c = cv.getContext('2d');
-  c.fillStyle = '#f4f0e4'; c.fillRect(0, 0, 256, 128);
-  let seed = 777001;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 2600; i++) { // canvas grain
-    c.fillStyle = 'rgba(120,110,90,' + (rnd() * 0.05) + ')';
-    c.fillRect(rnd() * 256, rnd() * 128, 2, 1);
-  }
-  for (let x = 0; x <= 256; x += 64) { // panel seams + their highlight lip
-    c.fillStyle = 'rgba(105,98,84,0.55)'; c.fillRect(x, 0, 2, 128);
-    c.fillStyle = 'rgba(255,255,252,0.5)'; c.fillRect(x + 2, 0, 1, 128);
-  }
-  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
-  t.wrapS = THREE.RepeatWrapping;
-  return t;
-}
+// Real Swan Boats have OPEN red benches and a green hull, not a canopy.
+const benchRed = new THREE.MeshStandardMaterial({color:0xa93529,roughness:.84});
 function buildSwanBoats(scene) {
-  const boatMat = new THREE.MeshStandardMaterial({ color: 0xf0ebdd, roughness: 0.6 });
-  const canvasMat = new THREE.MeshStandardMaterial({ map: canopyTex(), roughness: 0.9, side: THREE.DoubleSide });
-  const bootMat = new THREE.MeshStandardMaterial({ color: 0x27313a, roughness: 0.7 });
-  const valanceMat = new THREE.MeshStandardMaterial({
-    map: valanceTex(), transparent: true, alphaTest: 0.45, roughness: 0.9, side: THREE.DoubleSide,
-  });
+  const boatMat = new THREE.MeshStandardMaterial({color:0x275a40,roughness:.62});
+  const bootMat = new THREE.MeshStandardMaterial({color:0x182f28,roughness:.76});
   const deckMat = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.9 });
 
   // plan-view hull outline (shape y = -world z: bow at shape +y)
@@ -889,7 +845,8 @@ function buildSwanBoats(scene) {
   function boat(drift) {
     const g = new THREE.Group();
     const hull = new THREE.Mesh(hullGeo, boatMat);
-    hull.castShadow = true; hull.receiveShadow = true; g.add(hull);
+    hull.castShadow = true; hull.receiveShadow = true;
+    hull.userData.scurrySwanHull=true;g.add(hull);
     const rail = new THREE.Mesh(hullGeo, darkWood);
     rail.scale.set(1.045, 1, 1.03); rail.position.y = 0.7; rail.scale.y = 0.16; g.add(rail);
     // waterline band (v0.6.31): the real boats sit on a dark-painted
@@ -904,24 +861,18 @@ function buildSwanBoats(scene) {
     // bench rows facing the bow (-z): seat + leaning back + side stringers
     for (let i = 0; i < 5; i++) {
       const bz = -2.4 + i * 1.1;
-      box(2.9, 0.09, 0.5, benchWood, 0, 1.0, bz, g);
-      const back = box(2.9, 0.55, 0.09, benchWood, 0, 1.3, bz + 0.29, g);
-      back.rotation.x = -0.12;
-      for (const sx of [-1.35, 1.35]) box(0.08, 0.27, 0.5, benchWood, sx, 0.86, bz, g, false);
+      const seat=box(2.9,.09,.5,benchRed,0,1.0,bz,g);
+      seat.userData.scurrySwanSeat=true;
+      const back=box(2.9,.55,.09,benchRed,0,1.3,bz+.29,g);
+      back.rotation.x=-.12;back.userData.scurrySwanSeatBack=true;
+      for(const sx of [-1.35,1.35])
+        box(.08,.27,.5,darkWood,sx,.86,bz,g,false);
     }
-    // canopy: arched canvas on four slim posts, edge rails to finish it
-    for (const px of [-1.4, 1.4]) for (const pz of [-2.6, 2.3]) cyl(0.05, 0.05, 1.62, white, px, 1.6, pz, g, 6);
-    const roof = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.9, 1.9, 5.6, 14, 1, true, Math.PI - 0.8, 1.6), canvasMat);
-    roof.rotation.x = Math.PI / 2; roof.position.set(0, 0.98, -0.15);
-    roof.castShadow = true; g.add(roof);
-    for (const sx of [-1.36, 1.36]) box(0.07, 0.07, 5.6, white, sx, 2.3, -0.15, g, false);
-    // scalloped valance hanging from both canopy edge rails
-    for (const sx of [-1.38, 1.38]) {
-      const v = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 0.36), valanceMat);
-      v.rotation.y = Math.PI / 2;
-      v.position.set(sx, 2.14, -0.15);
-      g.add(v);
+    // Actual open side rails, no invented white canopy or canvas.
+    for(const sx of [-1.51,1.51]){
+      box(.055,.055,6.4,darkWood,sx,1.45,-.14,g,false);
+      for(const pz of [-2.7,-1.6,-.5,.6,1.7,2.6])
+        box(.07,.6,.07,darkWood,sx,1.13,pz,g,false);
     }
     // Real boats carry people. Ten lightweight human silhouettes on the
     // five existing bench rows; two instanced draws per hull instead of
@@ -961,7 +912,7 @@ function buildSwanBoats(scene) {
     box(.34,.08,.28,darkWood,0,2.0,-.07,operator,false);
     g.add(operator);g.userData.operator=operator;
     // stern deck the swan rides on
-    box(3.3, 0.14, 1.7, benchWood, 0, 0.8, 3.85, g);
+    box(3.3, 0.14, 1.7, deckMat, 0, 0.8, 3.85, g);
     swan(g);
     g.userData.bobPhase = Math.random() * 6;
     g.userData.drift = drift;
@@ -983,7 +934,7 @@ function buildSwanBoats(scene) {
   boat({cx:-146,cz:-18,rx:1,rz:5,w:(Math.PI*2)/170,ph:.6});
   boat({cx:-119,cz:-17,rx:1,rz:5,w:-(Math.PI*2)/190,ph:3.4});
   // third boat MOORED at the dock (v0.6.28): the fleet at rest on the
-  // south shore west of the bridge - canopy up, waiting on passengers.
+  // south shore west of the bridge - open benches, waiting on passengers.
   // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);
   // the bob + roll still apply, so she rides the water at her lines.
   // Full hull is inset from the south bank; bow and stern stay inside
@@ -1004,7 +955,7 @@ function buildSwanBoats(scene) {
     const coil = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 7, 18),
       new THREE.MeshStandardMaterial({ color: 0x9a8a68, roughness: 1 }));
     coil.rotation.x = Math.PI / 2; coil.position.set(3.4, 0.52, -1.05); g.add(coil);
-    box(0.62, 0.5, 0.62, benchWood, -3.9, 0.7, 1.15, g);
+    box(0.62, 0.5, 0.62, darkWood, -3.9, 0.7, 1.15, g);
     // dock sign, park-board green like the station sign
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
     const c = cv.getContext('2d');

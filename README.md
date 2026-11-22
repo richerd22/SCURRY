@@ -22,7 +22,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 - [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, still screenshots, real desktop PLAY/WALK/JUMP/PORTAL round trips, simulated mobile dual-touch controls, optional map/notes checks, and screenshots/console artifacts on pushes to main.
 
-**Current version: v0.7.2.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. v0.7.2 replaces the Public Garden lagoon ellipse with one sculpted, physically wet/dry shoreline and a **solid, climbable island** (tree, collidable boulders, graded access) shared by Three.js water triangles, shoreline curbs, terrain, boat hull safety, the park map, wildlife and underwater tint. The passenger Swan Boat tour still stays south until independent under-bridge boat-canopy clearance is proven (issue #11). Native iPhone Safari and real-GPU/performance playtesting remain required.
+**Current version: v0.7.3.** Includes live browser regression coverage for walking, jumping, pause/resume, portals and simulated dual-touch movement; optional Field Notes discovery tracking; selectable landmark compass waypoints; and substantial collision/input/audio stability work. v0.7.2 replaces the Public Garden lagoon ellipse with one sculpted, physically wet/dry shoreline and a **solid, climbable island** (tree, collidable boulders, graded access) shared by Three.js water triangles, shoreline curbs, terrain, boat hull safety, the park map, wildlife and underwater tint. v0.7.3 corrects the photographed Boston Swan Boat silhouette: green hulls and five OPEN red passenger bench rows, instead of a fictional overhead passenger canopy, retaining ten people, operator, white swan, dock, and stowaway ride. The passenger tour remains south until full rendered swan-head/bridge clearance is proven (issue #11). Native iPhone Safari and real-GPU/performance playtesting remain required.
 
 ## Controls
 
@@ -80,7 +80,7 @@ loses 25%. Relocated, never harmed.
   Frog Pond surfaces shift almost imperceptibly as you
   watch - the reflection breathes. Stare at the water by
   the bridge for ten seconds. It is doing something.
-- **Swan boat details.** Canvas seams on the canopies, a
+- **Swan boat details.** Open-air red-painted seats and green hulls, a
   dark waterline where the hulls meet the lagoon, real
   wood grain on the benches, and the moored boat's dock
   has picked up a coiled rope and a crate, like docks do.
