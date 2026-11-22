@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';import {test} from 'node:test';
 const load=(path)=>import('data:text/javascript;base64,'+
  Buffer.from(readFileSync(new URL(path,import.meta.url),'utf8')).toString('base64'));
 const {GARDEN_LAGOON,GARDEN_BRIDGE,GARDEN_DOCK,lagoonEllipse,
- gardenBridgeDeck,gardenBridgeLanding,gardenBridgeRamp,gardenBridgeHeight,gardenBridgeUnderClearance}=await load('../js/world/garden-lagoon-layout.js');
+ GARDEN_BRIDGE_PIER,gardenBridgeDeck,gardenBridgeLanding,gardenBridgeRamp,gardenBridgeHeight,gardenBridgeUnderClearance}=await load('../js/world/garden-lagoon-layout.js');
 const {SWAN_DOCK,swanRidePose}=await load('../js/systems/swan-ride-rules.js');
 test('Garden water lobes run north-south; actual Mall↔Common bridge east-west',()=>{
  assert.ok(GARDEN_LAGOON.rz>GARDEN_LAGOON.rx*1.9);
@@ -106,8 +106,8 @@ test('geese guard only the actual deck, not water below or canopy above',()=>{
  const b=GARDEN_BRIDGE,x=b.x,z=b.z;
  assert.equal(gardenBridgeDeck(x,z),true);
  assert.equal(gardenBridgeDeck(x,z,gardenBridgeHeight(x)),true);
- assert.ok(gardenBridgeHeight(x)>4.5,'solid crest clears the full white swan head');
- assert.ok(gardenBridgeUnderClearance(x)>4,'4m bridge underside at boat lane');
+ assert.ok(gardenBridgeHeight(x)>3.1,'solid crest clears the rescaled white swan head');
+ assert.ok(gardenBridgeUnderClearance(x)>2.8,'2.85m bridge underside at boat lane');
  assert.equal(gardenBridgeDeck(x,z,gardenBridgeHeight(x)-.08),true);
  assert.equal(gardenBridgeDeck(x,z,gardenBridgeHeight(x)+.5),true);
  for(const y of [-2,-.2,0,.3,gardenBridgeHeight(x)-.13,gardenBridgeHeight(x)+.8,gardenBridgeHeight(x)+2]){
@@ -124,10 +124,35 @@ test('dropped bridge snacks land on real raised planks, not submerged soil',()=>
  assert.match(food,/onDeck\?\{y:gardenBridgeHeight\(x\)\}:\{\}/);
 });
 
-test('elevated physics smoke selects actual registered 4.55m arch strip, not old flat bridge',()=>{
+test('elevated physics smoke selects actual registered 3.20m arch strip, not old flat bridge',()=>{
  const src=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
  assert.match(src,/s\.isGardenBridgeSurface&&/);
- assert.match(src,/s\.y0>4\.5&&s\.y1>4\.5/);
+ assert.match(src,/s\.y0>3\.1&&s\.y1>3\.1/);
  assert.match(src,/y:boxSurfaceHeight\(bridge,/);
  assert.doesNotMatch(src,/Math\.abs\(s\.y-1\.15\)/);
+});
+
+
+test('photo-calibrated bridge pylons and sculpture have real geometry and collision',()=>{
+ assert.equal(GARDEN_BRIDGE.archRise,2.05);
+ assert.equal(GARDEN_BRIDGE.deckThickness,.35);
+ assert.ok(Math.abs(gardenBridgeHeight(GARDEN_BRIDGE.x)-3.2)<1e-10);
+ assert.ok(Math.abs(gardenBridgeUnderClearance(GARDEN_BRIDGE.x)-2.85)<1e-10);
+ assert.ok(GARDEN_BRIDGE_PIER.topAboveDeck<3.5);
+ assert.ok(GARDEN_BRIDGE_PIER.lampAboveDeck<3.7);
+ const src=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ assert.match(src,/pier.userData.scurryGardenBridgePier=true/);
+ assert.match(src,/isGardenBridgePier:true/);
+ assert.match(src,/s.scale.y=.55/);
+ assert.match(main,/surveyGardenBridgePiers:\(\)=>/);
+});
+
+test('granite bridge pylon bases are sunk into rendered lakebed, not just water plane',()=>{
+ assert.equal(GARDEN_BRIDGE_PIER.submergedBase,-.95);
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const harness=readFileSync(new URL('../harness/browser-smoke.mjs',import.meta.url),'utf8');
+ assert.match(main,/pier has no lakebed to be rooted in/);
+ assert.match(main,/minLakebedEmbed/);
+ assert.match(harness,/piers\.minLakebedEmbed>\.12/);
 });

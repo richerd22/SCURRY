@@ -54,7 +54,7 @@ async function harness() {
   assert.ok(!body.includes('import '), 'all dependency imports must be replaced');
   const mod = await import('data:text/javascript;base64,' +
     Buffer.from(body+'\n// test-harness-'+(++moduleCounter)).toString('base64'));
-  return { S, ...mod };
+  return { S, lagoon, ...mod };
 }
 
 test('explicit raised floor survives updateFood while home food stays on ground', async () => {
@@ -167,7 +167,7 @@ test('nearest food reports actual distance for prompt priority', async () => {
 test('actual bridge plank drops stay raised but food over a rail lands below',async()=>{
  const h=await harness();
  const b=h.S.player.pos;
- const crest=4.55;
+ const crest=h.lagoon.gardenBridgeHeight(-132);
  b.set(-132,crest,0);h.S.carried='acorn';
  const deck=h.dropCarried();
  assert.ok(Math.abs(deck.floorY-crest)<.01,

@@ -130,7 +130,8 @@ async function checkGameplay() {
       assert.equal(b.seats,5);assert.equal(b.backs,5);assert.equal(b.hulls,1);
       assert.equal(b.seatColor,0xa93529);assert.equal(b.hullColor,0x275a40);
       assert.equal(b.roofMeshCount,0);
-      assert.ok(b.height>3&&b.height<4.5,'real swan head height '+b.height);
+      assert.ok(b.height>2.1&&b.height<3.1,
+        'photo-calibrated swan must not tower over open-air passenger heads '+b.height);
     }
     const lagoon=await page.evaluate(()=>window.__scurryQA.surveyGardenLagoon());
     assert.ok(lagoon.count>1600,'lagoon 3D water/island sampling density');
@@ -167,6 +168,14 @@ async function checkGameplay() {
       'ACTUAL visible boat footprint touches an island or outside shore: '+JSON.stringify(underpass));
     console.log('GARDEN ACTUAL SWAN UNDERPASS AND HULL',
       JSON.stringify(underpass));
+    const piers=await page.evaluate(()=>window.__scurryQA.surveyGardenBridgePiers());
+    assert.equal(piers.meshes,4,'four visible granite bridge pylons');
+    assert.equal(piers.solids,4,'each granite pylon must be fully physical');
+    assert.ok(piers.maxYDiff<.001&&piers.maxXZDiff<.001&&piers.deepest<-.9&&
+      piers.minLakebedEmbed>.12,
+      'bridge pylons must root into ACTUAL rendered lakebed, not float: '+JSON.stringify(piers));
+    assert.ok(piers.lampRelativeHeight<3.7&&piers.pierRelativeHeight<3.5,
+      'game photo-proportion pass left the old five-metre decorative masts');
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
     assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
     assert.ok(bridge.maxAbsDiff<.015,
@@ -198,8 +207,8 @@ async function checkGameplay() {
         'approach ramp launches squirrel into air: '+JSON.stringify(crossing));
       const onDeck=crossing.samples.filter(s=>s.x>-147&&s.x<-117);
       assert.ok(onDeck.length>8&&onDeck.every(s=>s.feet>1.07)&&
-        onDeck.some(s=>s.feet>4.4),
-        'squirrel did not walk to real 4.55m bridge crest: '+JSON.stringify(onDeck));
+        onDeck.some(s=>s.feet>3.1),
+        'squirrel did not walk to real 3.20m bridge crest: '+JSON.stringify(onDeck));
     }
     await page.evaluate(()=>window.__scurryQA.placeOnTerrain(24,30,-2.2));
     await page.keyboard.down('w');
