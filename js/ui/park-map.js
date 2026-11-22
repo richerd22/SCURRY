@@ -3,6 +3,7 @@
 // Uses the SAME map dimensions, paths and landmark positions as the world.
 import { S, MAP } from '../state.js';
 import { PATHS } from '../world/world.js';
+import { GARDEN_LAGOON_SHORE,GARDEN_ISLAND_SHORE } from '../world/garden-lagoon-layout.js';
 import { mapPoint, mapHeading, mapRealm, waypointBearing } from './map-math.js';
 import { LANDMARKS, FIELD_NOTES } from '../systems/discovery-rules.js';
 import { MBTA_STATIONS } from '../systems/mbta-rules.js';
@@ -243,7 +244,18 @@ function draw() {
     ctx.fillStyle = fill; ctx.fill();
     ctx.strokeStyle = '#a6bbc0'; ctx.lineWidth = 1; ctx.stroke();
   }
-  pond(MAP.lagoon,'#39717a'); pond(MAP.frogPond,'#457782');
+  ctx.beginPath();
+  GARDEN_LAGOON_SHORE.forEach(([x,z],i)=>{
+    const q=p(x,z);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);
+  });
+  ctx.closePath();ctx.fillStyle='#39717a';ctx.fill();
+  ctx.strokeStyle='#a6bbc0';ctx.lineWidth=1;ctx.stroke();
+  ctx.beginPath();
+  GARDEN_ISLAND_SHORE.forEach(([x,z],i)=>{
+    const q=p(x,z);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);
+  });
+  ctx.closePath();ctx.fillStyle='#305542';ctx.fill();ctx.stroke();
+  pond(MAP.frogPond,'#457782');
   ctx.textAlign = 'center'; ctx.fillStyle = '#9fbe9b';
   ctx.font = '700 '+Math.max(9,Math.min(13,w/48))+'px ui-monospace, monospace';
   const garden = p(-138,-56), common = p(70,85);
