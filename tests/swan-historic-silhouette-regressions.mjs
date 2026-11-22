@@ -22,3 +22,9 @@ test('real rendered mesh and bounding-box validation runs in headless Chromium',
  assert.match(harness,/window.__scurryQA.surveySwanFleet\(\)/);
  assert.match(harness,/b.seats,5/);
 });
+
+test('white swan figurehead retains horizontal body size but lower, photo-proportional crown',()=>{
+ assert.match(art,/s.scale.y=.55/);
+ assert.match(art,/body.scale.set\(1.02, 0.78, 1.42\)/);
+ assert.match(art,/s.position.set\(0, 0.86, 4.32\)/);
+});

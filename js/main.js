@@ -39,7 +39,7 @@ import { createMobileQualityState, advanceMobileQuality } from './systems/mobile
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
-import { GARDEN_BRIDGE,GARDEN_DOCK,gardenBridgeHeight,gardenBridgeUnderClearance,lagoonContains,isGardenIsland,lagoonWaterClearance } from './world/garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,GARDEN_BRIDGE_PIER,GARDEN_DOCK,gardenBridgeHeight,gardenBridgeUnderClearance,lagoonContains,isGardenIsland,lagoonWaterClearance } from './world/garden-lagoon-layout.js';
 import {swanRidePose,SWAN_RIDE_SECONDS} from './systems/swan-ride-rules.js';
 
 // ---------- device class ----------
@@ -786,6 +786,26 @@ if (qaLocal) {
         actualHullMinBank:minHullBank,hullWorst,hullVertices:hull.length,footprintProbes,
         duration:SWAN_RIDE_SECONDS};
     },
+    surveyGardenBridgePiers:()=>{
+      scene.updateMatrixWorld(true);
+      const meshes=scene.children.filter(m=>m.userData.scurryGardenBridgePier);
+      const solids=S.solids.filter(s=>s.isGardenBridgePier);
+      let maxYDiff=0,maxXZDiff=0,deepest=Infinity;
+      for(const mesh of meshes){
+        const box=new THREE.Box3().setFromObject(mesh);
+        const s=solids.find(p=>Math.abs(p.x-mesh.position.x)<.001&&
+          Math.abs(p.z-mesh.position.z)<.001);
+        if(!s)throw Error('unphysical granite bridge pier');
+        maxYDiff=Math.max(maxYDiff,Math.abs(box.min.y-s.minY),Math.abs(box.max.y-s.maxY));
+        maxXZDiff=Math.max(maxXZDiff,Math.abs(box.max.x-box.min.x-GARDEN_BRIDGE_PIER.width),
+          Math.abs(box.max.z-box.min.z-GARDEN_BRIDGE_PIER.width));
+        deepest=Math.min(deepest,box.min.y);
+      }
+      return {meshes:meshes.length,solids:solids.length,
+        maxYDiff,maxXZDiff,deepest,
+        pierRelativeHeight:GARDEN_BRIDGE_PIER.topAboveDeck,
+        lampRelativeHeight:GARDEN_BRIDGE_PIER.lampAboveDeck};
+    },
     surveyGardenBridge:()=>{
       scene.updateMatrixWorld(true);
       const meshes=[];
@@ -853,7 +873,7 @@ if (qaLocal) {
         Math.abs(t.x-s.x)<.001 && Math.abs(t.z-s.z)<.001));
       const bridge=S.platformBoxes.find(s=>s.isGardenBridgeSurface&&
         Number.isFinite(s.y0)&&Number.isFinite(s.y1)&&
-        s.y0>4.5&&s.y1>4.5&&s.maxZ-s.minZ>4);
+        s.y0>3.1&&s.y1>3.1&&s.maxZ-s.minZ>4);
       const fence=S.platformSegments.find(s=>Number.isFinite(s.y0) &&
         Number.isFinite(s.y1) && Math.hypot(s.x1-s.x0,s.z1-s.z0)>1.4);
       if (!canopy || !bridge || !fence)throw new Error('missing real support registries');

@@ -80,13 +80,21 @@ export const GARDEN_BRIDGE=Object.freeze({
  x:GARDEN_LAGOON.x,z:0,axis:'east-west',
  halfLength:24,halfWidth:2.7,scaleLength:24/18,
  deckY:1.15,railY:2.07,shoreX:31,
- rampLength:6,shoreY:.28,archRise:3.4,deckThickness:.5,
+ rampLength:6,shoreY:.28,archRise:2.05,deckThickness:.35,
+});
+// Source photographs show stone pylons near human scale, rather than the
+// former five-metre cast-iron fantasy towers. These are photo-informed
+// ARTISTIC relative sizes, not surveyed engineering dimensions.
+export const GARDEN_BRIDGE_PIER=Object.freeze({
+ offset:18,z:2.6,width:.86,submergedBase:-.42,
+ topAboveDeck:3.3,lampAboveDeck:3.53,
+ cableAboveCrest:1.06,cableAbovePierDeck:3.08,
 });
 export const GARDEN_DOCK=Object.freeze({
  x:-140.5,z:47.9,boatX:-140,boatZ:44,deckY:.45,
 });
 // Arch has level 1.15m end deck (unchanged six-metre landings) and
-// a 4.55m crest. Solid deck, railings and actual goose feet MUST use
+// a 3.20m crest. Solid deck, railings and actual goose feet MUST use
 // the identical analytic curve. Quartic crest is smooth at centre and
 // at the endpoints, unlike a stair-step or fake visual arch.
 export function gardenBridgeHeight(x){

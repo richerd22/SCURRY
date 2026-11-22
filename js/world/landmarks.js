@@ -10,7 +10,7 @@ import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { GARDEN_ART } from './garden-art-facts.js';
 import { DUCKLING_COUNT, DUCKLING_YAW, MOTHER_RADIUS, DUCKLING_RADIUS, ducklingPose } from './ducklings-layout.js';
-import { GARDEN_BRIDGE,GARDEN_DOCK,gardenBridgeRamp,gardenBridgeHeight } from './garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,GARDEN_BRIDGE_PIER,GARDEN_DOCK,gardenBridgeRamp,gardenBridgeHeight } from './garden-lagoon-layout.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -725,33 +725,43 @@ function buildBridge(scene) {
   railInstances.count=railIndex;
   railInstances.instanceMatrix.needsUpdate=true;
   railInstances.castShadow=true;scene.add(railInstances);
-  // Tall cast-iron suspension towers above the arch, with vertically
-  // linked true drooping cables, hanging rods and lamp-topped pylons.
-  for(const offset of [-18,18]){
-    const x=c+offset,base=gardenBridgeHeight(x);
-    for(const zSide of [-2.6,2.6])
-      cyl(.14,.17,5.2,white,x,base+2.6,zSide,scene,8);
-    box(.34,.3,5.9,white,x,base+5.2,0,scene);
-    box(.24,.22,5.6,white,x,base+2.3,0,scene);
+  // Photo-proportion pass: four granite piers really grow from the lake
+  // bed through the deck, rather than tall white poles floating on it.
+  // Their visible rectangular corners are backed by full-height indexed
+  // squirrel solids; existing bridge rails remain the passage limits.
+  const PI=GARDEN_BRIDGE_PIER;
+  for(const offset of [-PI.offset,PI.offset]){
+    const x=c+offset,base=gardenBridgeHeight(x),top=base+PI.topAboveDeck;
+    for(const zSide of [-PI.z,PI.z]){
+      const pier=box(PI.width,top-PI.submergedBase,PI.width,
+        granite,x,(top+PI.submergedBase)/2,zSide,scene);
+      pier.userData.scurryGardenBridgePier=true;
+      S.solids.push({x,z:zSide,r:PI.width*Math.SQRT2/2+.02,
+        minY:PI.submergedBase,maxY:top,isGardenBridgePier:true});
+    }
+    box(.2,.18,5.6,white,x,base+2.98,0,scene);
+    box(.14,.14,5.5,white,x,base+1.54,0,scene);
     for(const sign of [-1,1]){
-      const brace=box(.09,.09,5.8,white,x,base+3.75,0,scene,false);
-      brace.rotation.x=sign*.487;
+      const brace=box(.08,.08,5.6,white,x,base+2.25,0,scene,false);
+      brace.rotation.x=sign*.35;
     }
   }
   function cableY(x){
-    const u=Math.abs(x-c)/18;
-    return gardenBridgeHeight(x)+1.45+3.7*Math.min(1,u*u);
+    const u=Math.min(1,Math.abs(x-c)/PI.offset);
+    const centre=gardenBridgeHeight(c)+PI.cableAboveCrest;
+    const tower=gardenBridgeHeight(c+PI.offset)+PI.cableAbovePierDeck;
+    return centre+(tower-centre)*u*u;
   }
   for(const zSide of [-2.6,2.6]){
     const pts=[
       new THREE.Vector3(c-h-1,2.25,zSide),
-      new THREE.Vector3(c-18,cableY(c-18),zSide),
+      new THREE.Vector3(c-PI.offset,cableY(c-PI.offset),zSide),
     ];
     for(let i=1;i<32;i++){
-      const x=c-18+i*36/32;
+      const x=c-PI.offset+i*(2*PI.offset)/32;
       pts.push(new THREE.Vector3(x,cableY(x),zSide));
     }
-    pts.push(new THREE.Vector3(c+18,cableY(c+18),zSide),
+    pts.push(new THREE.Vector3(c+PI.offset,cableY(c+PI.offset),zSide),
       new THREE.Vector3(c+h+1,2.25,zSide));
     const tube=new THREE.Mesh(new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(pts),96,.045,6),cableMat);
@@ -766,8 +776,8 @@ function buildBridge(scene) {
     }
   }
   const lampTex=glowTex();
-  for(const offset of [-18,18])for(const zSide of [-2.6,2.6]){
-    const x=c+offset,y=gardenBridgeHeight(x)+5.55;
+  for(const offset of [-PI.offset,PI.offset])for(const zSide of [-PI.z,PI.z]){
+    const x=c+offset,y=gardenBridgeHeight(x)+PI.lampAboveDeck;
     const bulbMat=new THREE.MeshStandardMaterial({
       color:0xd8d4c4,emissive:0xffb45e,emissiveIntensity:0});
     const bulb=new THREE.Mesh(new THREE.SphereGeometry(.2,8,6),bulbMat);
@@ -877,6 +887,11 @@ function buildSwanBoats(scene) {
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.4, 8), swanBeak);
     beak.rotation.x = -Math.PI / 2 + 0.3; beak.position.set(0, 2.44, -1.22); s.add(beak);
     s.position.set(0, 0.86, 4.32);
+    // Photo-based relative correction: keep the recognizable full-width
+    // carved white swan, but reduce its formerly over-tall S-neck/figure
+    // relative to the five open passenger bench rows. This ALSO lowers
+    // the actual underbridge mesh and must pass the full physical sweep.
+    s.scale.y=.55;
     g.add(s);
   }
 

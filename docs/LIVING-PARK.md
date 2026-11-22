@@ -407,3 +407,41 @@ Acceptance is at least 0.15m face-to-undercarriage clearance including
 triangle faces, intersection probes and new bridge-boundary vertices.
 This is not a physical iOS Safari hardware test or a licensed real-world
 engineering clearance claim.
+
+
+## Photo-parity Garden Pylons + Swan silhouette, v0.7.5 isolated
+
+Relative photo sources: JewishBoston's Swan Boat passing the actual
+bridge, Meet Boston's dock aerial, Fairmont Copley Plaza's side-on scene.
+This deliberately retains the island and two physically proven boat
+passes while addressing the v0.7.4 visual exaggeration. The photographed
+bridge walkway has a gentler crest and shorter stone lamp pylons; the
+carved swan's neck is closer to the passenger-head scale. No single
+photo provides a dependable engineering measurement.
+
+- Coupled reference geometry: bridge remains 48m in game world and
+  uses exact TWO end ramps, but quartic arch rise is 2.05m (crest
+  Y3.20m) instead of 3.40m; deck thickness 0.35m, underside centre
+  2.85m. 48 true walkable indexed deck strips, raycast underside
+  and the goose and food-height calculations continue to share it.
+- Carved swan figurehead retains its full body width, body, wings,
+  beak, crest and the five red passenger rows, but its actual group Y
+  scale changes to 0.55 (historically more believable proportions).
+  This *also* scales the real visible vertices checked by QA.
+- Four photo-proportion granite bridge piers now extend continuously
+  from below water Y-0.42m to 3.30m over the local walkable deck at
+  the suspension tower positions, with a matching full-height
+  collision solid per pier. Lamp centres are 3.53m over local deck
+  rather than 5.55m. Cable hangers follow the physically revised
+  bridge profile and attach to the shortened pylons; a central
+  cable droop is preserved, not just a cosmetic post shrink.
+- New real Three.js Box3 audit measures all four visible pier
+  boxes vs the exact minimum/maximum heights and plan footprints
+  in S.solids; applies before accepting any visual screenshot.
+- Crucially, the entire actual clipped boat-mesh-to-rendered
+  underside sweep, 225 raycast deck/physics samples, two 57m
+  player crossings, geese and food height, dock and island QA
+  are NOT weakened. The branch remains gated until all pass.
+- Photo calibration is qualitative and game-scale. Do not claim
+  exact historical height, measured clearance, or native iPhone
+  Safari hardware acceptance.
