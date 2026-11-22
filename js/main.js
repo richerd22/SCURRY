@@ -346,6 +346,16 @@ if (Q.has('shot')) {
     case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
     case 'gardenisland':
       pose(-166,-33,-134,-31,0.18);break; // dry west bank toward island
+    case 'swanunderpass': {
+      // Frozen at its genuinely under-bridge pose; the next daycycle
+      // frame reads the same fixed drift and cannot jump it to the dock.
+      const boat=S.boats?.[2],p=swanRidePose(5/22);
+      if(boat){
+        Object.assign(boat.userData.drift,{cx:p.x,cz:p.z,rx:0,rz:0,w:0,yaw:p.yaw});
+        boat.position.set(p.x,.05,p.z);boat.rotation.y=p.yaw;
+      }
+      pose(-159,10,-132,0,.12);break;
+    }
     case 'geese': // real east-west deck, with all three geese in view
       pose(-114,0,-132,0);P.pos.y=gardenBridgeHeight(-114);P.grounded=true;
       break;

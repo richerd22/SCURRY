@@ -670,6 +670,7 @@ try {
     await checkScene('spawn');
     await checkScene('garden');
     await checkScene('gardenisland');
+    await checkScene('swanunderpass');
     // These are separate from the physics raycast: preserve visual
     // evidence of the correctly oriented crossing and dry south dock.
     await checkScene('bridge');
