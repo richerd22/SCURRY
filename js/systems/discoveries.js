@@ -2,6 +2,7 @@
 // save schema; no migrations or change to scurry-save-v1 required).
 import { S } from '../state.js';
 import { visibleGroundHeight } from '../world/world.js';
+import { isGardenIsland } from '../world/garden-lagoon-layout.js';
 import { discoverAt, FIELD_NOTES, FIELD_NOTE_KEYS } from './discovery-rules.js';
 
 export const NOTES_KEY='scurry-field-notes-v1';
@@ -26,7 +27,7 @@ export function updateDiscoveries(dt) {
   const remote=p.inHollow||p.inBurrow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade;
   const floor=remote?null:visibleGroundHeight(p.pos.x,p.pos.z);
   let changed=false;
-  for(const id of discoverAt(p,floor,S.hollowTreePos)) {
+  for(const id of discoverAt(p,floor,S.hollowTreePos,isGardenIsland)) {
     if(unlocked.has(id))continue;
     unlocked.add(id);
     changed=true;
