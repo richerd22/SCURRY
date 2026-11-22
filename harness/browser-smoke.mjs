@@ -176,11 +176,21 @@ async function checkGameplay() {
     const piers=await page.evaluate(()=>window.__scurryQA.surveyGardenBridgePiers());
     assert.equal(piers.meshes,4,'four visible granite bridge pylons');
     assert.equal(piers.solids,4,'each granite pylon must be fully physical');
+    assert.equal(piers.stemMeshes,4,'four real iron globe-lamp stems');
+    assert.equal(piers.stemSolids,4,'each lamp stem is physical at squirrel height');
+    assert.ok(piers.minStemLength>.6&&piers.maxStemYDiff<.001,
+      'visible stem and pole collision heights disagree: '+JSON.stringify(piers));
     assert.ok(piers.maxYDiff<.001&&piers.maxXZDiff<.001&&piers.deepest<-.9&&
       piers.minLakebedEmbed>.12,
       'bridge pylons must root into ACTUAL rendered lakebed, not float: '+JSON.stringify(piers));
-    assert.ok(piers.lampRelativeHeight<3.7&&piers.pierRelativeHeight<3.5,
+    assert.ok(piers.lampRelativeHeight<3.7&&piers.pierRelativeHeight<2.75,
       'game photo-proportion pass left the old five-metre decorative masts');
+    const lattice=await page.evaluate(()=>window.__scurryQA.surveyGardenBridgeLattice());
+    assert.equal(lattice.instances,192,'two physically backed Victorian X bars per rail panel');
+    assert.equal(lattice.railWalls,96,'all 48 panels × both rail sides registered');
+    assert.equal(lattice.unsupported,0,'decorative X bars without physical walls');
+    assert.ok(lattice.maxVerticalExcess<.015&&lattice.maxZDeviation<.001,
+      'Victorian iron infill misses real physical railing: '+JSON.stringify(lattice));
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
     assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
     assert.ok(bridge.maxAbsDiff<.015,

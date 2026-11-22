@@ -452,3 +452,46 @@ photo provides a dependable engineering measurement.
   triangulated park terrain at each column. Acceptance requires the
   physical/visual box heights match within 1mm and each stone base is
   embedded at least 12cm into rendered soil, not only below water.
+
+
+## v0.7.6 — operator-powered Swan Boats / Victorian physical bridge infill
+
+Official source https://swanboats.com/history/ confirms the real
+five-bench hull can accommodate about 20 riders, not SCURRY's prior
+two-per-row ten silhouettes. Authored 4 separated rider positions
+per bench, 20 live color/skin instances per craft. **Still exactly
+two InstancedMesh draws for heads/torso per hull**; no new model assets.
+The game deliberately retains three safe independent Swan Boats; the
+real six-craft fleet cannot simply be pasted into this smaller lagoon
+without six independently cleared full-hull paths.
+
+The real driver pedals the wheel concealed inside the iconic swan.
+Two actual dark shoe meshes and small visible axle are attached to the
+human operator, cycling in exactly opposite phase. A tiny exported
+pure swanPedalPose(seconds,side,out) moves existing THREE.Vector3
+positions by absolute time and is completely frame-rate independent
+and allocation-free on the live tick. Tests validate opposite phases,
+closed 2π periods, seat distances, and the actual rendered instance
+counts. This does not claim an accurate internal paddle-wheel mechanism.
+
+Bridge photo detail: the prior four stone pylon tops had globes
+almost directly glued onto their caps; actual archival and modern
+photographs show narrow iron stems atop stone. The granite caps are
+reduced from 3.30m to 2.62m above each actual arched deck support,
+and four newly rendered ~0.71m cylindrical iron stems are registered
+as *four additional height-bounded solids* matching real mesh bounds.
+Every pylon still embeds ≥12cm into the independently raycast lakebed.
+
+One new instanced draw of 192 real angled iron X-lattice members
+fills the 48 historical bridge-side panels twice each on both sides.
+Each diagonal follows real graded local y and stays entirely within
+the 96 continuously registered S.walls physical rail panels; WebGL
+surveys the actual instance matrices against the actual wall endpoints
+to disallow any decorative ghost bars. Removed the previous three
+unphysical cross-beams spanning the squirrel walking corridor at
+each pylon. The 225 independently raycast bridge deck points, fully
+clipped boat triangle clearance through both underpasses, geese,
+shoreline, dock and mobile gameplay acceptance remain unchanged.
+
+No exact historical dimensions claimed, no uncertain-license art,
+no game build step, and physical iOS Safari testing is still required.

@@ -87,8 +87,8 @@ export const GARDEN_BRIDGE=Object.freeze({
 // ARTISTIC relative sizes, not surveyed engineering dimensions.
 export const GARDEN_BRIDGE_PIER=Object.freeze({
  offset:18,z:2.6,width:.86,submergedBase:-.95,
- topAboveDeck:3.3,lampAboveDeck:3.53,
- cableAboveCrest:1.06,cableAbovePierDeck:3.08,
+ topAboveDeck:2.62,lampAboveDeck:3.53,
+ cableAboveCrest:1.06,cableAbovePierDeck:2.9,
 });
 export const GARDEN_DOCK=Object.freeze({
  x:-140.5,z:47.9,boatX:-140,boatZ:44,deckY:.45,

@@ -794,11 +794,50 @@ if (qaLocal) {
         actualHullMinBank:minHullBank,hullWorst,hullVertices:hull.length,footprintProbes,
         duration:SWAN_RIDE_SECONDS};
     },
+    // Independent real instanced-mesh parity with the EXACT rail-wall
+    // segments the player's collision solver uses. Every X infill
+    // endpoint must sit inside registered rail metal (no ghost bars).
+    surveyGardenBridgeLattice:()=>{
+      scene.updateMatrixWorld(true);
+      const mesh=scene.children.find(o=>o.userData.scurryGardenBridgeLattice);
+      const walls=S.walls.filter(w=>w.isGardenBridgeRail);
+      if(!mesh)throw Error('missing Garden X-pattern iron lattice');
+      const a=new THREE.Vector3(),b=new THREE.Vector3(),matrix=new THREE.Matrix4();
+      let unsupported=0,maxVerticalExcess=0,maxZDeviation=0;
+      for(let i=0;i<mesh.count;i++){
+        mesh.getMatrixAt(i,matrix);
+        a.set(0,-.5,0).applyMatrix4(matrix).applyMatrix4(mesh.matrixWorld);
+        b.set(0,.5,0).applyMatrix4(matrix).applyMatrix4(mesh.matrixWorld);
+        const minX=Math.min(a.x,b.x),maxX=Math.max(a.x,b.x);
+        const rail=walls.find(w=>Math.abs(w.x0-minX)<.005&&
+          Math.abs(w.x1-maxX)<.005&&Math.abs(w.z0-a.z)<.005);
+        if(!rail){unsupported++;continue;}
+        const low=Math.min(a.y,b.y),high=Math.max(a.y,b.y);
+        maxVerticalExcess=Math.max(maxVerticalExcess,
+          rail.minY-low,high-rail.maxY);
+        maxZDeviation=Math.max(maxZDeviation,Math.abs(a.z-rail.z0),
+          Math.abs(b.z-rail.z1));
+      }
+      return {instances:mesh.count,railWalls:walls.length,unsupported,
+        maxVerticalExcess,maxZDeviation};
+    },
     surveyGardenBridgePiers:()=>{
       scene.updateMatrixWorld(true);
       const meshes=scene.children.filter(m=>m.userData.scurryGardenBridgePier);
       const solids=S.solids.filter(s=>s.isGardenBridgePier);
       let maxYDiff=0,maxXZDiff=0,deepest=Infinity,minLakebedEmbed=Infinity;
+      const stemMeshes=scene.children.filter(m=>m.userData.scurryGardenBridgeLampStem);
+      const stemSolids=S.solids.filter(s=>s.isGardenBridgeLampStem);
+      let maxStemYDiff=0,minStemLength=Infinity;
+      for(const mesh of stemMeshes){
+        const box=new THREE.Box3().setFromObject(mesh);
+        const stem=stemSolids.find(s=>Math.abs(s.x-mesh.position.x)<.001&&
+          Math.abs(s.z-mesh.position.z)<.001);
+        if(!stem)throw Error('visible bridge lamp stem has no physical collider');
+        maxStemYDiff=Math.max(maxStemYDiff,
+          Math.abs(box.min.y-stem.minY),Math.abs(box.max.y-stem.maxY));
+        minStemLength=Math.min(minStemLength,box.max.y-box.min.y);
+      }
       const terrain=scene.children.find(m=>m.userData.scurryTerrainMesh);
       if(!terrain)throw Error('no actual rendered Garden lakebed');
       const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
@@ -817,6 +856,8 @@ if (qaLocal) {
         minLakebedEmbed=Math.min(minLakebedEmbed,bed.point.y-box.min.y);
       }
       return {meshes:meshes.length,solids:solids.length,
+        stemMeshes:stemMeshes.length,stemSolids:stemSolids.length,
+        maxStemYDiff,minStemLength,
         maxYDiff,maxXZDiff,deepest,minLakebedEmbed,
         pierRelativeHeight:GARDEN_BRIDGE_PIER.topAboveDeck,
         lampRelativeHeight:GARDEN_BRIDGE_PIER.lampAboveDeck};

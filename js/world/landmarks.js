@@ -717,7 +717,8 @@ function buildBridge(scene) {
       const a=c-h+i*(2*h/n),d=a+2*h/n;
       const y0=gardenBridgeHeight(a),y1=gardenBridgeHeight(d);
       S.walls.push({x0:a,z0:zSide,x1:d,z1:zSide,r:.05,
-        minY:Math.min(y0,y1),maxY:Math.max(y0,y1)+.92});
+        minY:Math.min(y0,y1),maxY:Math.max(y0,y1)+.92,
+        isGardenBridgeRail:true});
       S.platformSegments.push({x0:a,z0:zSide,x1:d,z1:zSide,
         r:.18,y0:y0+.92,y1:y1+.92,jumpOnly:true});
     }
@@ -725,6 +726,36 @@ function buildBridge(scene) {
   railInstances.count=railIndex;
   railInstances.instanceMatrix.needsUpdate=true;
   railInstances.castShadow=true;scene.add(railInstances);
+  // Historic Victorian bridge infill: 192 curved-deck-following X bars,
+  // one additional instanced draw call instead of 192 independent meshes.
+  // Every bar remains ENTIRELY within an existing continuous physical
+  // S.walls rail segment (the normal squirrel collision wall). No
+  // overhead ghost crossbars cutting through the actual walkway.
+  const lattice=new THREE.InstancedMesh(
+    new THREE.BoxGeometry(.046,1,.046),railMat,4*n);
+  const dummy=new THREE.Object3D(),up=new THREE.Vector3(0,1,0);
+  const a3=new THREE.Vector3(),b3=new THREE.Vector3();
+  const dir3=new THREE.Vector3(),mid3=new THREE.Vector3();
+  let li=0;
+  for(const zSide of [-2.6,2.6])for(let i=0;i<n;i++){
+    const a=c-h+i*(2*h/n),d=a+2*h/n;
+    const y0=gardenBridgeHeight(a),y1=gardenBridgeHeight(d);
+    for(const flip of [false,true]){
+      a3.set(a,y0+(flip?.83:.12),zSide);
+      b3.set(d,y1+(flip?.12:.83),zSide);
+      dir3.subVectors(b3,a3);
+      mid3.copy(a3).add(b3).multiplyScalar(.5);
+      dummy.position.copy(mid3);
+      dummy.quaternion.setFromUnitVectors(up,dir3.clone().normalize());
+      dummy.scale.set(1,dir3.length(),1);
+      dummy.updateMatrix();lattice.setMatrixAt(li++,dummy.matrix);
+    }
+  }
+  lattice.count=li;
+  lattice.instanceMatrix.needsUpdate=true;
+  lattice.frustumCulled=false;
+  lattice.userData.scurryGardenBridgeLattice=true;
+  scene.add(lattice);
   // Photo-proportion pass: four granite piers really grow from the lake
   // bed through the deck, rather than tall white poles floating on it.
   // Their visible rectangular corners are backed by full-height indexed
@@ -738,12 +769,17 @@ function buildBridge(scene) {
       pier.userData.scurryGardenBridgePier=true;
       S.solids.push({x,z:zSide,r:PI.width*Math.SQRT2/2+.02,
         minY:PI.submergedBase,maxY:top,isGardenBridgePier:true});
-    }
-    box(.2,.18,5.6,white,x,base+2.98,0,scene);
-    box(.14,.14,5.5,white,x,base+1.54,0,scene);
-    for(const sign of [-1,1]){
-      const brace=box(.08,.08,5.6,white,x,base+2.25,0,scene,false);
-      brace.rotation.x=sign*.35;
+      // The genuine photo silhouette is a tall STONE pier with a
+      // separate slender iron globe-lamp spindle. Both surfaces are
+      // actual Y-bounded solids (no untouchable lamppost art).
+      const stemTop=base+PI.lampAboveDeck-.2;
+      const stemLength=stemTop-top;
+      if(!(stemLength>.5))throw Error('lamp stem submerged in granite');
+      const stem=cyl(.06,.085,stemLength,cableMat,
+        x,(top+stemTop)/2,zSide,scene,8);
+      stem.userData.scurryGardenBridgeLampStem=true;
+      S.solids.push({x,z:zSide,r:.09,minY:top,maxY:stemTop,
+        isGardenBridgeLampStem:true});
     }
   }
   function cableY(x){
