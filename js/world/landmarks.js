@@ -10,7 +10,7 @@ import { toast } from '../ui/hud.js';
 import { SWAN_SEATS } from './swan-passengers.js';
 import { GARDEN_ART } from './garden-art-facts.js';
 import { DUCKLING_COUNT, DUCKLING_YAW, MOTHER_RADIUS, DUCKLING_RADIUS, ducklingPose } from './ducklings-layout.js';
-import { GARDEN_BRIDGE, GARDEN_DOCK, gardenBridgeRamp } from './garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,GARDEN_DOCK,gardenBridgeRamp,gardenBridgeHeight } from './garden-lagoon-layout.js';
 import { graniteTex, stateHouseFacade, glowTex, drumTex, arcadeTex, fluteTex, reliefTex, plankTex } from './textures.js';
 
 const graniteT = graniteTex();
@@ -632,127 +632,172 @@ function buildParkStreetChurch(scene) {
 
 // --- Public Garden lagoon bridge (completed 1867; stylized geometry) ---
 function buildBridge(scene) {
-  const g = new THREE.Group();
-  const x = MAP.lagoon.x, z = 0;
-  const deckMat = new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.85 });
-  const cableMat = new THREE.MeshStandardMaterial({ color: 0x3c4147, metalness: 0.75, roughness: 0.45 });
-  // flat deck (the suspension dressing carries the look; flat keeps squirrel feet honest)
-  const deckMesh=box(5.4,0.5,36,deckMat,0,.9,0,g);
-  deckMesh.userData.scurryGardenBridgeSurface=true;
-  // deck fascia: a finished white edge so the slab reads as a built bridge, not a plank
-  for (const sx of [-2.68, 2.68]) box(0.14, 0.36, 36.2, white, sx, 0.9, 0, g);
-  // stone abutments grounding both ends
-  for (const az of [-18.6,18.6]) box(6.4,1.0,2.6,granite,0,.18,az,g);
-  // granite end posts with ball caps (v0.6.27): the real bridge lands
-  // on ornamented pylons, not bare abutment corners
-  for (const az of [-18.2, 18.2]) for (const sx of [-2.85, 2.85]) {
-    box(0.42, 1.5, 0.42, granite, sx, 1.35, az, g);
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), granite);
-    cap.position.set(sx, 2.25, az); cap.castShadow = true; g.add(cap);
+  // The real Swan Boats pass BENEATH this bridge. An actual quartic
+  // arch, tagged visible upper and lower triangles, and 48 identical
+  // walk-surface collider strips replace the previously impossible
+  // flat 65cm underside. No shader-only deformation or ghost ramp.
+  const b=GARDEN_BRIDGE,c=b.x,h=b.halfLength,n=48,w=b.halfWidth;
+  const deckMat=new THREE.MeshStandardMaterial({
+    color:0xd9d4c8,roughness:.85,side:THREE.DoubleSide});
+  const cableMat=new THREE.MeshStandardMaterial({
+    color:0x3c4147,metalness:.75,roughness:.45});
+  const railMat=white;
+  function sheet(yOffset,material,flag){
+    const vertices=[],indices=[];
+    for(let i=0;i<n;i++){
+      const a=c-h+i*(2*h/n),d=a+2*h/n;
+      const base=vertices.length/3;
+      vertices.push(
+        a,gardenBridgeHeight(a)+yOffset,-w,
+        a,gardenBridgeHeight(a)+yOffset, w,
+        d,gardenBridgeHeight(d)+yOffset,-w,
+        d,gardenBridgeHeight(d)+yOffset, w
+      );
+      indices.push(base,base+1,base+2,base+1,base+3,base+2);
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    geo.setIndex(indices);geo.computeVertexNormals();
+    const mesh=new THREE.Mesh(geo,material);
+    mesh.receiveShadow=true;mesh.castShadow=yOffset===0;
+    mesh.userData[flag]=true;
+    scene.add(mesh);
+    return mesh;
   }
-  // railings: top + mid rails on a run of slim balusters
-  const balusters = new THREE.InstancedMesh(new THREE.BoxGeometry(0.045, 0.85, 0.045), white, 66);
-  {
-    const d = new THREE.Object3D();
-    let bi = 0;
-    for (const sx of [-2.6, 2.6]) {
-      box(0.1, 0.1, 35, white, sx, 2.02, 0, g);
-      box(0.05, 0.05, 34.6, white, sx, 1.58, 0, g, false);
-      for (let bz = -16.8; bz <= 16.8; bz += 1.05) {
-        d.position.set(sx, 1.57, bz);
-        d.updateMatrix();
-        balusters.setMatrixAt(bi++, d.matrix);
+  sheet(0,deckMat,'scurryGardenBridgeSurface');
+  sheet(-b.deckThickness,deckMat,'scurryGardenBridgeUnderside');
+  // Curved stone fascia exactly shares its top/bottom edge vertices
+  // with the two continuous surfaces, on both long outside faces.
+  const sidePositions=[],sideIndices=[];
+  for(const zSide of [-w,w])for(let i=0;i<n;i++){
+    const a=c-h+i*(2*h/n),d=a+2*h/n,k=sidePositions.length/3;
+    const y0=gardenBridgeHeight(a),y1=gardenBridgeHeight(d);
+    sidePositions.push(a,y0,zSide,a,y0-b.deckThickness,zSide,
+      d,y1,zSide,d,y1-b.deckThickness,zSide);
+    sideIndices.push(k,k+1,k+2,k+1,k+3,k+2);
+  }
+  const sideGeo=new THREE.BufferGeometry();
+  sideGeo.setAttribute('position',new THREE.Float32BufferAttribute(sidePositions,3));
+  sideGeo.setIndex(sideIndices);sideGeo.computeVertexNormals();
+  const sideMesh=new THREE.Mesh(sideGeo,deckMat);
+  sideMesh.castShadow=true;scene.add(sideMesh);
+  // Stone abutments at the real east/west dry shore landings.
+  for(const side of [-1,1]){
+    const ax=c+side*(h+.2);
+    box(2.1,.86,6.2,granite,ax,.21,0,scene);
+    for(const zSide of [-2.84,2.84]){
+      box(.42,1.5,.42,granite,ax,gardenBridgeHeight(ax)+.7,zSide,scene);
+      const ball=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),granite);
+      ball.position.set(ax,gardenBridgeHeight(ax)+1.61,zSide);
+      ball.castShadow=true;scene.add(ball);
+    }
+  }
+  // Both visible rails follow each 1m walking-height strip. Each has
+  // a correspondingly graded contact wall and jump-only top support.
+  const railInstances=new THREE.InstancedMesh(
+    new THREE.BoxGeometry(.05,.83,.05),railMat,2*(n+1));
+  const m=new THREE.Object3D();let railIndex=0;
+  for(const zSide of [-2.6,2.6]){
+    for(const heightAboveDeck of [.5,.92]){
+      const points=[];
+      for(let i=0;i<=n;i++){
+        const x=c-h+i*(2*h/n);
+        points.push(new THREE.Vector3(x,gardenBridgeHeight(x)+heightAboveDeck,zSide));
       }
+      const tube=new THREE.Mesh(new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(points),n*2,.052,6,false),railMat);
+      tube.castShadow=true;scene.add(tube);
     }
-    balusters.count = bi;
-    balusters.receiveShadow = true;
-    g.add(balusters);
-  }
-  // suspension towers: column pairs, top + mid beams, X-braced between
-  for (const tz of [-13.5, 13.5]) {
-    for (const sx of [-2.6, 2.6]) cyl(0.14, 0.17, 5.2, white, sx, 2.6, tz, g, 8);
-    box(5.9, 0.3, 0.34, white, 0, 5.2, tz, g);
-    box(5.6, 0.22, 0.24, white, 0, 2.3, tz, g);
-    for (const s of [1, -1]) {
-      const brace = box(5.9, 0.09, 0.09, white, 0, 3.75, tz, g, false);
-      brace.rotation.z = s * 0.487;
+    for(let i=0;i<=n;i++){
+      const x=c-h+i*(2*h/n);
+      m.position.set(x,gardenBridgeHeight(x)+.45,zSide);
+      m.updateMatrix();railInstances.setMatrixAt(railIndex++,m.matrix);
     }
-  }
-  // main cables: one sagging catenary per side, anchored on the abutments,
-  // cresting the tower beams and dipping toward the deck at midspan
-  const cableY = (zz) => 2.62 + 2.73 * Math.pow(zz / 13.5, 2);
-  for (const sx of [-2.6, 2.6]) {
-    const pts = [];
-    pts.push(new THREE.Vector3(sx, 1.15, -19.5), new THREE.Vector3(sx, 3.3, -16.8),
-      new THREE.Vector3(sx, 5.35, -13.5));
-    for (let zz = -10; zz <= 10; zz += 2.5) pts.push(new THREE.Vector3(sx, cableY(zz), zz));
-    pts.push(new THREE.Vector3(sx, 5.35, 13.5), new THREE.Vector3(sx, 3.3, 16.8),
-      new THREE.Vector3(sx, 1.15, 19.5));
-    const tube = new THREE.Mesh(
-      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 72, 0.045, 5), cableMat);
-    tube.castShadow = true;
-    g.add(tube);
-    // vertical suspender rods, cable to deck edge
-    const rodGeo = new THREE.CylinderGeometry(0.02, 0.02, 1, 4);
-    for (let zz = -12; zz <= 12; zz += 2) {
-      const top = cableY(zz) - 0.03, len = top - 1.15;
-      const rod = new THREE.Mesh(rodGeo, cableMat);
-      rod.scale.y = len;
-      rod.position.set(sx, 1.15 + len / 2, zz);
-      g.add(rod);
+    for(let i=0;i<n;i++){
+      const a=c-h+i*(2*h/n),d=a+2*h/n;
+      const y0=gardenBridgeHeight(a),y1=gardenBridgeHeight(d);
+      S.walls.push({x0:a,z0:zSide,x1:d,z1:zSide,r:.05,
+        minY:Math.min(y0,y1),maxY:Math.max(y0,y1)+.92});
+      S.platformSegments.push({x0:a,z0:zSide,x1:d,z1:zSide,
+        r:.18,y0:y0+.92,y1:y1+.92,jumpOnly:true});
     }
   }
-  // the arch under the deck (the real bridge's signature curve, flattened)
-  const arch = new THREE.Mesh(new THREE.TorusGeometry(15.5, 0.55, 8, 28, Math.PI), deckMat);
-  arch.rotation.y = Math.PI / 2;
-  arch.scale.set(1, 0.09, 1);
-  arch.position.y = -0.5;
-  arch.castShadow = true;
-  g.add(arch);
-  // little globe lamps on the bridge towers, wired into the daycycle glow
-  const gTex = glowTex();
-  for (const tz of [-13.5, 13.5]) {
-    for (const sx of [-2.6, 2.6]) {
-      const bulbMat = new THREE.MeshStandardMaterial({ color: 0xd8d4c4, emissive: 0xffb45e, emissiveIntensity: 0 });
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), bulbMat);
-      bulb.position.set(sx, 5.6, tz);
-      g.add(bulb);
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: gTex, color: 0xffbe78, transparent: true, opacity: 0, depthWrite: false }));
-      sprite.scale.set(3.6, 3.6, 1);
-      sprite.position.set(sx, 5.6, tz);
-      g.add(sprite);
-      // Rotated/scaled bridge: lamp world locations must match real bulbs.
-      S.lamps.push({ sprite, bulbMat, light: null,
-        x:x+tz*GARDEN_BRIDGE.scaleLength,z:-sx });
+  railInstances.count=railIndex;
+  railInstances.instanceMatrix.needsUpdate=true;
+  railInstances.castShadow=true;scene.add(railInstances);
+  // Tall cast-iron suspension towers above the arch, with vertically
+  // linked true drooping cables, hanging rods and lamp-topped pylons.
+  for(const offset of [-18,18]){
+    const x=c+offset,base=gardenBridgeHeight(x);
+    for(const zSide of [-2.6,2.6])
+      cyl(.14,.17,5.2,white,x,base+2.6,zSide,scene,8);
+    box(.34,.3,5.9,white,x,base+5.2,0,scene);
+    box(.24,.22,5.6,white,x,base+2.3,0,scene);
+    for(const sign of [-1,1]){
+      const brace=box(.09,.09,5.8,white,x,base+3.75,0,scene,false);
+      brace.rotation.x=sign*.487;
     }
   }
-  // The Garden's real Mall→Common central bridge runs east/west.
-  // Transform art AND its physical registry together; never rotate only
-  // the visible geometry while leaving a north/south invisible deck.
-  g.scale.z=GARDEN_BRIDGE.scaleLength;
-  g.rotation.y=Math.PI/2;
-  g.position.set(x,0,z);scene.add(g);
-  const B=GARDEN_BRIDGE,h=B.halfLength;
-  S.platformBoxes.push({
-    minX:x-h,maxX:x+h,minZ:-B.halfWidth,maxZ:B.halfWidth,y:B.deckY,
-    isGardenBridgeSurface:true,
-  });
-  // Each visible triangular ramp exactly matches the indexed graded
-  // boxSurfaceHeight() platform beneath it, from shore to deck.
+  function cableY(x){
+    const u=Math.abs(x-c)/18;
+    return gardenBridgeHeight(x)+1.45+3.7*Math.min(1,u*u);
+  }
+  for(const zSide of [-2.6,2.6]){
+    const pts=[
+      new THREE.Vector3(c-h-1,2.25,zSide),
+      new THREE.Vector3(c-18,cableY(c-18),zSide),
+    ];
+    for(let i=1;i<32;i++){
+      const x=c-18+i*36/32;
+      pts.push(new THREE.Vector3(x,cableY(x),zSide));
+    }
+    pts.push(new THREE.Vector3(c+18,cableY(c+18),zSide),
+      new THREE.Vector3(c+h+1,2.25,zSide));
+    const tube=new THREE.Mesh(new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(pts),96,.045,6),cableMat);
+    tube.castShadow=true;scene.add(tube);
+    for(let dx=-15;dx<=15;dx+=3){
+      const x=c+dx,low=gardenBridgeHeight(x)+.92,top=cableY(x);
+      const len=top-low;
+      if(len<.03)continue;
+      const rod=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,1,5),cableMat);
+      rod.scale.y=len;rod.position.set(x,low+len/2,zSide);
+      scene.add(rod);
+    }
+  }
+  const lampTex=glowTex();
+  for(const offset of [-18,18])for(const zSide of [-2.6,2.6]){
+    const x=c+offset,y=gardenBridgeHeight(x)+5.55;
+    const bulbMat=new THREE.MeshStandardMaterial({
+      color:0xd8d4c4,emissive:0xffb45e,emissiveIntensity:0});
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(.2,8,6),bulbMat);
+    bulb.position.set(x,y,zSide);scene.add(bulb);
+    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:lampTex,color:0xffbe78,transparent:true,opacity:0,depthWrite:false}));
+    sprite.scale.set(3.6,3.6,1);sprite.position.set(x,y,zSide);
+    scene.add(sprite);
+    S.lamps.push({sprite,bulbMat,light:null,x,z:zSide});
+  }
+  // Every arched visible triangle has precisely matching y0/y1 boxes.
+  for(let i=0;i<n;i++){
+    const x0=c-h+i*(2*h/n),x1=x0+2*h/n;
+    S.platformBoxes.push({minX:x0,maxX:x1,minZ:-w,maxZ:w,
+      y0:gardenBridgeHeight(x0),y1:gardenBridgeHeight(x1),
+      isGardenBridgeSurface:true});
+  }
+  // Original short approaches still meet the dry western/eastern bank
+  // at 28cm and the arch at 1.15m with no height seam.
   for(const side of [-1,1]){
     const ramp=gardenBridgeRamp(side);
     const {minX,maxX,minZ,maxZ,y0,y1}=ramp;
     const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.Float32BufferAttribute([
-      minX,y0,minZ, minX,y0,maxZ,
-      maxX,y1,minZ, maxX,y1,maxZ,
+      minX,y0,minZ,minX,y0,maxZ,maxX,y1,minZ,maxX,y1,maxZ
     ],3));
-    geo.setIndex([0,1,2,1,3,2]);
-    geo.computeVertexNormals();
-    const approach=new THREE.Mesh(geo,deckMat);
-    approach.receiveShadow=true;
-    approach.userData.scurryGardenBridgeSurface=true;
-    scene.add(approach);
+    geo.setIndex([0,1,2,1,3,2]);geo.computeVertexNormals();
+    const mesh=new THREE.Mesh(geo,deckMat);
+    mesh.receiveShadow=true;mesh.userData.scurryGardenBridgeSurface=true;
+    scene.add(mesh);
     S.platformBoxes.push({...ramp,isGardenBridgeSurface:true});
     for(const zSide of [minZ-.22,maxZ+.22]){
       const lip=new THREE.Mesh(new THREE.BoxGeometry(maxX-minX,.18,.22),granite);
@@ -760,13 +805,6 @@ function buildBridge(scene) {
       lip.rotation.z=Math.atan2(y1-y0,maxX-minX);
       lip.castShadow=true;scene.add(lip);
     }
-  }
-  for(const side of [-2.6,2.6]){
-    const zEdge=-side;
-    S.walls.push({x0:x-h+.7,z0:zEdge,x1:x+h-.7,z1:zEdge,
-      r:.05,minY:B.deckY,maxY:B.railY});
-    S.platformSegments.push({x0:x-h+.7,z0:zEdge,x1:x+h-.7,z1:zEdge,
-      r:.18,y:B.railY,jumpOnly:true});
   }
 }
 
@@ -929,10 +967,12 @@ function buildSwanBoats(scene) {
     const vx = -d.rx * Math.sin(th) * d.w, vz = d.rz * Math.cos(th) * d.w;
     return { x, z, yaw: Math.atan2(-vx, -vz) };
   }
-  // Island-cleared north-lobe traffic loops; the moored third craft
-  // stays south. None is routed under the bridge before clearance proof.
-  boat({cx:-146,cz:-18,rx:1,rz:5,w:(Math.PI*2)/170,ph:.6});
-  boat({cx:-119,cz:-17,rx:1,rz:5,w:-(Math.PI*2)/190,ph:3.4});
+  // The passenger craft now makes both lobes and circles the island.
+  // The two other boats keep their full hulls in the southern outer
+  // alcoves, >10m from its entire route and from each other, even at
+  // every combination of drift phases (no invisible collision skip).
+  boat({cx:-150,cz:15,rx:1,rz:2,w:(Math.PI*2)/170,ph:.6});
+  boat({cx:-114,cz:14,rx:1,rz:2,w:-(Math.PI*2)/190,ph:3.4});
   // third boat MOORED at the dock (v0.6.28): the fleet at rest on the
   // south shore west of the bridge - open benches, waiting on passengers.
   // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);
@@ -946,16 +986,29 @@ function buildSwanBoats(scene) {
     const g = new THREE.Group();
     const deckM = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.9 });
     box(9.5, 0.18, 3.6, deckM, 0, 0.36, 0, g);
-    for (const px of [-4.4, -1.5, 1.5, 4.4]) for (const pz of [-1.5, 1.5])
-      cyl(0.09, 0.09, 1.15, darkWood, px, -0.12, pz, g, 6);
-    for (const px of [-3.6, 3.6]) cyl(0.11, 0.13, 0.34, darkWood, px, 0.6, -1.45, g, 8); // mooring bollards
+    for(const px of [-4.4,-1.5,1.5,4.4])for(const pz of [-1.5,1.5]){
+      cyl(.09,.09,1.15,darkWood,px,-.12,pz,g,6);
+      S.solids.push({x:GARDEN_DOCK.x+px,z:GARDEN_DOCK.z+pz,
+        r:.12,minY:-.695,maxY:.46,isSwanDockSolid:true});
+    }
+    for(const px of [-3.6,3.6]){
+      cyl(.11,.13,.34,darkWood,px,.6,-1.45,g,8);
+      S.solids.push({x:GARDEN_DOCK.x+px,z:GARDEN_DOCK.z-1.45,
+        r:.14,minY:.43,maxY:.77,isSwanDockSolid:true});
+    }
     // dock dressing (v0.6.31): a coiled mooring line by the bollard
     // + a crate at the back corner - the dock was clean geometry,
     // and working docks have stuff on them.
     const coil = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 7, 18),
       new THREE.MeshStandardMaterial({ color: 0x9a8a68, roughness: 1 }));
     coil.rotation.x = Math.PI / 2; coil.position.set(3.4, 0.52, -1.05); g.add(coil);
+    S.solids.push({x:GARDEN_DOCK.x+3.4,z:GARDEN_DOCK.z-1.05,
+      r:.4,minY:.45,maxY:.6,isSwanDockSolid:true});
     box(0.62, 0.5, 0.62, darkWood, -3.9, 0.7, 1.15, g);
+    // An actual rectangular wooden crate; unlike an ornamental prop,
+    // its complete visible corners are protected by its round collider.
+    S.solids.push({x:GARDEN_DOCK.x-3.9,z:GARDEN_DOCK.z+1.15,
+      r:.44,minY:.45,maxY:.95,isSwanDockSolid:true});
     // dock sign, park-board green like the station sign
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
     const c = cv.getContext('2d');
@@ -963,7 +1016,11 @@ function buildSwanBoats(scene) {
     c.fillStyle = '#f2ead2'; c.font = 'bold 30px monospace'; c.textAlign = 'center';
     c.fillText('SWAN BOATS', 128, 42);
     const sTex = new THREE.CanvasTexture(cv); sTex.colorSpace = THREE.SRGBColorSpace;
-    for (const px of [-0.95, 0.95]) box(0.07, 1.6, 0.07, darkWood, px, 0.8, 0, g, false);
+    for(const px of [-.95,.95]){
+      box(.07,1.6,.07,darkWood,px,.8,0,g,false);
+      S.solids.push({x:GARDEN_DOCK.x+px,z:GARDEN_DOCK.z,
+        r:.07,minY:.44,maxY:1.6,isSwanDockSolid:true});
+    }
     const board = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.58),
       new THREE.MeshBasicMaterial({ map: sTex }));
     board.position.set(0, 1.62, 0.02); g.add(board);

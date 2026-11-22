@@ -80,16 +80,31 @@ export const GARDEN_BRIDGE=Object.freeze({
  x:GARDEN_LAGOON.x,z:0,axis:'east-west',
  halfLength:24,halfWidth:2.7,scaleLength:24/18,
  deckY:1.15,railY:2.07,shoreX:31,
- rampLength:6,shoreY:.28,
+ rampLength:6,shoreY:.28,archRise:3.4,deckThickness:.5,
 });
 export const GARDEN_DOCK=Object.freeze({
  x:-140.5,z:47.9,boatX:-140,boatZ:44,deckY:.45,
 });
+// Arch has level 1.15m end deck (unchanged six-metre landings) and
+// a 4.55m crest. Solid deck, railings and actual goose feet MUST use
+// the identical analytic curve. Quartic crest is smooth at centre and
+// at the endpoints, unlike a stair-step or fake visual arch.
+export function gardenBridgeHeight(x){
+ const b=GARDEN_BRIDGE;
+ if(!Number.isFinite(x))return NaN;
+ const u=Math.min(1,Math.abs(x-b.x)/b.halfLength);
+ return b.deckY+b.archRise*(1-u*u)**2;
+}
+export function gardenBridgeUnderClearance(x){
+ return gardenBridgeHeight(x)-GARDEN_BRIDGE.deckThickness;
+}
 export function gardenBridgeDeck(x,z,y=null){
  const b=GARDEN_BRIDGE;
- return Number.isFinite(x)&&Number.isFinite(z)&&
-   Math.abs(x-b.x)<=b.halfLength&&Math.abs(z-b.z)<=b.halfWidth&&
-   (y===null||Number.isFinite(y)&&y>=b.deckY-.12&&y<=b.deckY+.65);
+ if(!Number.isFinite(x)||!Number.isFinite(z)||
+   Math.abs(x-b.x)>b.halfLength||Math.abs(z-b.z)>b.halfWidth)
+   return false;
+ const h=gardenBridgeHeight(x);
+ return y===null||Number.isFinite(y)&&y>=h-.12&&y<=h+.65;
 }
 export function gardenBridgeLanding(side){
  const b=GARDEN_BRIDGE;

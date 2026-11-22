@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { S } from '../state.js';
 import { groundHeight, isGrass } from '../world/world.js';
-import { GARDEN_BRIDGE, gardenBridgeDeck } from '../world/garden-lagoon-layout.js';
+import { gardenBridgeDeck,gardenBridgeHeight } from '../world/garden-lagoon-layout.js';
 import { sfx } from './audio.js';
 import { toast, setGossip } from '../ui/hud.js';
 import { setCarriedVisual } from './player.js';
@@ -115,7 +115,7 @@ export function dropCarried() {
   // Released food stays on the physical deck when both feet and snack
   // are inside the rail footprint; beyond the edge it falls to ground.
   const onDeck=gardenBridgeDeck(P.x,P.z,P.y)&&gardenBridgeDeck(x,z);
-  const item=spawnFood(S.carried,x,z,onDeck?{y:GARDEN_BRIDGE.deckY}:{});
+  const item=spawnFood(S.carried,x,z,onDeck?{y:gardenBridgeHeight(x)}:{});
   S.carried = null;
   setCarriedVisual(null);
   return item;

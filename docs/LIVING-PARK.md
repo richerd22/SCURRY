@@ -292,3 +292,118 @@ boat geometry clear every position including bob and roll extremes.
 Historic reference photographs:
 https://cdn.jewishboston.com/uploads/2018/06/swan-boat-1.jpg
 https://images.trvl-media.com/place/507376/415181d0-41d5-45fa-a573-e8b82edb739b.jpg
+
+
+## v0.7.4 — ACTUAL full-lagoon Swan Boat underpass (draft gated)
+
+The historical route should go SOUTH-to-NORTH under the Garden bridge,
+round the northern rocky island, and BACK under the bridge to the dock.
+v0.7.2/v0.7.3 deliberately withheld this until source geometry agreed.
+
+- Shared Garden layout curve: end deck Y=1.15m at both dry shore
+  approaches, top crest Y=4.55m, 50cm deck slab, 4.05m underside at
+  centre. Smooth symmetric quartic elevation. This is a game-scale
+  artistic approximation, not a measured Boston engineering dimension.
+- The former 48m flat slab and decorative false arch are fully
+  REPLACED by a triangulated real arched walking deck, separate
+  triangulated visible underside, stone fascia and 48 adjacent 1m
+  collision slabs y0/y1. TWO old six-metre shore ramps remain continuous.
+  The real registered rail walls/jump-only collision tops, 4 cast-iron
+  towers, suspension cables, rods, balusters and glowing lamps all
+  follow the SAME foot elevation (no invisible flat collider).
+- Geese spawn/charge/waddle at their exact world-x height on the deck;
+  they only pursue an actual player ON that deck, never a boat below.
+  Dropped food rests on the curved height sampled at its ACTUAL
+  released world x, not an assumed flat plank.
+- Passenger route 22 CatmullRom control points and 56 sec
+  2,001-sample pass, long ~206m; full south+island circumnavigation,
+  with >5m safety to the true irregular shoreline ring at centreline.
+  Two ambient boats are separated on safe outer southern alcove loops,
+  and all 72 phase offsets at 2,001 route samples are checked to keep
+  BOTH independent full 5m hull envelopes from overlapping.
+- Real independent browser QA walks the moving boat full model: uses
+  every Three.js vertex transformed from actual seat, passenger,
+  hull, stern operator and decorated swan meshes. Scans 1,801 points
+  across the entire trip in three bob/roll extremes; clips vertices
+  to the bridge width and compares to the ACTUAL 48-segment underside
+  mesh triangles (not just the authored quartic oracle). 97 raycasts
+  independently verify the exact rendered underside interpolation.
+  Requires >=15cm vertical clearance at all bridge crossings.
+- Another browser QA projects the complete boat geometry into a
+  conservative 2D convex hull and samples every hull edge three
+  times against the real organic outer bank and island shore; insists
+  on >35cm horizontal clearance despite +/-0.025rad physical bob/roll.
+  No fake boat path through banks.
+- Reuses the 225-point rendered bridge-vs-registered support survey,
+  real foot solver registered crest and TWO 57m+ physical shore-to-shore
+  crossings; player stands above 4.4m on the bridge. Desktop, mobile
+  touch, all route boarding/return and iOS-emulated Chromium visual
+  diagnostics remain mandatory. New dedicated underpass camera shot.
+- Physical iPhone Safari, actual Boston exact bridge measurements,
+  licensing of third-party assets and outdoor GPS-level dimensions
+  remain out of scope. Site only merges after full branch CI.
+- Source references: official Swan Boats history and Friends of the
+  Public Garden on real island circumnavigation/bridge underpass;
+  HistoricBridges.org and Historic New England on the bridge.
+
+### Dock collision and squirrel-eye visual corrections
+
+The prior close-up visual QA accidentally placed its virtual squirrel
+INSIDE the real dock's back-corner crate, creating the appearance of a
+giant brown obstruction. The new camera stands on an open aisle and
+faces the five open red seats, green hull and real swan without the sign
+or wood crate between them. The underpass screenshot now views from a
+quiet north-eastern waterline, avoiding the drifting western Swan Boat
+that previously monopolized the shot.
+
+The actual dock now has FOURTEEN registered, height-bounded collision
+solids: eight underdeck mooring piles, two low bollards, one coiled
+mooring rope, one corner wooden crate, and two SWAN BOATS signposts.
+Each shares the corresponding physical artwork X/Z/Y extents; the old
+real standable dock deck remains at Y0.45m and is unchanged. A runtime
+QA survey independently checks all 14 live colliders and deck height,
+with the original full 56-second ride/boarding/exit suite still required.
+
+### Swan Boat pacing — continuous arc-length traversal
+
+The original CatmullRom route parameter divided 56 seconds evenly among
+22 unevenly spaced control points; that inadvertently accelerated the
+pedal boat through long stretches and decelerated it around the island.
+The redesigned pure swan-ride-rules.js calculates a 1,409-entry
+cumulative arc-length lookup once at module initialization, binary
+searches target travelled distance per update, and interpolates the
+original spline parameter. This changes neither the water route geometry
+nor the timing, dock, physical hull corridor or camera action. It
+keeps world-space speed approximately 3.68m/s (intentionally
+game-compressed versus the real 15-minute public ride), and a pure
+Node regression enforces under 3.5% step-to-step chord speed variance
+across 1,000 time samples, with a closed positional/heading seam.
+
+- Two separate safety checkers now require EXACTLY two passage
+  events at x within 2m of the actual bridge centre, first
+  south-to-north and then north-to-south. The pure spline test
+  validates the deterministic route and the Chromium checker
+  independently samples 1,801 real gameplay poses; this prevents
+  accidentally regressing to a single bridge crossing.
+
+
+### v0.7.4 further hardening: exact visible triangle-to-bridge underpass intersection
+
+A previous browser sweep examined every transformed Swan Boat mesh *vertex*
+at three bob/roll extrema and separately raycast the actual bridge underside.
+That proves the corners, but a large triangular face can still cross the bridge
+boundary or the 48-piece arch between its original corners.
+
+The QA now enumerates actual mesh triangle indices (including instanced
+passengers), transforms them with the actual moving boat group, clips each
+triangle first to the real bridge X/Z footprint and then to individual
+one-metre underside strips. Over each resulting polygon, both the face and
+the underside are linear; evaluating the generated vertices finds the exact
+minimum face clearance at that sampled pose. Conservative interval bounding
+can skip low triangles that have more than 2m certified clearance.
+
+Acceptance is at least 0.15m face-to-undercarriage clearance including
+0.05m bob and doubled conservative roll/pitch, with explicit counts of
+triangle faces, intersection probes and new bridge-boundary vertices.
+This is not a physical iOS Safari hardware test or a licensed real-world
+engineering clearance claim.

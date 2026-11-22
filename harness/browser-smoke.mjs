@@ -141,6 +141,32 @@ async function checkGameplay() {
       'coarse real island terrain triangles dipped below waterline: '+JSON.stringify(lagoon));
     assert.equal(lagoon.mismatches,0,
       'painted lagoon vs real water triangles disagree: '+JSON.stringify(lagoon));
+    const dock=await page.evaluate(()=>window.__scurryQA.surveySwanDock());
+    assert.deepEqual(dock,{solids:14,posts:8,bollards:2,crate:1,signposts:2,deckY:.45},
+      'physical dock posts, bollards, coil, crate and signposts must stay registered');
+    const underpass=await page.evaluate(()=>window.__scurryQA.surveySwanBridgePassage());
+    assert.ok(underpass.vertexCount>1800&&underpass.sweeps>90&&
+      underpass.closeVertices>900,'insufficient real boat/underbridge vertex sweep: '+JSON.stringify(underpass));
+    assert.ok(underpass.rayDiff<.015,'boat scan uses fake underside rather than true mesh: '+JSON.stringify(underpass));
+    assert.deepEqual(underpass.crossings.map(c=>[c.from,c.to]),[[1,-1],[-1,1]],
+      'Swan Boat must genuinely go under bridge SOUTH to NORTH and back again');
+    assert.ok(underpass.crossings.every(c=>Math.abs(c.x+132)<2),
+      'Swan Boat crossed water outside the centre of the real bridge');
+    assert.ok(underpass.minMargin>=.15,
+      'real rendered boat intersects physical arched bridge: '+JSON.stringify(underpass));
+    assert.ok(underpass.triangleFaces>100&&underpass.triangleProbes>1000&&
+      underpass.triangleBoundaryProbes>100,
+      'face-level clipping missed real boat/bridge surfaces: '+JSON.stringify(underpass));
+    assert.ok(underpass.minTriangleMargin>=.15,
+      'boat TRIANGLE intersects bridge strip between original mesh vertices: '+
+        JSON.stringify(underpass));
+    assert.ok(underpass.routeMinBank>5,
+      'full Swan Boat route is less than one hull length from physical bank: '+JSON.stringify(underpass));
+    assert.ok(underpass.hullVertices>=5&&underpass.footprintProbes>20000&&
+      underpass.actualHullMinBank>.35,
+      'ACTUAL visible boat footprint touches an island or outside shore: '+JSON.stringify(underpass));
+    console.log('GARDEN ACTUAL SWAN UNDERPASS AND HULL',
+      JSON.stringify(underpass));
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
     assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
     assert.ok(bridge.maxAbsDiff<.015,
@@ -171,8 +197,9 @@ async function checkGameplay() {
       assert.ok(crossing.nonGround<80,
         'approach ramp launches squirrel into air: '+JSON.stringify(crossing));
       const onDeck=crossing.samples.filter(s=>s.x>-147&&s.x<-117);
-      assert.ok(onDeck.length>8&&onDeck.every(s=>s.feet>1.07),
-        'squirrel did not really stand on bridge deck: '+JSON.stringify(onDeck));
+      assert.ok(onDeck.length>8&&onDeck.every(s=>s.feet>1.07)&&
+        onDeck.some(s=>s.feet>4.4),
+        'squirrel did not walk to real 4.55m bridge crest: '+JSON.stringify(onDeck));
     }
     await page.evaluate(()=>window.__scurryQA.placeOnTerrain(24,30,-2.2));
     await page.keyboard.down('w');
@@ -661,6 +688,7 @@ try {
     await checkScene('spawn');
     await checkScene('garden');
     await checkScene('gardenisland');
+    await checkScene('swanunderpass');
     // These are separate from the physics raycast: preserve visual
     // evidence of the correctly oriented crossing and dry south dock.
     await checkScene('bridge');

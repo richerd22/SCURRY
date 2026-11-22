@@ -39,7 +39,8 @@ import { createMobileQualityState, advanceMobileQuality } from './systems/mobile
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
-import { GARDEN_BRIDGE,lagoonContains,isGardenIsland } from './world/garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,GARDEN_DOCK,gardenBridgeHeight,gardenBridgeUnderClearance,lagoonContains,isGardenIsland,lagoonWaterClearance } from './world/garden-lagoon-layout.js';
+import {swanRidePose,SWAN_RIDE_SECONDS} from './systems/swan-ride-rules.js';
 
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
@@ -294,7 +295,10 @@ if (Q.has('shot')) {
     case 'promenade': pose(2, -18, 150, -18); break; // ON the Mall apron (v0.6.27), east down the promenade
     case 'pondedge': pose(74.5, 21.5, 95, 12, -0.1); break; // Frog Pond SW shore (v0.6.27): curb stones + water at eye height
     case 'wade': pose(-132, 10, -132, -2); break; // IN the lagoon (v0.6.28): bed level, eye under the water plane, looking at the bridge
-    case 'swanclose': pose(-144.8, 49, -143, 43); P.pos.y = 0.45; break; // ON the swan-boat dock (v0.6.28): the moored boat's swan + canopy close
+    case 'swanclose':
+      // Stand in a FREE aisle on the real dock, no longer inside the
+      // corner crate: front-row benches, swan and green hull visible.
+      pose(-143.3,46.8,-140,44,.14);P.pos.y=GARDEN_DOCK.deckY;break;
     case 'beacon': pose(40, -38, 40, -112); break; // the Mall looking north at the Beacon St row
     case 'beaconwest': pose(-120, -40, -140, -108); break; // Garden north edge, Beacon row west segment
     case 'beaconclose': pose(36, -93, 43, -111); break; // one Beacon unit at stoop distance
@@ -345,8 +349,21 @@ if (Q.has('shot')) {
     case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
     case 'gardenisland':
       pose(-166,-33,-134,-31,0.18);break; // dry west bank toward island
+    case 'swanunderpass': {
+      // Frozen at its genuinely under-bridge pose; the next daycycle
+      // frame reads the same fixed drift and cannot jump it to the dock.
+      const boat=S.boats?.[2],p=swanRidePose(5/22);
+      if(boat){
+        Object.assign(boat.userData.drift,{cx:p.x,cz:p.z,rx:0,rz:0,w:0,yaw:p.yaw});
+        boat.position.set(p.x,.05,p.z);boat.rotation.y=p.yaw;
+      }
+      // Low camera from the quiet north-eastern water, directly at the
+      // actual passenger craft beneath the iron arch. The old shot
+      // accidentally framed a roaming ambient boat in the foreground.
+      pose(-118,-7,-132,1,.1);P.pos.y=.72;P.grounded=false;break;
+    }
     case 'geese': // real east-west deck, with all three geese in view
-      pose(-114,0,-132,0);P.pos.y=GARDEN_BRIDGE.deckY;P.grounded=true;
+      pose(-114,0,-132,0);P.pos.y=gardenBridgeHeight(-114);P.grounded=true;
       break;
     case 'crow': // by the pretzel cart; crows.js freezes crow #0 mid-swoop in front
       pose(124.5, 52.5, 128, 56);
@@ -532,6 +549,243 @@ if (qaLocal) {
         islandHeight:visibleGroundHeight(-134,-31),
         islandSolids:S.solids.filter(s=>Math.hypot(s.x+134,s.z+31)<4.2).length};
     },
+    // Validate the *actual boat vertices* against the real 3D underside
+    // triangle heights at both passes, for the complete 56s course.
+    // Uses the production mesh, geometry transforms and instance matrices,
+    // not the decorative boat-centre path as a clearance shortcut.
+    surveySwanDock:()=>{
+      const solids=S.solids.filter(s=>s.isSwanDockSolid);
+      const deck=S.platformBoxes.find(b=>Math.abs(b.minX-(GARDEN_DOCK.x-4.75))<.001&&
+        Math.abs(b.maxZ-(GARDEN_DOCK.z+1.8))<.001);
+      return {solids:solids.length,posts:solids.filter(s=>s.minY<0).length,
+        bollards:solids.filter(s=>s.maxY===.77).length,
+        crate:solids.filter(s=>s.maxY===.95).length,
+        signposts:solids.filter(s=>s.maxY===1.6).length,
+        deckY:deck?.y};
+    },
+    surveySwanBridgePassage:()=>{
+      const bridge=scene.children.find(o=>o.userData.scurryGardenBridgeUnderside);
+      const boat=S.boats?.[2];
+      if(!bridge||!boat)throw Error('missing physical Swan Boat or bridge underside');
+      const bp=bridge.geometry.attributes.position;
+      const profile=[];
+      for(let i=0;i<bp.count;i+=4)
+        profile.push([bp.getX(i),bp.getY(i)]);
+      profile.push([bp.getX(bp.count-2),bp.getY(bp.count-2)]);
+      if(profile.length!==49||!profile.every((p,i)=>i===0||p[0]>profile[i-1][0]))
+        throw Error('underbridge must have 48 real graded triangles');
+      const underY=x=>{
+        const b=GARDEN_BRIDGE;
+        if(x<b.x-b.halfLength||x>b.x+b.halfLength)return Infinity;
+        const step=2*b.halfLength/(profile.length-1);
+        const i=Math.max(0,Math.min(profile.length-2,Math.floor((x-profile[0][0])/step)));
+        const a=profile[i],c=profile[i+1];
+        return a[1]+(c[1]-a[1])*(x-a[0])/(c[0]-a[0]);
+      };
+      // Independently cross-check triangle interpolation with vertical
+      // raycasts against actual Three.js underside (both-sided material).
+      const ray=new THREE.Raycaster(),up=new THREE.Vector3(0,1,0);
+      let rayDiff=0;
+      for(let i=0;i<=96;i++){
+        const x=profile[0][0]+i*(2*GARDEN_BRIDGE.halfLength)/96;
+        ray.set(new THREE.Vector3(x,-5,0),up);
+        const hit=ray.intersectObject(bridge,false)[0];
+        if(!hit)throw Error('underside ray missed at x='+x);
+        rayDiff=Math.max(rayDiff,Math.abs(hit.point.y-underY(x)));
+      }
+      const originalP=boat.position.clone(),originalR=boat.rotation.clone();
+      boat.updateMatrixWorld(true);
+      const inv=boat.matrixWorld.clone().invert(),v=new THREE.Vector3();
+      const vertexChunks=[],triangleChunks=[];let vertexCount=0;
+      boat.traverse(mesh=>{
+        if(!mesh.isMesh||!mesh.geometry?.attributes?.position)return;
+        mesh.updateWorldMatrix(true,false);
+        const toBoat=inv.clone().multiply(mesh.matrixWorld);
+        const attr=mesh.geometry.attributes.position;
+        const count=mesh.isInstancedMesh?mesh.count:1;
+        const instance=new THREE.Matrix4();
+        for(let inst=0;inst<count;inst++){
+          const matrix=toBoat.clone();
+          if(mesh.isInstancedMesh){
+            mesh.getMatrixAt(inst,instance);matrix.multiply(instance);
+          }
+          const points=new Float32Array(attr.count*3);
+          for(let i=0;i<attr.count;i++){
+            v.fromBufferAttribute(attr,i).applyMatrix4(matrix);
+            points[3*i]=v.x;points[3*i+1]=v.y;points[3*i+2]=v.z;
+          }
+          vertexChunks.push(points);
+          triangleChunks.push({points,index:mesh.geometry.index?.array||null});
+          vertexCount+=attr.count;
+        }
+      });
+      // Compute the convex footprint of ALL real visible boat geometry,
+      // including the five bench rows, swan head and stern. Sweep its
+      // actual outline, not a convenient center-circle, against BOTH
+      // polygon shores. Oversample edges to catch concave banks.
+      const projected=[];
+      for(const chunk of vertexChunks)
+        for(let i=0;i<chunk.length;i+=3)projected.push([chunk[i],chunk[i+2]]);
+      projected.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+      const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+      const lower=[],upper=[];
+      for(const p of projected){
+        while(lower.length>1&&cross(lower.at(-2),lower.at(-1),p)<=0)lower.pop();
+        lower.push(p);
+      }
+      for(let i=projected.length-1;i>=0;i--){
+        const p=projected[i];
+        while(upper.length>1&&cross(upper.at(-2),upper.at(-1),p)<=0)upper.pop();
+        upper.push(p);
+      }
+      const hull=lower.slice(0,-1).concat(upper.slice(0,-1));
+      if(hull.length<5)throw Error('cannot derive actual rendered Swan Boat footprint');
+      let minHullBank=Infinity,hullWorst=null,footprintProbes=0;
+      let minMargin=Infinity,worst=null,sweeps=0,closeVertices=0;
+      let minTriangleMargin=Infinity,triangleWorst=null,triangleFaces=0,
+        triangleProbes=0,triangleBoundaryProbes=0,triangleBoundSkips=0;
+      // Clip actual rendered mesh triangles to the underside footprint and
+      // each one-metre bridge strip. Vertex-only collision tests can miss
+      // a *face* crossing the edge or the arch kink between vertices.
+      // Each clipped face is planar and each underside strip is linear:
+      // their signed clearance is affine, so its minimum is attained at
+      // one of the clipped polygon's vertices. This is an exact spatial
+      // triangle/underside check per sampled animation pose, not a radius.
+      const clipPoly=(poly,axis,limit,above)=>{
+        if(!poly.length)return poly;
+        const result=[];let a=poly[poly.length-1];
+        let keepA=above?a[axis]>=limit:a[axis]<=limit;
+        for(const b of poly){
+          const keepB=above?b[axis]>=limit:b[axis]<=limit;
+          if(keepA!==keepB){
+            const t=(limit-a[axis])/(b[axis]-a[axis]);
+            result.push({x:a.x+t*(b.x-a.x),y:a.y+t*(b.y-a.y),
+              z:a.z+t*(b.z-a.z)});
+          }
+          if(keepB)result.push(b);
+          a=b;keepA=keepB;
+        }
+        return result;
+      };
+      const scanTriangle=(p,q,r,t,bob)=>{
+        let minX=Math.min(p.x,q.x,r.x),maxX=Math.max(p.x,q.x,r.x);
+        const bridgeMin=profile[0][0],bridgeMax=profile.at(-1)[0];
+        if(maxX<bridgeMin||minX>bridgeMax)return;
+        const minZ=Math.min(p.z,q.z,r.z),maxZ=Math.max(p.z,q.z,r.z);
+        const zHalf=GARDEN_BRIDGE.halfWidth;
+        if(maxZ< -zHalf||minZ>zHalf)return;
+        // Conservative interval lower bound: the arch is largest at
+        // centre, so its minimum on any X subinterval is at an endpoint.
+        const left=Math.max(minX,bridgeMin),right=Math.min(maxX,bridgeMax);
+        const bound=Math.min(underY(left),underY(right))-
+          Math.max(p.y,q.y,r.y);
+        if(bound>2){triangleBoundSkips++;return;}
+        let poly=[p,q,r];
+        poly=clipPoly(poly,'x',bridgeMin,true);
+        poly=clipPoly(poly,'x',bridgeMax,false);
+        poly=clipPoly(poly,'z',-zHalf,true);
+        poly=clipPoly(poly,'z',zHalf,false);
+        if(poly.length<3)return;
+        triangleFaces++;
+        const start=Math.max(0,Math.floor((left-bridgeMin)-1e-7));
+        const end=Math.min(profile.length-2,Math.floor((right-bridgeMin)+1e-7));
+        for(let k=start;k<=end;k++){
+          let section=clipPoly(poly,'x',profile[k][0],true);
+          section=clipPoly(section,'x',profile[k+1][0],false);
+          for(const v of section){
+            const margin=underY(v.x)-v.y;
+            triangleProbes++;
+            if(v.x<=profile[k][0]+1e-6||v.x>=profile[k+1][0]-1e-6||
+               Math.abs(v.z)>=zHalf-1e-6)triangleBoundaryProbes++;
+            if(margin<minTriangleMargin){
+              minTriangleMargin=margin;
+              triangleWorst={progress:t,x:v.x,y:v.y,z:v.z,
+                under:underY(v.x),bob,strip:k};
+            }
+          }
+        }
+      };
+      const minBank={value:Infinity,where:null};
+      const crossings=[];let previousSign=Math.sign(swanRidePose(0).z);
+      try {
+        for(let step=0;step<=1800;step++){
+          const t=step/1800,p=swanRidePose(t);
+          const sign=Math.sign(p.z);
+          if(sign&&previousSign&&sign!==previousSign)
+            crossings.push({progress:t,from:previousSign,to:sign,x:p.x});
+          if(sign)previousSign=sign;
+          // Centreline has already passed 2,001 lagoon/island samples;
+          // this is an independently sampled actual boat footprint.
+          const clearance=lagoonWaterClearance(p.x,p.z);
+          if(clearance<minBank.value)minBank.value=clearance,minBank.where=t;
+          const c=Math.cos(p.yaw),s=Math.sin(p.yaw);
+          for(let hi=0;hi<hull.length;hi++){
+            const a=hull[hi],b=hull[(hi+1)%hull.length];
+            for(const fraction of [0,.33,.67]){
+              const lx=a[0]+fraction*(b[0]-a[0]);
+              const lz=a[1]+fraction*(b[1]-a[1]);
+              const wx=p.x+c*lx+s*lz,wz=p.z-s*lx+c*lz;
+              const bank=lagoonWaterClearance(wx,wz);
+              footprintProbes++;
+              if(bank<minHullBank){
+                minHullBank=bank;hullWorst={progress:t,x:wx,z:wz};
+              }
+            }
+          }
+          if(Math.abs(p.z)>12)continue;
+          for(const extremum of [-1,0,1]){
+            boat.position.set(p.x,.05+extremum*.05,p.z);
+            boat.rotation.set(extremum*.025,p.yaw,extremum*.025,'XYZ');
+            boat.updateMatrixWorld(true);
+            const m=boat.matrixWorld.elements;
+            sweeps++;
+            for(const chunk of vertexChunks)for(let k=0;k<chunk.length;k+=3){
+              const x=chunk[k],y=chunk[k+1],z=chunk[k+2];
+              const wx=m[0]*x+m[4]*y+m[8]*z+m[12];
+              const wz=m[2]*x+m[6]*y+m[10]*z+m[14];
+              if(Math.abs(wz)>GARDEN_BRIDGE.halfWidth||
+                Math.abs(wx-GARDEN_BRIDGE.x)>GARDEN_BRIDGE.halfLength)continue;
+              const wy=m[1]*x+m[5]*y+m[9]*z+m[13],margin=underY(wx)-wy;
+              closeVertices++;
+              if(margin<minMargin){
+                minMargin=margin;worst={progress:t,x:wx,z:wz,
+                  under:underY(wx),vertexY:wy,bob:extremum};
+              }
+            }
+            // Independent face-level check at every near-underpass pose.
+            // The transformed triangle's intersection with each physical
+            // bridge strip gives the exact minimum over that whole face,
+            // including vertices generated by clipping at bridge edges.
+            if(Math.abs(p.z)<9){
+              for(const chunk of triangleChunks){
+                const arr=chunk.points,idx=chunk.index;
+                const count=idx?idx.length:arr.length/3;
+                for(let k=0;k<count;k+=3){
+                  const toWorld=i=>{
+                    const j=(idx?idx[i]:i)*3;
+                    const x=arr[j],y=arr[j+1],z=arr[j+2];
+                    return {x:m[0]*x+m[4]*y+m[8]*z+m[12],
+                      y:m[1]*x+m[5]*y+m[9]*z+m[13],
+                      z:m[2]*x+m[6]*y+m[10]*z+m[14]};
+                  };
+                  scanTriangle(toWorld(k),toWorld(k+1),toWorld(k+2),
+                    t,extremum);
+                }
+              }
+            }
+          }
+        }
+      } finally {
+        boat.position.copy(originalP);boat.rotation.copy(originalR);
+        boat.updateMatrixWorld(true);
+      }
+      return {rayDiff,sweeps,closeVertices,vertexCount,minMargin,worst,crossings,
+        minTriangleMargin,triangleWorst,triangleFaces,triangleProbes,
+        triangleBoundaryProbes,triangleBoundSkips,
+        routeMinBank:minBank.value,routeMinAt:minBank.where,
+        actualHullMinBank:minHullBank,hullWorst,hullVertices:hull.length,footprintProbes,
+        duration:SWAN_RIDE_SECONDS};
+    },
     surveyGardenBridge:()=>{
       scene.updateMatrixWorld(true);
       const meshes=[];
@@ -539,7 +793,7 @@ if (qaLocal) {
         if(o.isMesh&&o.userData.scurryGardenBridgeSurface)meshes.push(o);
       });
       const supports=S.platformBoxes.filter(b=>b.isGardenBridgeSurface);
-      if(meshes.length!==3||supports.length!==3)
+      if(meshes.length!==3||supports.length!==50)
         throw Error('Garden bridge meshes/supports not registered: '+meshes.length+'/'+supports.length);
       const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
       const origin=new THREE.Vector3();
@@ -553,7 +807,7 @@ if (qaLocal) {
             z>=s.minZ&&z<=s.maxZ);
           if(!eligible.length)throw Error('missing bridge collider at '+x+','+z);
           const declared=Math.max(...eligible.map(s=>boxSurfaceHeight(s,x)));
-          const solver=walkSurface(x,z,b.deckY,1.5,
+          const solver=walkSurface(x,z,declared,1.5,
             visibleGroundHeight(x,z),S.platforms,S.platformBoxes,S.platformSegments);
           origin.set(x,25,z);ray.set(origin,down);
           const hit=ray.intersectObjects(meshes,false)[0];
@@ -597,15 +851,17 @@ if (qaLocal) {
     supportTargets: () => {
       const canopy=S.platforms.find(s=>s.y>5 && s.r>2 && S.trees.some(t=>
         Math.abs(t.x-s.x)<.001 && Math.abs(t.z-s.z)<.001));
-      const bridge=S.platformBoxes.find(s=>Math.abs(s.y-1.15)<.001 &&
-        s.maxX-s.minX>40&&s.maxZ-s.minZ>4);
+      const bridge=S.platformBoxes.find(s=>s.isGardenBridgeSurface&&
+        Number.isFinite(s.y0)&&Number.isFinite(s.y1)&&
+        s.y0>4.5&&s.y1>4.5&&s.maxZ-s.minZ>4);
       const fence=S.platformSegments.find(s=>Number.isFinite(s.y0) &&
         Number.isFinite(s.y1) && Math.hypot(s.x1-s.x0,s.z1-s.z0)>1.4);
       if (!canopy || !bridge || !fence)throw new Error('missing real support registries');
       const dx=fence.x1-fence.x0,dz=fence.z1-fence.z0;
       return [
         {name:'registered canopy',x:canopy.x,y:canopy.y,z:canopy.z,yaw:0,steps:30},
-        {name:'Garden bridge',x:(bridge.minX+bridge.maxX)/2,y:bridge.y,
+        {name:'Garden bridge',x:(bridge.minX+bridge.maxX)/2,
+          y:boxSurfaceHeight(bridge,(bridge.minX+bridge.maxX)/2),
           z:(bridge.minZ+bridge.maxZ)/2,yaw:-Math.PI/2,steps:55},
         {name:'graded iron top',x:(fence.x0+fence.x1)/2,
           z:(fence.z0+fence.z1)/2,y:(fence.y0+fence.y1)/2,
