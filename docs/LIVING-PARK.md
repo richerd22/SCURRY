@@ -495,3 +495,10 @@ shoreline, dock and mobile gameplay acceptance remain unchanged.
 
 No exact historical dimensions claimed, no uncertain-license art,
 no game build step, and physical iOS Safari testing is still required.
+
+- Operator pedal-arc safety: a 13cm-high visible shoe is centered
+  at 0.94±0.12m, keeping its bottom ≥0.755m over a real visual deck
+  at Y0.73m through all phases. Previous preliminary 0.86±0.12m
+  would have penetrated the wooden deck 5.5cm at the low crank
+  extreme; corrected before release and covered by 100-step
+  deterministic phase regression.

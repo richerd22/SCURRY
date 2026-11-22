@@ -23,7 +23,9 @@ test('stern shoe cranks oppose at all phases and remain frame-rate independent',
   const t=i/99*period;
   const l=swanPedalPose(t,0),r=swanPedalPose(t,1);
   assert.ok(Math.hypot(l.y-r.y,l.z-r.z)>.23);
-  assert.ok(Math.abs(l.y+r.y-1.72)<1e-10);
+  assert.ok(Math.abs(l.y+r.y-1.88)<1e-10);
+  assert.ok(Math.min(l.y,r.y)-.065>.73,
+   'actual pedal shoes must never clip through the visual Swan Boat deck');
   assert.ok(Math.abs(l.z+r.z+.44)<1e-10);
   const again=swanPedalPose(t+period,0);
   assert.ok(Math.hypot(again.y-l.y,again.z-l.z)<1e-10);

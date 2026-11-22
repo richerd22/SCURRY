@@ -1010,7 +1010,7 @@ function buildSwanBoats(scene) {
     const pedalFeet=[];
     for(const side of [0,1]){
       const foot=box(.20,.13,.36,darkWood,side?+.18:-.18,
-        side?.74:.98,-.22,operator);
+        side?.82:1.06,-.22,operator);
       foot.userData.scurrySwanPedalFoot=true;
       pedalFeet.push(foot);
     }

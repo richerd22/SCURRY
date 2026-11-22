@@ -14,7 +14,9 @@ export function swanPedalPose(seconds,side,out=null){
  if(!Number.isFinite(seconds)||(side!==0&&side!==1))
   throw new RangeError('finite time and pedal side 0 or 1');
  const a=seconds*SWAN_PEDAL_OMEGA+side*Math.PI;
- const y=.86+.12*Math.cos(a),z=-.22+.18*Math.sin(a);
+ // The pedal shoe geometry is 13cm tall over the 73cm deck plane.
+ // A minimum foot centre of 82cm keeps the entire shoe ABOVE planks.
+ const y=.94+.12*Math.cos(a),z=-.22+.18*Math.sin(a);
  if(out){out.y=y;out.z=z;return out;}
  return {y,z};
 }
