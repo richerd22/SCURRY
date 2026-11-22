@@ -489,6 +489,20 @@ if (qaLocal) {
     // Compare with the SAME walkSurface solver the squirrel uses.
     // Actual WebGL water triangles must match the SAME wet/dry oracle
     // used by player, wildlife, underwater fog and map, including island.
+    surveySwanFleet:()=>{
+      if(S.boats?.length!==3)throw Error('expected 3 real Swan Boats');
+      return S.boats.map(boat=>{
+        const seats=boat.children.filter(m=>m.userData.scurrySwanSeat);
+        const backs=boat.children.filter(m=>m.userData.scurrySwanSeatBack);
+        const hulls=boat.children.filter(m=>m.userData.scurrySwanHull);
+        const bounds=new THREE.Box3().setFromObject(boat);
+        return {seats:seats.length,backs:backs.length,hulls:hulls.length,
+          seatColor:seats[0]?.material.color.getHex(),
+          hullColor:hulls[0]?.material.color.getHex(),
+          height:bounds.max.y-bounds.min.y,
+          roofMeshCount:boat.children.filter(m=>m.userData.scurrySwanRoof).length};
+      });
+    },
     surveyGardenLagoon:()=>{
       scene.updateMatrixWorld(true);
       const water=scene.children.find(o=>o.userData.scurryLagoonWater);

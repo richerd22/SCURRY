@@ -124,6 +124,14 @@ async function checkGameplay() {
     await page.locator('#title').click({timeout:30000});
     await page.waitForFunction(() => window.__scurryQA.state().started, null, {timeout:15000});
     const start = await get();
+    const fleet=await page.evaluate(()=>window.__scurryQA.surveySwanFleet());
+    assert.equal(fleet.length,3,'actual 3-boat fleet');
+    for(const b of fleet){
+      assert.equal(b.seats,5);assert.equal(b.backs,5);assert.equal(b.hulls,1);
+      assert.equal(b.seatColor,0xa93529);assert.equal(b.hullColor,0x275a40);
+      assert.equal(b.roofMeshCount,0);
+      assert.ok(b.height>3&&b.height<4.5,'real swan head height '+b.height);
+    }
     const lagoon=await page.evaluate(()=>window.__scurryQA.surveyGardenLagoon());
     assert.ok(lagoon.count>1600,'lagoon 3D water/island sampling density');
     assert.ok(lagoon.waterHits>250&&lagoon.islandHits>8,'island hole and lake sampled');
