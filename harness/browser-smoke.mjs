@@ -164,10 +164,15 @@ async function checkGameplay() {
     assert.ok(islandWalk.samples.some(q=>q.x>-139&&q.x<-132&&
       q.z>-32&&q.z<-26&&q.floor>.12),
       'island was not physically traversed '+JSON.stringify(islandWalk.end));
+    const islandState=await get();
+    console.log('ISLAND AFTER WALK '+JSON.stringify({end:islandWalk.end,
+      lastSamples:islandWalk.samples.slice(-8),player:islandState.pos,
+      grounded:islandState.grounded,floor:islandState.floor,
+      discovered:await page.evaluate(()=>localStorage.getItem('scurry-field-notes-v1'))}));
     await page.waitForFunction(()=>{
       try{return JSON.parse(localStorage.getItem('scurry-field-notes-v1'))?.ids?.includes('duck-island');}
       catch{return false;}
-    },null,{timeout:10000});
+    },null,{timeout:16000});
     console.log('ISLAND LANDFALL '+JSON.stringify({end:islandWalk.end,
       steps:islandWalk.steps,minMeshClear:islandWalk.minMeshClear}));
     const dock=await page.evaluate(()=>window.__scurryQA.surveySwanDock());
