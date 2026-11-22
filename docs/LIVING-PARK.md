@@ -268,3 +268,27 @@ The additional runtime food-on-planks test initially failed 1 of 171 checks beca
   triangles from the 60cm deeper lagoon bottom. The actual browser
   terrain mesh is independently sampled across the dry island to prove
   there is no below-zero patch at squirrel foot height.
+
+
+## v0.7.3 — real Swan Boats have no passenger canopy
+
+The earlier code-built craft used a full white arched canopy with scalloped
+skirt over its passengers. Actual Boston Swan Boat reference photographs
+show five open-air red bench rows, a long green hull with black trim,
+ten exposed riders and a white mute swan sculpted at the operator's aft.
+Removed both procedural canvas textures, roof pieces, valances, four
+false roof posts and roof rails from all three actual Three.js craft.
+The fleet retains its physically boardable dock, seat rows, two instanced
+passenger layers, working crew glance, swan face and full swan head height.
+New explicit seat/back/hull mesh tags permit actual runtime WebGL
+geometry/color and world-bounds inspection, including five red bench
+seat + five back meshes per boat.
+
+Accepted only with Node + Chromium gameplay and visual (including
+mobile touch) tests. No under-bridge passage is claimed: the real swan
+head still cannot clear the current too-low bridge slab (issue #11).
+Do not change the 56-second route until coupled bridge and moving
+boat geometry clear every position including bob and roll extremes.
+Historic reference photographs:
+https://cdn.jewishboston.com/uploads/2018/06/swan-boat-1.jpg
+https://images.trvl-media.com/place/507376/415181d0-41d5-45fa-a573-e8b82edb739b.jpg
