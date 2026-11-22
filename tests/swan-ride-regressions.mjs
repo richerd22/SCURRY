@@ -53,3 +53,16 @@ test('independent moving ambient boats cannot strike passenger route at ANY phas
  }
  assert.ok(min>10,'two 5m full-hull envelopes can overlap: '+min);
 });
+
+test('full physical bridge passage has an actual real-mesh and full-hull QA gate',()=>{
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const browser=readFileSync(new URL('../harness/browser-smoke.mjs',import.meta.url),'utf8');
+ assert.match(main,/surveySwanBridgePassage:\(\)=>/);
+ assert.match(main,/boat\.traverse\(mesh=>/);
+ assert.match(main,/getMatrixAt\(inst,instance\)/);
+ assert.match(main,/scurryGardenBridgeUnderside/);
+ assert.match(main,/actualHullMinBank:minHullBank/);
+ assert.match(browser,/underpass\.minMargin>=\.15/);
+ assert.match(browser,/underpass\.actualHullMinBank>\.35/);
+ assert.match(browser,/checkScene\('swanunderpass'\)/);
+});

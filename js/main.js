@@ -601,6 +601,28 @@ if (qaLocal) {
           vertexChunks.push(points);vertexCount+=attr.count;
         }
       });
+      // Compute the convex footprint of ALL real visible boat geometry,
+      // including the five bench rows, swan head and stern. Sweep its
+      // actual outline, not a convenient center-circle, against BOTH
+      // polygon shores. Oversample edges to catch concave banks.
+      const projected=[];
+      for(const chunk of vertexChunks)
+        for(let i=0;i<chunk.length;i+=3)projected.push([chunk[i],chunk[i+2]]);
+      projected.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+      const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+      const lower=[],upper=[];
+      for(const p of projected){
+        while(lower.length>1&&cross(lower.at(-2),lower.at(-1),p)<=0)lower.pop();
+        lower.push(p);
+      }
+      for(let i=projected.length-1;i>=0;i--){
+        const p=projected[i];
+        while(upper.length>1&&cross(upper.at(-2),upper.at(-1),p)<=0)upper.pop();
+        upper.push(p);
+      }
+      const hull=lower.slice(0,-1).concat(upper.slice(0,-1));
+      if(hull.length<5)throw Error('cannot derive actual rendered Swan Boat footprint');
+      let minHullBank=Infinity,hullWorst=null,footprintProbes=0;
       let minMargin=Infinity,worst=null,sweeps=0,closeVertices=0;
       const minBank={value:Infinity,where:null};
       try {
@@ -610,6 +632,20 @@ if (qaLocal) {
           // this is an independently sampled actual boat footprint.
           const clearance=lagoonWaterClearance(p.x,p.z);
           if(clearance<minBank.value)minBank.value=clearance,minBank.where=t;
+          const c=Math.cos(p.yaw),s=Math.sin(p.yaw);
+          for(let hi=0;hi<hull.length;hi++){
+            const a=hull[hi],b=hull[(hi+1)%hull.length];
+            for(const fraction of [0,.33,.67]){
+              const lx=a[0]+fraction*(b[0]-a[0]);
+              const lz=a[1]+fraction*(b[1]-a[1]);
+              const wx=p.x+c*lx+s*lz,wz=p.z-s*lx+c*lz;
+              const bank=lagoonWaterClearance(wx,wz);
+              footprintProbes++;
+              if(bank<minHullBank){
+                minHullBank=bank;hullWorst={progress:t,x:wx,z:wz};
+              }
+            }
+          }
           if(Math.abs(p.z)>12)continue;
           for(const extremum of [-1,0,1]){
             boat.position.set(p.x,.05+extremum*.05,p.z);
@@ -638,6 +674,7 @@ if (qaLocal) {
       }
       return {rayDiff,sweeps,closeVertices,vertexCount,minMargin,worst,
         routeMinBank:minBank.value,routeMinAt:minBank.where,
+        actualHullMinBank:minHullBank,hullWorst,hullVertices:hull.length,footprintProbes,
         duration:SWAN_RIDE_SECONDS};
     },
     surveyGardenBridge:()=>{

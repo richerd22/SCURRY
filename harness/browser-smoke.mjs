@@ -149,6 +149,11 @@ async function checkGameplay() {
       'real rendered boat intersects physical arched bridge: '+JSON.stringify(underpass));
     assert.ok(underpass.routeMinBank>5,
       'full Swan Boat route is less than one hull length from physical bank: '+JSON.stringify(underpass));
+    assert.ok(underpass.hullVertices>=5&&underpass.footprintProbes>20000&&
+      underpass.actualHullMinBank>.35,
+      'ACTUAL visible boat footprint touches an island or outside shore: '+JSON.stringify(underpass));
+    console.log('GARDEN ACTUAL SWAN UNDERPASS AND HULL',
+      JSON.stringify(underpass));
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
     assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
     assert.ok(bridge.maxAbsDiff<.015,
