@@ -68,3 +68,15 @@ test('rocky island tree and boulders are physically registered and separated fro
  for(const [x,z] of [[-137,-31.5],[-131,-33],[-134,-27.8]])
   assert.ok(isGardenIsland(x,z),'boulder is planted in water');
 });
+
+test('island shores grade to waterline continuously and are physically climbable',()=>{
+ let prev=null,highestStep=0,min=Infinity,max=-Infinity;
+ // Cross the island on an east-west path; this traverses both shores.
+ for(let x=-145;x<=-123;x+=.1){
+  const y=-lagoonBasin(x,-31);
+  if(prev!==null)highestStep=Math.max(highestStep,Math.abs(y-prev));
+  prev=y;min=Math.min(min,y);max=Math.max(max,y);
+ }
+ assert.ok(highestStep<.055,'unclimbable invisible island height cliff: '+highestStep);
+ assert.ok(max>.3&&min<-.4,'real island rise and submerged shallows');
+});

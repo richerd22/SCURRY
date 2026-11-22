@@ -247,3 +247,9 @@ The additional runtime food-on-planks test initially failed 1 of 171 checks beca
   actual raised soil. Trunk/boulders use real height-bounded colliders;
   its canopy is a walkable platform. It spawns after the canopy-route
   planner so no impossible branch bridge gets invented across water.
+
+- Island shore grades are coupled on BOTH sides of the waterline
+  (3.4m shallows outside, 3.4m terrestrial rise inside). This
+  avoids a 94cm vertical terrain discontinuity that prevented
+  squirrel-scale water-to-island access. Regression samples at 10cm
+  increments, requiring under 5.5cm between samples.

@@ -57,9 +57,13 @@ export function lagoonContains(x,z,margin=0){
 }
 export function lagoonBasin(x,z){
  if(Math.abs(x+132)>31||Math.abs(z)>61)return 0;
- if(isGardenIsland(x,z))return -.34; // exposed, traversable terrain
+ if(isGardenIsland(x,z))
+  return -.34*Math.min(1,shoreDistance(x,z,GARDEN_ISLAND_SHORE)/3.4);
  if(!insideShoreRing(x,z,GARDEN_LAGOON_SHORE))return 0;
- return .6*Math.min(1,shoreDistance(x,z,GARDEN_LAGOON_SHORE)/8);
+ // Both banks grade to the same 0m waterline: a squirrel can step
+ // out of the shallow side onto a 34cm-high island without a cliff.
+ return .6*Math.min(1,shoreDistance(x,z,GARDEN_LAGOON_SHORE)/8,
+   shoreDistance(x,z,GARDEN_ISLAND_SHORE)/3.4);
 }
 // Legacy approximation for old compatibility probes. Never use this
 // ellipsoid for water, collision, props, shore, map, or navigation.
