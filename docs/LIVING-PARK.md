@@ -378,3 +378,10 @@ keeps world-space speed approximately 3.68m/s (intentionally
 game-compressed versus the real 15-minute public ride), and a pure
 Node regression enforces under 3.5% step-to-step chord speed variance
 across 1,000 time samples, with a closed positional/heading seam.
+
+- Two separate safety checkers now require EXACTLY two passage
+  events at x within 2m of the actual bridge centre, first
+  south-to-north and then north-to-south. The pure spline test
+  validates the deterministic route and the Chromium checker
+  independently samples 1,801 real gameplay poses; this prevents
+  accidentally regressing to a single bridge crossing.

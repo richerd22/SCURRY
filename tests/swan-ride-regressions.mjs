@@ -94,3 +94,16 @@ test('pedal boat advances with near-constant arc length, not per-control-point s
  const yawDelta=Math.atan2(Math.sin(a.yaw-b.yaw),Math.cos(a.yaw-b.yaw));
  assert.ok(Math.abs(yawDelta)<.02,'avoid yaw snap at end of tour');
 });
+
+test('full loop crosses real bridge centre exactly twice in opposite directions',()=>{
+ let previous=Math.sign(swanRidePose(0).z);
+ const crossings=[];
+ for(let i=1;i<=2000;i++){
+  const p=swanRidePose(i/2000),sign=Math.sign(p.z);
+  if(sign&&previous&&sign!==previous)
+   crossings.push({from:previous,to:sign,x:p.x});
+  if(sign)previous=sign;
+ }
+ assert.deepEqual(crossings.map(c=>[c.from,c.to]),[[1,-1],[-1,1]]);
+ assert.ok(crossings.every(c=>Math.abs(c.x+132)<2));
+});

@@ -148,6 +148,10 @@ async function checkGameplay() {
     assert.ok(underpass.vertexCount>1800&&underpass.sweeps>90&&
       underpass.closeVertices>900,'insufficient real boat/underbridge vertex sweep: '+JSON.stringify(underpass));
     assert.ok(underpass.rayDiff<.015,'boat scan uses fake underside rather than true mesh: '+JSON.stringify(underpass));
+    assert.deepEqual(underpass.crossings.map(c=>[c.from,c.to]),[[1,-1],[-1,1]],
+      'Swan Boat must genuinely go under bridge SOUTH to NORTH and back again');
+    assert.ok(underpass.crossings.every(c=>Math.abs(c.x+132)<2),
+      'Swan Boat crossed water outside the centre of the real bridge');
     assert.ok(underpass.minMargin>=.15,
       'real rendered boat intersects physical arched bridge: '+JSON.stringify(underpass));
     assert.ok(underpass.routeMinBank>5,

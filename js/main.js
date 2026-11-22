@@ -641,9 +641,14 @@ if (qaLocal) {
       let minHullBank=Infinity,hullWorst=null,footprintProbes=0;
       let minMargin=Infinity,worst=null,sweeps=0,closeVertices=0;
       const minBank={value:Infinity,where:null};
+      const crossings=[];let previousSign=Math.sign(swanRidePose(0).z);
       try {
         for(let step=0;step<=1800;step++){
           const t=step/1800,p=swanRidePose(t);
+          const sign=Math.sign(p.z);
+          if(sign&&previousSign&&sign!==previousSign)
+            crossings.push({progress:t,from:previousSign,to:sign,x:p.x});
+          if(sign)previousSign=sign;
           // Centreline has already passed 2,001 lagoon/island samples;
           // this is an independently sampled actual boat footprint.
           const clearance=lagoonWaterClearance(p.x,p.z);
@@ -688,7 +693,7 @@ if (qaLocal) {
         boat.position.copy(originalP);boat.rotation.copy(originalR);
         boat.updateMatrixWorld(true);
       }
-      return {rayDiff,sweeps,closeVertices,vertexCount,minMargin,worst,
+      return {rayDiff,sweeps,closeVertices,vertexCount,minMargin,worst,crossings,
         routeMinBank:minBank.value,routeMinAt:minBank.where,
         actualHullMinBank:minHullBank,hullWorst,hullVertices:hull.length,footprintProbes,
         duration:SWAN_RIDE_SECONDS};
