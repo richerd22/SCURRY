@@ -506,7 +506,15 @@ if (qaLocal) {
           throw Error('visible lake surface is at incorrect Y');
         count++;
       }
-      return {count,mismatches,waterHits,islandHits,worst,
+      // Survey actual low-res park triangles, not the analytic island
+      // height. Catch "dry island" polygons floating over submerged grass.
+      let drySamples=0,minDryMeshY=Infinity;
+      for(let x=-139;x<=-129;x+=.5)for(let z=-36;z<=-26;z+=.5){
+        if(!isGardenIsland(x,z))continue;
+        drySamples++;
+        minDryMeshY=Math.min(minDryMeshY,visibleGroundHeight(x,z));
+      }
+      return {count,mismatches,waterHits,islandHits,worst,drySamples,minDryMeshY,
         islandHeight:visibleGroundHeight(-134,-31),
         islandSolids:S.solids.filter(s=>Math.hypot(s.x+134,s.z+31)<4.2).length};
     },

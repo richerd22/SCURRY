@@ -62,8 +62,12 @@ export function lagoonBasin(x,z){
  if(!insideShoreRing(x,z,GARDEN_LAGOON_SHORE))return 0;
  // Both banks grade to the same 0m waterline: a squirrel can step
  // out of the shallow side onto a 34cm-high island without a cliff.
+ // The terrain mesh has ~2.9m triangle spacing. A near-shore
+ // underwater shelf prevents any island-facing triangle from being
+ // pulled below the waterline by an adjacent deep-water vertex.
+ const islandClear=shoreDistance(x,z,GARDEN_ISLAND_SHORE);
  return .6*Math.min(1,shoreDistance(x,z,GARDEN_LAGOON_SHORE)/8,
-   shoreDistance(x,z,GARDEN_ISLAND_SHORE)/3.4);
+   Math.max(0,(islandClear-2.8)/4));
 }
 // Legacy approximation for old compatibility probes. Never use this
 // ellipsoid for water, collision, props, shore, map, or navigation.

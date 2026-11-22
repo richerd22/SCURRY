@@ -129,6 +129,8 @@ async function checkGameplay() {
     assert.ok(lagoon.waterHits>250&&lagoon.islandHits>8,'island hole and lake sampled');
     assert.ok(lagoon.islandHeight>.18&&lagoon.islandSolids>=4,
       'real island tree, boulders, and walkable raised terrain required: '+JSON.stringify(lagoon));
+    assert.ok(lagoon.drySamples>120&&lagoon.minDryMeshY>=-.001,
+      'coarse real island terrain triangles dipped below waterline: '+JSON.stringify(lagoon));
     assert.equal(lagoon.mismatches,0,
       'painted lagoon vs real water triangles disagree: '+JSON.stringify(lagoon));
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());

@@ -260,3 +260,11 @@ The additional runtime food-on-planks test initially failed 1 of 171 checks beca
   Quality: Node assertions, game WebGL, visual WebGL, mobile touch and
   GitHub Pages must all be green before production merge; actual iOS
   Safari hardware still remains a separate field test.
+
+- Final island mesh-parity fix: the 2.9m terrain-grid triangles used to
+  interpolate shore vertices that dipped below the water's y=0.02
+  surface, even though the analytic bank rose above it. A 2.8m
+  zero-depth underwater shelf around the island now decouples those
+  triangles from the 60cm deeper lagoon bottom. The actual browser
+  terrain mesh is independently sampled across the dry island to prove
+  there is no below-zero patch at squirrel foot height.
