@@ -345,3 +345,21 @@ v0.7.2/v0.7.3 deliberately withheld this until source geometry agreed.
 - Source references: official Swan Boats history and Friends of the
   Public Garden on real island circumnavigation/bridge underpass;
   HistoricBridges.org and Historic New England on the bridge.
+
+### Dock collision and squirrel-eye visual corrections
+
+The prior close-up visual QA accidentally placed its virtual squirrel
+INSIDE the real dock's back-corner crate, creating the appearance of a
+giant brown obstruction. The new camera stands on an open aisle and
+faces the five open red seats, green hull and real swan without the sign
+or wood crate between them. The underpass screenshot now views from a
+quiet north-eastern waterline, avoiding the drifting western Swan Boat
+that previously monopolized the shot.
+
+The actual dock now has FOURTEEN registered, height-bounded collision
+solids: eight underdeck mooring piles, two low bollards, one coiled
+mooring rope, one corner wooden crate, and two SWAN BOATS signposts.
+Each shares the corresponding physical artwork X/Z/Y extents; the old
+real standable dock deck remains at Y0.45m and is unchanged. A runtime
+QA survey independently checks all 14 live colliders and deck height,
+with the original full 56-second ride/boarding/exit suite still required.

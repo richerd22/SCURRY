@@ -141,6 +141,9 @@ async function checkGameplay() {
       'coarse real island terrain triangles dipped below waterline: '+JSON.stringify(lagoon));
     assert.equal(lagoon.mismatches,0,
       'painted lagoon vs real water triangles disagree: '+JSON.stringify(lagoon));
+    const dock=await page.evaluate(()=>window.__scurryQA.surveySwanDock());
+    assert.deepEqual(dock,{solids:14,posts:8,bollards:2,crate:1,signposts:2,deckY:.45},
+      'physical dock posts, bollards, coil, crate and signposts must stay registered');
     const underpass=await page.evaluate(()=>window.__scurryQA.surveySwanBridgePassage());
     assert.ok(underpass.vertexCount>1800&&underpass.sweeps>90&&
       underpass.closeVertices>900,'insufficient real boat/underbridge vertex sweep: '+JSON.stringify(underpass));

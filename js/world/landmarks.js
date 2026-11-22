@@ -986,16 +986,29 @@ function buildSwanBoats(scene) {
     const g = new THREE.Group();
     const deckM = new THREE.MeshStandardMaterial({ map: plankTex(), roughness: 0.9 });
     box(9.5, 0.18, 3.6, deckM, 0, 0.36, 0, g);
-    for (const px of [-4.4, -1.5, 1.5, 4.4]) for (const pz of [-1.5, 1.5])
-      cyl(0.09, 0.09, 1.15, darkWood, px, -0.12, pz, g, 6);
-    for (const px of [-3.6, 3.6]) cyl(0.11, 0.13, 0.34, darkWood, px, 0.6, -1.45, g, 8); // mooring bollards
+    for(const px of [-4.4,-1.5,1.5,4.4])for(const pz of [-1.5,1.5]){
+      cyl(.09,.09,1.15,darkWood,px,-.12,pz,g,6);
+      S.solids.push({x:GARDEN_DOCK.x+px,z:GARDEN_DOCK.z+pz,
+        r:.12,minY:-.695,maxY:.46,isSwanDockSolid:true});
+    }
+    for(const px of [-3.6,3.6]){
+      cyl(.11,.13,.34,darkWood,px,.6,-1.45,g,8);
+      S.solids.push({x:GARDEN_DOCK.x+px,z:GARDEN_DOCK.z-1.45,
+        r:.14,minY:.43,maxY:.77,isSwanDockSolid:true});
+    }
     // dock dressing (v0.6.31): a coiled mooring line by the bollard
     // + a crate at the back corner - the dock was clean geometry,
     // and working docks have stuff on them.
     const coil = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 7, 18),
       new THREE.MeshStandardMaterial({ color: 0x9a8a68, roughness: 1 }));
     coil.rotation.x = Math.PI / 2; coil.position.set(3.4, 0.52, -1.05); g.add(coil);
+    S.solids.push({x:GARDEN_DOCK.x+3.4,z:GARDEN_DOCK.z-1.05,
+      r:.4,minY:.45,maxY:.6,isSwanDockSolid:true});
     box(0.62, 0.5, 0.62, darkWood, -3.9, 0.7, 1.15, g);
+    // An actual rectangular wooden crate; unlike an ornamental prop,
+    // its complete visible corners are protected by its round collider.
+    S.solids.push({x:GARDEN_DOCK.x-3.9,z:GARDEN_DOCK.z+1.15,
+      r:.44,minY:.45,maxY:.95,isSwanDockSolid:true});
     // dock sign, park-board green like the station sign
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
     const c = cv.getContext('2d');
@@ -1003,7 +1016,11 @@ function buildSwanBoats(scene) {
     c.fillStyle = '#f2ead2'; c.font = 'bold 30px monospace'; c.textAlign = 'center';
     c.fillText('SWAN BOATS', 128, 42);
     const sTex = new THREE.CanvasTexture(cv); sTex.colorSpace = THREE.SRGBColorSpace;
-    for (const px of [-0.95, 0.95]) box(0.07, 1.6, 0.07, darkWood, px, 0.8, 0, g, false);
+    for(const px of [-.95,.95]){
+      box(.07,1.6,.07,darkWood,px,.8,0,g,false);
+      S.solids.push({x:GARDEN_DOCK.x+px,z:GARDEN_DOCK.z,
+        r:.07,minY:.44,maxY:1.6,isSwanDockSolid:true});
+    }
     const board = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.58),
       new THREE.MeshBasicMaterial({ map: sTex }));
     board.position.set(0, 1.62, 0.02); g.add(board);

@@ -295,7 +295,10 @@ if (Q.has('shot')) {
     case 'promenade': pose(2, -18, 150, -18); break; // ON the Mall apron (v0.6.27), east down the promenade
     case 'pondedge': pose(74.5, 21.5, 95, 12, -0.1); break; // Frog Pond SW shore (v0.6.27): curb stones + water at eye height
     case 'wade': pose(-132, 10, -132, -2); break; // IN the lagoon (v0.6.28): bed level, eye under the water plane, looking at the bridge
-    case 'swanclose': pose(-144.8, 49, -143, 43); P.pos.y = 0.45; break; // ON the swan-boat dock (v0.6.28): the moored boat's swan + canopy close
+    case 'swanclose':
+      // Stand in a FREE aisle on the real dock, no longer inside the
+      // corner crate: front-row benches, swan and green hull visible.
+      pose(-143.3,46.8,-140,44,.14);P.pos.y=GARDEN_DOCK.deckY;break;
     case 'beacon': pose(40, -38, 40, -112); break; // the Mall looking north at the Beacon St row
     case 'beaconwest': pose(-120, -40, -140, -108); break; // Garden north edge, Beacon row west segment
     case 'beaconclose': pose(36, -93, 43, -111); break; // one Beacon unit at stoop distance
@@ -354,7 +357,10 @@ if (Q.has('shot')) {
         Object.assign(boat.userData.drift,{cx:p.x,cz:p.z,rx:0,rz:0,w:0,yaw:p.yaw});
         boat.position.set(p.x,.05,p.z);boat.rotation.y=p.yaw;
       }
-      pose(-159,10,-132,0,.12);break;
+      // Low camera from the quiet north-eastern water, directly at the
+      // actual passenger craft beneath the iron arch. The old shot
+      // accidentally framed a roaming ambient boat in the foreground.
+      pose(-118,-7,-132,1,.1);P.pos.y=.72;P.grounded=false;break;
     }
     case 'geese': // real east-west deck, with all three geese in view
       pose(-114,0,-132,0);P.pos.y=gardenBridgeHeight(-114);P.grounded=true;
@@ -547,6 +553,16 @@ if (qaLocal) {
     // triangle heights at both passes, for the complete 56s course.
     // Uses the production mesh, geometry transforms and instance matrices,
     // not the decorative boat-centre path as a clearance shortcut.
+    surveySwanDock:()=>{
+      const solids=S.solids.filter(s=>s.isSwanDockSolid);
+      const deck=S.platformBoxes.find(b=>Math.abs(b.minX-(GARDEN_DOCK.x-4.75))<.001&&
+        Math.abs(b.maxZ-(GARDEN_DOCK.z+1.8))<.001);
+      return {solids:solids.length,posts:solids.filter(s=>s.minY<0).length,
+        bollards:solids.filter(s=>s.maxY===.77).length,
+        crate:solids.filter(s=>s.maxY===.95).length,
+        signposts:solids.filter(s=>s.maxY===1.6).length,
+        deckY:deck?.y};
+    },
     surveySwanBridgePassage:()=>{
       const bridge=scene.children.find(o=>o.userData.scurryGardenBridgeUnderside);
       const boat=S.boats?.[2];

@@ -66,3 +66,14 @@ test('full physical bridge passage has an actual real-mesh and full-hull QA gate
  assert.match(browser,/underpass\.actualHullMinBank>\.35/);
  assert.match(browser,/checkScene\('swanunderpass'\)/);
 });
+
+test('14 real swan dock solid obstacles protect the visible fixtures',()=>{
+ const art=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const harness=readFileSync(new URL('../harness/browser-smoke.mjs',import.meta.url),'utf8');
+ assert.match(art,/isSwanDockSolid:true/);
+ assert.match(main,/surveySwanDock:\(\)=>/);
+ assert.match(harness,/solids:14,posts:8,bollards:2,crate:1,signposts:2/);
+ assert.match(main,/pose\(-143\.3,46\.8,-140,44/);
+ assert.match(main,/pose\(-118,-7,-132,1/);
+});
