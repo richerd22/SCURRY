@@ -533,3 +533,25 @@ cannot credit island landfall. Existing scurry-field-notes-v1 save data
 is retained without migrations or changed ID meanings; players who
 previously completed all 14 notes will find one new discoverable entry.
 No new 3D draw calls, models, imagery, geometry or tutorial overlays.
+
+
+## Mobile cold boot — Fenway neighborhood demand-loading (isolated quality PR)
+
+The 2.60 MiB BPDA Fenway neighborhood GLB (38,297 source triangles)
+no longer downloads when an ordinary player starts in Boston Common.
+Procedural Fenway neighborhood roads and the CITGO sign are still built
+immediately, but the heavier backdrop loads once when the player actually
+enters Fenway via E or asks for a ?shot=fenwayhood screenshot.
+
+- The background load is idempotent and creates no teleport, no player
+  ground mutation and no change to the field's independent height grid.
+- It preserves the existing best-effort offline fallback, city lights
+  registration and existing shot-mode whenModelsSettled readiness.
+- Browser regression listens for actual HTTP requests: Common-only
+  = zero neighborhood GLBs; Fenway E arrival = exactly one request;
+  fenwayhood photo pose = one request and a full visual screenshot.
+- This is network-byte avoidance, not an unmeasured claim about iPhone
+  frame rates. Physical Safari real-device acceptance is still open.
+- The larger TD Garden 6.66 MiB GLB remains eagerly loaded, and
+  need separate safe portal/ground support handling (#8). No new
+  licensing rights are created by deferring the Fenway asset.

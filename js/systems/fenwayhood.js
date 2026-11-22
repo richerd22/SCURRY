@@ -270,18 +270,33 @@ function buildStreets(g) {
 }
 
 // ------------------------------------------------------------ build
+let hoodGroup=null,hoodLoad=null;
+// Background massing is 2.60 MiB. Build the procedural street grid at
+// startup but do NOT fetch city meshes until the squirrel visits Fenway.
 export function buildFenwayHood(scene) {
   const g = new THREE.Group();
   g.position.copy(FEN);
   scene.add(g);
   buildStreets(g);
   buildCitgo(g);
+  hoodGroup=g;
+  S.ensureFenwayHoodModel=ensureFenwayHoodModel;
+  S.fenwayHoodAssetStatus='idle';
+}
+
+// Explicit demand load: the already-built streets and CITGO sign remain
+// usable if the model is missing or a slow network never completes.
+// No deferred callback can teleport the squirrel or mutate ground floors.
+export function ensureFenwayHoodModel(){
+  if(!hoodGroup)return Promise.resolve(null);
+  if(hoodLoad)return hoodLoad;
+  S.fenwayHoodAssetStatus='loading';
 
   // the surveyed massing: async + best-effort like every sourced model.
   // The streets and the sign are procedural and stand on their own if
   // the GLB never lands.
-  loadModel('assets/models/fenway-neighborhood.glb').then((tpl) => {
-    if (!tpl) return;
+  hoodLoad=loadModel('assets/models/fenway-neighborhood.glb').then((tpl) => {
+    if(!tpl){S.fenwayHoodAssetStatus='fallback';return null;}
     const { day, glow } = facadeCanvases();
     const facadeTex = new THREE.CanvasTexture(day);
     facadeTex.wrapS = facadeTex.wrapT = THREE.RepeatWrapping;
@@ -301,8 +316,11 @@ export function buildFenwayHood(scene) {
       o.castShadow = false;   // backdrop: outside the park's shadow framing anyway
       o.receiveShadow = true;
     });
-    g.add(tpl.scene);
+    hoodGroup.add(tpl.scene);
+    S.fenwayHoodAssetStatus='ready';
+    return tpl;
   });
+  return hoodLoad;
 }
 
 export function updateFenwayHood(dt) {
