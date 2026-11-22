@@ -114,3 +114,13 @@ test('dock visual and QA import the actual authored dock geometry',()=>{
  assert.match(main,/surveySwanDock:\(\)=>/);
  assert.match(main,/P\.pos\.y=GARDEN_DOCK\.deckY/);
 });
+
+test('browser verifies exact clipped visible Swan Boat TRIANGLES, not vertices alone',()=>{
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const harness=readFileSync(new URL('../harness/browser-smoke.mjs',import.meta.url),'utf8');
+ assert.match(main,/const scanTriangle=\(p,q,r,t,bob\)=>/);
+ assert.match(main,/const clipPoly=\(poly,axis,limit,above\)=>/);
+ assert.match(main,/minTriangleMargin,triangleWorst,triangleFaces,triangleProbes/);
+ assert.match(main,/scanTriangle\(toWorld\(k\),toWorld\(k\+1\),toWorld\(k\+2\)/);
+ assert.match(harness,/underpass\.minTriangleMargin>=\.15/);
+});

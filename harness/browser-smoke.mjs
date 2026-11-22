@@ -154,6 +154,12 @@ async function checkGameplay() {
       'Swan Boat crossed water outside the centre of the real bridge');
     assert.ok(underpass.minMargin>=.15,
       'real rendered boat intersects physical arched bridge: '+JSON.stringify(underpass));
+    assert.ok(underpass.triangleFaces>100&&underpass.triangleProbes>1000&&
+      underpass.triangleBoundaryProbes>100,
+      'face-level clipping missed real boat/bridge surfaces: '+JSON.stringify(underpass));
+    assert.ok(underpass.minTriangleMargin>=.15,
+      'boat TRIANGLE intersects bridge strip between original mesh vertices: '+
+        JSON.stringify(underpass));
     assert.ok(underpass.routeMinBank>5,
       'full Swan Boat route is less than one hull length from physical bank: '+JSON.stringify(underpass));
     assert.ok(underpass.hullVertices>=5&&underpass.footprintProbes>20000&&

@@ -385,3 +385,25 @@ across 1,000 time samples, with a closed positional/heading seam.
   validates the deterministic route and the Chromium checker
   independently samples 1,801 real gameplay poses; this prevents
   accidentally regressing to a single bridge crossing.
+
+
+### v0.7.4 further hardening: exact visible triangle-to-bridge underpass intersection
+
+A previous browser sweep examined every transformed Swan Boat mesh *vertex*
+at three bob/roll extrema and separately raycast the actual bridge underside.
+That proves the corners, but a large triangular face can still cross the bridge
+boundary or the 48-piece arch between its original corners.
+
+The QA now enumerates actual mesh triangle indices (including instanced
+passengers), transforms them with the actual moving boat group, clips each
+triangle first to the real bridge X/Z footprint and then to individual
+one-metre underside strips. Over each resulting polygon, both the face and
+the underside are linear; evaluating the generated vertices finds the exact
+minimum face clearance at that sampled pose. Conservative interval bounding
+can skip low triangles that have more than 2m certified clearance.
+
+Acceptance is at least 0.15m face-to-undercarriage clearance including
+0.05m bob and doubled conservative roll/pitch, with explicit counts of
+triangle faces, intersection probes and new bridge-boundary vertices.
+This is not a physical iOS Safari hardware test or a licensed real-world
+engineering clearance claim.
