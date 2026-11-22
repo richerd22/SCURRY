@@ -253,3 +253,10 @@ The additional runtime food-on-planks test initially failed 1 of 171 checks beca
   avoids a 94cm vertical terrain discontinuity that prevented
   squirrel-scale water-to-island access. Regression samples at 10cm
   increments, requiring under 5.5cm between samples.
+
+- Release target v0.7.2: the existing 56-second tour, dock E,
+  bridge geese three routes and real two-direction foot crossing are
+  explicitly preserved, not redefined to claim an untested underpass.
+  Quality: Node assertions, game WebGL, visual WebGL, mobile touch and
+  GitHub Pages must all be green before production merge; actual iOS
+  Safari hardware still remains a separate field test.
