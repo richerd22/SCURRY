@@ -107,3 +107,10 @@ test('full loop crosses real bridge centre exactly twice in opposite directions'
  assert.deepEqual(crossings.map(c=>[c.from,c.to]),[[1,-1],[-1,1]]);
  assert.ok(crossings.every(c=>Math.abs(c.x+132)<2));
 });
+
+test('dock visual and QA import the actual authored dock geometry',()=>{
+ const main=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ assert.match(main,/import \{ GARDEN_BRIDGE,GARDEN_DOCK,gardenBridgeHeight/);
+ assert.match(main,/surveySwanDock:\(\)=>/);
+ assert.match(main,/P\.pos\.y=GARDEN_DOCK\.deckY/);
+});

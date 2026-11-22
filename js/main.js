@@ -39,7 +39,7 @@ import { createMobileQualityState, advanceMobileQuality } from './systems/mobile
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
-import { GARDEN_BRIDGE,gardenBridgeHeight,gardenBridgeUnderClearance,lagoonContains,isGardenIsland,lagoonWaterClearance } from './world/garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,GARDEN_DOCK,gardenBridgeHeight,gardenBridgeUnderClearance,lagoonContains,isGardenIsland,lagoonWaterClearance } from './world/garden-lagoon-layout.js';
 import {swanRidePose,SWAN_RIDE_SECONDS} from './systems/swan-ride-rules.js';
 
 // ---------- device class ----------
