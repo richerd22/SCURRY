@@ -141,6 +141,14 @@ async function checkGameplay() {
       'coarse real island terrain triangles dipped below waterline: '+JSON.stringify(lagoon));
     assert.equal(lagoon.mismatches,0,
       'painted lagoon vs real water triangles disagree: '+JSON.stringify(lagoon));
+    const underpass=await page.evaluate(()=>window.__scurryQA.surveySwanBridgePassage());
+    assert.ok(underpass.vertexCount>1800&&underpass.sweeps>90&&
+      underpass.closeVertices>900,'insufficient real boat/underbridge vertex sweep: '+JSON.stringify(underpass));
+    assert.ok(underpass.rayDiff<.015,'boat scan uses fake underside rather than true mesh: '+JSON.stringify(underpass));
+    assert.ok(underpass.minMargin>=.15,
+      'real rendered boat intersects physical arched bridge: '+JSON.stringify(underpass));
+    assert.ok(underpass.routeMinBank>5,
+      'full Swan Boat route is less than one hull length from physical bank: '+JSON.stringify(underpass));
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
     assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
     assert.ok(bridge.maxAbsDiff<.015,

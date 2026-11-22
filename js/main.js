@@ -39,7 +39,8 @@ import { createMobileQualityState, advanceMobileQuality } from './systems/mobile
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
-import { GARDEN_BRIDGE,gardenBridgeHeight,lagoonContains,isGardenIsland } from './world/garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,gardenBridgeHeight,gardenBridgeUnderClearance,lagoonContains,isGardenIsland,lagoonWaterClearance } from './world/garden-lagoon-layout.js';
+import {swanRidePose,SWAN_RIDE_SECONDS} from './systems/swan-ride-rules.js';
 
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
@@ -531,6 +532,103 @@ if (qaLocal) {
       return {count,mismatches,waterHits,islandHits,worst,drySamples,minDryMeshY,
         islandHeight:visibleGroundHeight(-134,-31),
         islandSolids:S.solids.filter(s=>Math.hypot(s.x+134,s.z+31)<4.2).length};
+    },
+    // Validate the *actual boat vertices* against the real 3D underside
+    // triangle heights at both passes, for the complete 56s course.
+    // Uses the production mesh, geometry transforms and instance matrices,
+    // not the decorative boat-centre path as a clearance shortcut.
+    surveySwanBridgePassage:()=>{
+      const bridge=scene.children.find(o=>o.userData.scurryGardenBridgeUnderside);
+      const boat=S.boats?.[2];
+      if(!bridge||!boat)throw Error('missing physical Swan Boat or bridge underside');
+      const bp=bridge.geometry.attributes.position;
+      const profile=[];
+      for(let i=0;i<bp.count;i+=4)
+        profile.push([bp.getX(i),bp.getY(i)]);
+      profile.push([bp.getX(bp.count-2),bp.getY(bp.count-2)]);
+      if(profile.length!==49||!profile.every((p,i)=>i===0||p[0]>profile[i-1][0]))
+        throw Error('underbridge must have 48 real graded triangles');
+      const underY=x=>{
+        const b=GARDEN_BRIDGE;
+        if(x<b.x-b.halfLength||x>b.x+b.halfLength)return Infinity;
+        const step=2*b.halfLength/(profile.length-1);
+        const i=Math.max(0,Math.min(profile.length-2,Math.floor((x-profile[0][0])/step)));
+        const a=profile[i],c=profile[i+1];
+        return a[1]+(c[1]-a[1])*(x-a[0])/(c[0]-a[0]);
+      };
+      // Independently cross-check triangle interpolation with vertical
+      // raycasts against actual Three.js underside (both-sided material).
+      const ray=new THREE.Raycaster(),up=new THREE.Vector3(0,1,0);
+      let rayDiff=0;
+      for(let i=0;i<=96;i++){
+        const x=profile[0][0]+i*(2*GARDEN_BRIDGE.halfLength)/96;
+        ray.set(new THREE.Vector3(x,-5,0),up);
+        const hit=ray.intersectObject(bridge,false)[0];
+        if(!hit)throw Error('underside ray missed at x='+x);
+        rayDiff=Math.max(rayDiff,Math.abs(hit.point.y-underY(x)));
+      }
+      const originalP=boat.position.clone(),originalR=boat.rotation.clone();
+      boat.updateMatrixWorld(true);
+      const inv=boat.matrixWorld.clone().invert(),v=new THREE.Vector3();
+      const vertexChunks=[];let vertexCount=0;
+      boat.traverse(mesh=>{
+        if(!mesh.isMesh||!mesh.geometry?.attributes?.position)return;
+        mesh.updateWorldMatrix(true,false);
+        const toBoat=inv.clone().multiply(mesh.matrixWorld);
+        const attr=mesh.geometry.attributes.position;
+        const count=mesh.isInstancedMesh?mesh.count:1;
+        const instance=new THREE.Matrix4();
+        for(let inst=0;inst<count;inst++){
+          const matrix=toBoat.clone();
+          if(mesh.isInstancedMesh){
+            mesh.getMatrixAt(inst,instance);matrix.multiply(instance);
+          }
+          const points=new Float32Array(attr.count*3);
+          for(let i=0;i<attr.count;i++){
+            v.fromBufferAttribute(attr,i).applyMatrix4(matrix);
+            points[3*i]=v.x;points[3*i+1]=v.y;points[3*i+2]=v.z;
+          }
+          vertexChunks.push(points);vertexCount+=attr.count;
+        }
+      });
+      let minMargin=Infinity,worst=null,sweeps=0,closeVertices=0;
+      const minBank={value:Infinity,where:null};
+      try {
+        for(let step=0;step<=1800;step++){
+          const t=step/1800,p=swanRidePose(t);
+          // Centreline has already passed 2,001 lagoon/island samples;
+          // this is an independently sampled actual boat footprint.
+          const clearance=lagoonWaterClearance(p.x,p.z);
+          if(clearance<minBank.value)minBank.value=clearance,minBank.where=t;
+          if(Math.abs(p.z)>12)continue;
+          for(const extremum of [-1,0,1]){
+            boat.position.set(p.x,.05+extremum*.05,p.z);
+            boat.rotation.set(extremum*.025,p.yaw,extremum*.025,'XYZ');
+            boat.updateMatrixWorld(true);
+            const m=boat.matrixWorld.elements;
+            sweeps++;
+            for(const chunk of vertexChunks)for(let k=0;k<chunk.length;k+=3){
+              const x=chunk[k],y=chunk[k+1],z=chunk[k+2];
+              const wx=m[0]*x+m[4]*y+m[8]*z+m[12];
+              const wz=m[2]*x+m[6]*y+m[10]*z+m[14];
+              if(Math.abs(wz)>GARDEN_BRIDGE.halfWidth||
+                Math.abs(wx-GARDEN_BRIDGE.x)>GARDEN_BRIDGE.halfLength)continue;
+              const wy=m[1]*x+m[5]*y+m[9]*z+m[13],margin=underY(wx)-wy;
+              closeVertices++;
+              if(margin<minMargin){
+                minMargin=margin;worst={progress:t,x:wx,z:wz,
+                  under:underY(wx),vertexY:wy,bob:extremum};
+              }
+            }
+          }
+        }
+      } finally {
+        boat.position.copy(originalP);boat.rotation.copy(originalR);
+        boat.updateMatrixWorld(true);
+      }
+      return {rayDiff,sweeps,closeVertices,vertexCount,minMargin,worst,
+        routeMinBank:minBank.value,routeMinAt:minBank.where,
+        duration:SWAN_RIDE_SECONDS};
     },
     surveyGardenBridge:()=>{
       scene.updateMatrixWorld(true);
