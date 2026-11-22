@@ -38,8 +38,8 @@ test('full 56-second tour hull and BOTH drifting craft stay away from island and
   assert.ok(lagoonWaterClearance(p.x,p.z)>5,
     'swan tour clips organic shore '+JSON.stringify(p));
  }
- for(const d of [{cx:-146,cz:-18,rx:1,rz:5,ph:.6},
-  {cx:-119,cz:-17,rx:1,rz:5,ph:3.4}]){
+ for(const d of [{cx:-150,cz:15,rx:1,rz:2,ph:.6},
+  {cx:-114,cz:14,rx:1,rz:2,ph:3.4}]){
   for(let i=0;i<=720;i++){
    const a=d.ph+i/720*Math.PI*2,x=d.cx+d.rx*Math.cos(a),z=d.cz+d.rz*Math.sin(a);
    assert.ok(lagoonWaterClearance(x,z)>5,'ambient full hull in bank '+x+','+z);

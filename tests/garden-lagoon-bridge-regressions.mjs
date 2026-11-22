@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';import {test} from 'node:test';
 const load=(path)=>import('data:text/javascript;base64,'+
  Buffer.from(readFileSync(new URL(path,import.meta.url),'utf8')).toString('base64'));
 const {GARDEN_LAGOON,GARDEN_BRIDGE,GARDEN_DOCK,lagoonEllipse,
- gardenBridgeDeck,gardenBridgeLanding,gardenBridgeRamp}=await load('../js/world/garden-lagoon-layout.js');
+ gardenBridgeDeck,gardenBridgeLanding,gardenBridgeRamp,gardenBridgeHeight,gardenBridgeUnderClearance}=await load('../js/world/garden-lagoon-layout.js');
 const {SWAN_DOCK,swanRidePose}=await load('../js/systems/swan-ride-rules.js');
 test('Garden water lobes run north-south; actual Mall↔Common bridge east-west',()=>{
  assert.ok(GARDEN_LAGOON.rz>GARDEN_LAGOON.rx*1.9);
@@ -32,10 +32,11 @@ test('full boat CatmullRom course stays inside south lobe and clear of bridge',(
   // the centreline. Never fake an in-bounds route with a clipped stern.
   assert.ok(lagoonEllipse(p.x,p.z,5,5)<1,
    'full 5m hull envelope clips shoreline '+JSON.stringify(p));
-  assert.ok(p.z>12,'boat route through real bridge '+JSON.stringify(p));
+  assert.ok(p.z>-52,'boat drove beyond northern bank '+JSON.stringify(p));
   length+=Math.hypot(p.x-prev.x,p.z-prev.z);prev=p;
  }
- assert.ok(length>50&&length<140);
+ assert.ok(length>180&&length<230);
+ assert.ok(swanRidePose(.42).z<0,'full circuit must pass north of the bridge');
 });
 test('actual source explicitly rotates visible deck, rail solids and goose actions',()=>{
  const landmarks=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
@@ -104,10 +105,12 @@ test('old land-based park props and burrow entrances no longer spawn inside resh
 test('geese guard only the actual deck, not water below or canopy above',()=>{
  const b=GARDEN_BRIDGE,x=b.x,z=b.z;
  assert.equal(gardenBridgeDeck(x,z),true);
- assert.equal(gardenBridgeDeck(x,z,b.deckY),true);
- assert.equal(gardenBridgeDeck(x,z,b.deckY-.08),true);
- assert.equal(gardenBridgeDeck(x,z,b.deckY+.5),true);
- for(const y of [-2,-.2,0,.3,b.deckY-.13,b.deckY+.8,b.deckY+2]){
+ assert.equal(gardenBridgeDeck(x,z,gardenBridgeHeight(x)),true);
+ assert.ok(gardenBridgeHeight(x)>4.5,'solid crest clears the full white swan head');
+ assert.ok(gardenBridgeUnderClearance(x)>4,'4m bridge underside at boat lane');
+ assert.equal(gardenBridgeDeck(x,z,gardenBridgeHeight(x)-.08),true);
+ assert.equal(gardenBridgeDeck(x,z,gardenBridgeHeight(x)+.5),true);
+ for(const y of [-2,-.2,0,.3,gardenBridgeHeight(x)-.13,gardenBridgeHeight(x)+.8,gardenBridgeHeight(x)+2]){
   assert.equal(gardenBridgeDeck(x,z,y),false,'wrong goose target at Y='+y);
  }
  assert.equal(gardenBridgeDeck(x,z,NaN),false);
@@ -118,5 +121,5 @@ test('geese guard only the actual deck, not water below or canopy above',()=>{
 test('dropped bridge snacks land on real raised planks, not submerged soil',()=>{
  const food=readFileSync(new URL('../js/systems/food.js',import.meta.url),'utf8');
  assert.match(food,/gardenBridgeDeck\(P\.x,P\.z,P\.y\)&&gardenBridgeDeck\(x,z\)/);
- assert.match(food,/onDeck\?\{y:GARDEN_BRIDGE\.deckY\}:\{\}/);
+ assert.match(food,/onDeck\?\{y:gardenBridgeHeight\(x\)\}:\{\}/);
 });
