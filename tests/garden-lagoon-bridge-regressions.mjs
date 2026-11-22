@@ -156,3 +156,25 @@ test('granite bridge pylon bases are sunk into rendered lakebed, not just water 
  assert.match(main,/minLakebedEmbed/);
  assert.match(harness,/piers\.minLakebedEmbed>\.12/);
 });
+
+test('Victorian iron X-pattern is one instanced mesh fully backed by real rail walls',()=>{
+ const src=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
+ const qa=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ const browser=readFileSync(new URL('../harness/browser-smoke.mjs',import.meta.url),'utf8');
+ assert.match(src,/new THREE\.BoxGeometry\(\.046,1,\.046\),railMat,4\*n/);
+ assert.match(src,/lattice.userData.scurryGardenBridgeLattice=true/);
+ assert.match(src,/isGardenBridgeRail:true/);
+ assert.doesNotMatch(src,/box\(\.2,\.18,5\.6,white,x,base\+2\.98/);
+ assert.match(qa,/surveyGardenBridgeLattice:\(\)=>/);
+ assert.match(qa,/const rail=walls.find\(w=>/);
+ assert.match(browser,/lattice\.unsupported,0/);
+});
+test('granite lamp-post cap has a separate real narrow iron stem with physical collision',()=>{
+ assert.ok(GARDEN_BRIDGE_PIER.topAboveDeck<2.75);
+ assert.ok(GARDEN_BRIDGE_PIER.lampAboveDeck-GARDEN_BRIDGE_PIER.topAboveDeck>.8);
+ const src=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
+ const qa=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ assert.match(src,/stem.userData.scurryGardenBridgeLampStem=true/);
+ assert.match(src,/isGardenBridgeLampStem:true/);
+ assert.match(qa,/minStemLength/);
+});

@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import { S, MAP } from '../state.js';
+import { swanPedalPose } from '../world/swan-passengers.js';
 import { lagoonContains } from '../world/garden-lagoon-layout.js';
 
 const DAY_LENGTH = 780; // seconds per full day (13 min) - a long golden evening
@@ -233,6 +234,14 @@ export function updateDaycycle(dt) {
     }
     boat.position.y = 0.05 + Math.sin(now * 0.7 + boat.userData.bobPhase) * 0.05;
     boat.rotation.z = Math.sin(now * 0.5 + boat.userData.bobPhase) * 0.012;
+    const feet=boat.userData.operator?.userData.pedalFeet;
+    if(feet?.length===2){
+      // Pure absolute-time crank, opposite phases; no frame-rate drift,
+      // no per-frame allocations, and the Stern swan conceals the wheel.
+      const seconds=now+boat.userData.bobPhase/2.6;
+      swanPedalPose(seconds,0,feet[0].position);
+      swanPedalPose(seconds,1,feet[1].position);
+    }
   }
   // fountain falls (v0.6.28): scroll the ONE flow texture. On the fall
   // cylinders uv.y runs 0 at the bottom to 1 at the rim, so a growing
