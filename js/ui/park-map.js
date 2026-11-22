@@ -62,7 +62,7 @@ export function initParkMap() {
     number:'H',label:'HOLLOW TREE'
   });
   // Transit markers are navigable public street entrances, not new
-  // Field Notes. The 14-entry discovery/save contract stays unchanged.
+  // Field Notes. The notes list grows compatibly with existing v1 saves.
   for(const station of MBTA_STATIONS){
     entries.push({id:'station-'+station.id,number:'T',transit:true,
       x:station.surfaceX,z:station.surfaceZ,label:station.name+' T'});

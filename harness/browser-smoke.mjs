@@ -74,12 +74,14 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
       assert.equal(await page.locator('#map-panel').getAttribute('aria-hidden'), 'false');
       assert.ok(await page.locator('#map-legend button').count() >= 6,
         'numbered landmark legend must be visible on the phone');
+      assert.equal(await page.locator('#map-legend [data-note-id="duck-island"]').count(),1,
+        'Duck Island is an explicitly navigable map destination');
       assert.equal(await page.locator('#map-legend [data-transit="true"]').count(),3,
         'all three real MBTA station entrances must be on the park atlas');
       await page.locator('#map-guide-toggle').tap();
       assert.equal(await page.locator('#map-guide').isVisible(),true,
         'Field Notes must open in map panel');
-      assert.equal(await page.locator('#map-guide [role="listitem"]').count(),14);
+      assert.equal(await page.locator('#map-guide [role="listitem"]').count(),15);
       await page.screenshot({path:out+'/'+title+'-field-notes.png'});
       await page.locator('#map-guide-toggle').tap();
       assert.equal(await page.locator('#map-canvas').isVisible(),true,
@@ -151,6 +153,23 @@ async function checkGameplay() {
       'coarse real island terrain triangles dipped below waterline: '+JSON.stringify(lagoon));
     assert.equal(lagoon.mismatches,0,
       'painted lagoon vs real water triangles disagree: '+JSON.stringify(lagoon));
+    // Island Field Note is earned through real player motion at 90Hz:
+    // swim to a bank, step up and stand on physical island land.
+    await page.evaluate(()=>window.__scurryQA.placeOnTerrain(-146,-29,-Math.PI/2));
+    await page.keyboard.down('w');
+    const islandWalk=await page.evaluate(()=>window.__scurryQA.traceTerrainWalk(600));
+    await page.keyboard.up('w');
+    assert.ok(islandWalk.minMeshClear>=-.03&&islandWalk.penetrations===0,
+      'swim-to-island movement clipped terrain '+JSON.stringify(islandWalk));
+    assert.ok(islandWalk.samples.some(q=>q.x>-139&&q.x<-132&&
+      q.z>-32&&q.z<-26&&q.floor>.12),
+      'island was not physically traversed '+JSON.stringify(islandWalk.end));
+    await page.waitForFunction(()=>{
+      try{return JSON.parse(localStorage.getItem('scurry-field-notes-v1'))?.ids?.includes('duck-island');}
+      catch{return false;}
+    },null,{timeout:10000});
+    console.log('ISLAND LANDFALL '+JSON.stringify({end:islandWalk.end,
+      steps:islandWalk.steps,minMeshClear:islandWalk.minMeshClear}));
     const dock=await page.evaluate(()=>window.__scurryQA.surveySwanDock());
     assert.deepEqual(dock,{solids:14,posts:8,bollards:2,crate:1,signposts:2,deckY:.45},
       'physical dock posts, bollards, coil, crate and signposts must stay registered');

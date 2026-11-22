@@ -521,3 +521,15 @@ no game build step, and physical iOS Safari testing is still required.
   for the first SwiftShader software-rendering capture per scene.
   This is a CI capture deadline adjustment, not physics tolerance,
   screenshot omission, or game frame-rate reduction.
+
+
+## v0.7.7 — Earned Duck Island landfall Field Note
+
+Duck Island is now a navigable atlas pin and 15th persistent discovery.
+The squirrel must be grounded with feet within 38cm of physical island
+terrain, and inside the real shared island polygon, to earn the note.
+The Swan Boat tour, swimming nearby, canopy jumping and remote realms
+cannot credit island landfall. Existing scurry-field-notes-v1 save data
+is retained without migrations or changed ID meanings; players who
+previously completed all 14 notes will find one new discoverable entry.
+No new 3D draw calls, models, imagery, geometry or tutorial overlays.

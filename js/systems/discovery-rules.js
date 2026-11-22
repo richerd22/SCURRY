@@ -2,6 +2,7 @@
 // A tiny optional exploration record, not GPS, quests, or a tutorial.
 export const LANDMARKS = Object.freeze([
   {id:'garden-bridge',x:-132,z:0,r:13,label:'Garden Bridge'},
+  {id:'duck-island',x:-134,z:-31,r:5,label:'Duck Island',island:true},
   {id:'washington',x:-193,z:0,r:12,label:'Washington Statue'},
   {id:'fountain',x:148,z:-70,r:12,label:'Brewer Fountain'},
   {id:'monument',x:60,z:-45,r:16,label:'Soldiers Monument'},
@@ -20,7 +21,7 @@ export const FIELD_NOTES = Object.freeze([
   {id:'esplanade',label:'Charles River Esplanade'},
 ]);
 const REMOTE_FLAGS=['inHollow','inBurrow','inFenway','inGarden','inCityHall','inEsplanade'];
-export function discoverAt(player, groundY, hollowTree) {
+export function discoverAt(player, groundY, hollowTree, isOnIsland=null) {
   if(!player?.pos)return [];
   const found=[];
   const realm=[
@@ -31,8 +32,15 @@ export function discoverAt(player, groundY, hollowTree) {
   if(realm) return [realm[1]];
   const {x,y,z}=player.pos;
   if(![x,y,z].every(Number.isFinite))return [];
-  for(const l of LANDMARKS)if(Math.hypot(x-l.x,z-l.z)<=l.r)
+  for(const l of LANDMARKS){
+    if(Math.hypot(x-l.x,z-l.z)>l.r)continue;
+    // Proximity is not proof of landfall: the island is surrounded by
+    // water and boat riders routinely pass within view of it.
+    if(l.island&&(player.onSwanBoat||player.grounded!==true||
+      typeof isOnIsland!=='function'||!isOnIsland(x,z)||
+      !Number.isFinite(groundY)||Math.abs(y-groundY)>.38))continue;
     found.push(l.id);
+  }
   if(hollowTree && Math.hypot(x-hollowTree.x,z-hollowTree.z)<5)
     found.push('hollow-tree');
   if(Number.isFinite(groundY)&&y-groundY>4.5)
