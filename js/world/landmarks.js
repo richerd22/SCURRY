@@ -630,7 +630,7 @@ function buildParkStreetChurch(scene) {
   scene.add(g);
 }
 
-// --- Public Garden lagoon bridge (1861 suspension bridge) ---
+// --- Public Garden lagoon bridge (completed 1867; stylized geometry) ---
 function buildBridge(scene) {
   const g = new THREE.Group();
   const x = MAP.lagoon.x, z = 0;
@@ -980,8 +980,8 @@ function buildSwanBoats(scene) {
   }
   // Island-cleared north-lobe traffic loops; the moored third craft
   // stays south. None is routed under the bridge before clearance proof.
-  boat({cx:-149,cz:-24,rx:2,rz:7,w:(Math.PI*2)/170,ph:.6});
-  boat({cx:-117,cz:-24,rx:2,rz:7,w:-(Math.PI*2)/190,ph:3.4});
+  boat({cx:-146,cz:-18,rx:1,rz:5,w:(Math.PI*2)/170,ph:.6});
+  boat({cx:-119,cz:-17,rx:1,rz:5,w:-(Math.PI*2)/190,ph:3.4});
   // third boat MOORED at the dock (v0.6.28): the fleet at rest on the
   // south shore west of the bridge - canopy up, waiting on passengers.
   // A drift with zero radii + a fixed yaw (daycycle honours d.yaw);

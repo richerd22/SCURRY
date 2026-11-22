@@ -39,7 +39,7 @@ import { createMobileQualityState, advanceMobileQuality } from './systems/mobile
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
-import { GARDEN_BRIDGE } from './world/garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,lagoonContains,isGardenIsland } from './world/garden-lagoon-layout.js';
 
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
@@ -343,6 +343,8 @@ if (Q.has('shot')) {
     case 'esplanadecanopy': debugEnterEsplanade('canopy'); break; // up the path elm, river below
     case 'esplanadedoor': debugEnterEsplanade('door'); break;    // in the rat market, facing the new RIVERBOUND door
     case 'charlesclose': pose(-59.5, 8, -62, 10, 0.18); break; // Charles St shopfront glass at fence distance
+    case 'gardenisland':
+      pose(-166,-33,-134,-31,0.18);break; // dry west bank toward island
     case 'geese': // real east-west deck, with all three geese in view
       pose(-114,0,-132,0);P.pos.y=GARDEN_BRIDGE.deckY;P.grounded=true;
       break;
@@ -485,6 +487,27 @@ if (qaLocal) {
     // Bridge acceptance: cast rays against the ACTUAL transformed deck
     // and the two approach triangle meshes, never the schematic layout.
     // Compare with the SAME walkSurface solver the squirrel uses.
+    // Actual WebGL water triangles must match the SAME wet/dry oracle
+    // used by player, wildlife, underwater fog and map, including island.
+    surveyGardenLagoon:()=>{
+      scene.updateMatrixWorld(true);
+      const water=scene.children.find(o=>o.userData.scurryLagoonWater);
+      if(!water)throw Error('missing triangulated Garden lagoon');
+      const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
+      let count=0,mismatches=0,waterHits=0,islandHits=0,worst=null;
+      for(let x=-164;x<=-100;x+=2)for(let z=-57;z<=57;z+=2){
+        ray.set(new THREE.Vector3(x,5,z),down);
+        const hit=ray.intersectObject(water,false)[0];
+        const expected=lagoonContains(x,z),rendered=!!hit;
+        if(expected)waterHits++;
+        if(isGardenIsland(x,z))islandHits++;
+        if(expected!==rendered){mismatches++;worst={x,z,expected,rendered};}
+        if(hit&&Math.abs(hit.point.y-.02)>.001)
+          throw Error('visible lake surface is at incorrect Y');
+        count++;
+      }
+      return {count,mismatches,waterHits,islandHits,worst};
+    },
     surveyGardenBridge:()=>{
       scene.updateMatrixWorld(true);
       const meshes=[];

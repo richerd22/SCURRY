@@ -48,9 +48,15 @@ export function lagoonWaterClearance(x,z){
    shoreDistance(x,z,GARDEN_ISLAND_SHORE));
 }
 export function lagoonContains(x,z,margin=0){
- return Number.isFinite(margin)&&margin>=0&&lagoonWaterClearance(x,z)>margin;
+ if(!Number.isFinite(x)||!Number.isFinite(z)||!Number.isFinite(margin)||margin<0)return false;
+ // Reject nearly the entire city BEFORE walking a 96-edge polygon.
+ if(Math.abs(x+132)>31||Math.abs(z)>61)return false;
+ if(margin===0)return insideShoreRing(x,z,GARDEN_LAGOON_SHORE)&&
+   !isGardenIsland(x,z);
+ return lagoonWaterClearance(x,z)>margin;
 }
 export function lagoonBasin(x,z){
+ if(Math.abs(x+132)>31||Math.abs(z)>61)return 0;
  if(isGardenIsland(x,z))return -.34; // exposed, traversable terrain
  if(!insideShoreRing(x,z,GARDEN_LAGOON_SHORE))return 0;
  return .6*Math.min(1,shoreDistance(x,z,GARDEN_LAGOON_SHORE)/8);

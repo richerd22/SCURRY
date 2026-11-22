@@ -221,3 +221,24 @@ The first goose-height tightening commit failed fast CI (not browser) because te
 ## One exact food-bob regression adjustment
 
 The additional runtime food-on-planks test initially failed 1 of 171 checks because the assertion required rendered food to remain *exactly* 1.200 metres after updateFood. Production intentionally adds a sinusoidal ±8 mm pickup-glint bob; the dedicated mesh-visual test now asserts the actual tight ≤8.001 mm envelope while separately keeping floorY fixed at exactly 1.15m. This fixes a wrong expected rendered pose without changing gameplay, lowering floor accuracy or deleting a test.
+
+
+### Garden Phase II — living island + unified shoreline (feature branch)
+
+- Authored a 96-edge organic lagoon polygon and a 32-edge island hole,
+  explicitly situated north of the east/west bridge. Historic Garden aerial
+  and TCLF support a real island (former northern peninsula); the proportions
+  remain artistic local metres, not a survey.
+- One shoreline controls water mesh triangles, exposed terrain, substrate
+  paint, the map, underwater fog, wildlife wet feet, curbstone locations,
+  and boat full-hull safety margins. Island is physically raised terrain
+  with no water plane over it; not a transparent decal.
+- Adjusted BOTH drifting north-lobe Swan Boats to stay more than 5m clear
+  of the island and shoreline. South-lobe passenger tour remains confined
+  below the bridge because the drawn swan head/canopy cannot clear the
+  current underside; under-bridge routing is a separately gated Phase II
+  milestone (issue #11). Do not enable it without real mesh-to-mesh proof.
+- Runtime QA independently raycasts more than 1,600 actual THREE water
+  mesh samples against the water/island hit predicate and includes the
+  new Garden island camera in visual CI. These checks are not a substitute
+  for physical iOS Safari testing.

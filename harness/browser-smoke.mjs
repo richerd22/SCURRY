@@ -124,6 +124,11 @@ async function checkGameplay() {
     await page.locator('#title').click({timeout:30000});
     await page.waitForFunction(() => window.__scurryQA.state().started, null, {timeout:15000});
     const start = await get();
+    const lagoon=await page.evaluate(()=>window.__scurryQA.surveyGardenLagoon());
+    assert.ok(lagoon.count>1600,'lagoon 3D water/island sampling density');
+    assert.ok(lagoon.waterHits>250&&lagoon.islandHits>8,'island hole and lake sampled');
+    assert.equal(lagoon.mismatches,0,
+      'painted lagoon vs real water triangles disagree: '+JSON.stringify(lagoon));
     const bridge=await page.evaluate(()=>window.__scurryQA.surveyGardenBridge());
     assert.equal(bridge.count,225,'bridge deck + both ramps at 75 × 3 positions');
     assert.ok(bridge.maxAbsDiff<.015,
@@ -643,6 +648,7 @@ try {
   if (suite==='all'||suite==='visuals') {
     await checkScene('spawn');
     await checkScene('garden');
+    await checkScene('gardenisland');
     // These are separate from the physics raycast: preserve visual
     // evidence of the correctly oriented crossing and dry south dock.
     await checkScene('bridge');
