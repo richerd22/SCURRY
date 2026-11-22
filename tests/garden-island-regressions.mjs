@@ -84,7 +84,6 @@ test('island shores grade to waterline continuously and are physically climbable
 test('shore-side under-water shelf preserves island floor across 2.9m terrain-grid triangles',()=>{
  // Analytic basin must stay 0m deep for 2.8m outside the island ring,
  // so interpolated vertices do not drag a dry island into deep water.
- const {GARDEN_ISLAND_SHORE}=await load('../js/world/garden-lagoon-layout.js');
  const c=[-134,-31];
  for(const [x,z] of GARDEN_ISLAND_SHORE.slice(0).filter((p,i)=>i%4===0)){
   const vx=x-c[0],vz=z-c[1],d=Math.hypot(vx,vz);
