@@ -705,15 +705,17 @@ if (qaLocal) {
     supportTargets: () => {
       const canopy=S.platforms.find(s=>s.y>5 && s.r>2 && S.trees.some(t=>
         Math.abs(t.x-s.x)<.001 && Math.abs(t.z-s.z)<.001));
-      const bridge=S.platformBoxes.find(s=>Math.abs(s.y-1.15)<.001 &&
-        s.maxX-s.minX>40&&s.maxZ-s.minZ>4);
+      const bridge=S.platformBoxes.find(s=>s.isGardenBridgeSurface&&
+        Number.isFinite(s.y0)&&Number.isFinite(s.y1)&&
+        s.y0>4.5&&s.y1>4.5&&s.maxZ-s.minZ>4);
       const fence=S.platformSegments.find(s=>Number.isFinite(s.y0) &&
         Number.isFinite(s.y1) && Math.hypot(s.x1-s.x0,s.z1-s.z0)>1.4);
       if (!canopy || !bridge || !fence)throw new Error('missing real support registries');
       const dx=fence.x1-fence.x0,dz=fence.z1-fence.z0;
       return [
         {name:'registered canopy',x:canopy.x,y:canopy.y,z:canopy.z,yaw:0,steps:30},
-        {name:'Garden bridge',x:(bridge.minX+bridge.maxX)/2,y:bridge.y,
+        {name:'Garden bridge',x:(bridge.minX+bridge.maxX)/2,
+          y:boxSurfaceHeight(bridge,(bridge.minX+bridge.maxX)/2),
           z:(bridge.minZ+bridge.maxZ)/2,yaw:-Math.PI/2,steps:55},
         {name:'graded iron top',x:(fence.x0+fence.x1)/2,
           z:(fence.z0+fence.z1)/2,y:(fence.y0+fence.y1)/2,

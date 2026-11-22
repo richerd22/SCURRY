@@ -123,3 +123,11 @@ test('dropped bridge snacks land on real raised planks, not submerged soil',()=>
  assert.match(food,/gardenBridgeDeck\(P\.x,P\.z,P\.y\)&&gardenBridgeDeck\(x,z\)/);
  assert.match(food,/onDeck\?\{y:gardenBridgeHeight\(x\)\}:\{\}/);
 });
+
+test('elevated physics smoke selects actual registered 4.55m arch strip, not old flat bridge',()=>{
+ const src=readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
+ assert.match(src,/s\.isGardenBridgeSurface&&/);
+ assert.match(src,/s\.y0>4\.5&&s\.y1>4\.5/);
+ assert.match(src,/y:boxSurfaceHeight\(bridge,/);
+ assert.doesNotMatch(src,/Math\.abs\(s\.y-1\.15\)/);
+});
