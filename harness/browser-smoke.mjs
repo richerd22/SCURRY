@@ -128,6 +128,11 @@ async function checkGameplay() {
     assert.equal(fleet.length,3,'actual 3-boat fleet');
     for(const b of fleet){
       assert.equal(b.seats,5);assert.equal(b.backs,5);assert.equal(b.hulls,1);
+      assert.equal(b.passengers,20,'real five benches have four rider silhouettes each');
+      assert.equal(b.passengerHeads,20,'every rendered torso has a visible head');
+      assert.equal(b.pedalFeet,2,'stern operator has both real pedal shoe geometries');
+      assert.ok(b.pedalSeparation>.2,
+        'two pedals should oppose instead of both hovering in one static pose');
       assert.equal(b.seatColor,0xa93529);assert.equal(b.hullColor,0x275a40);
       assert.equal(b.roofMeshCount,0);
       assert.ok(b.height>2.1&&b.height<3.1,

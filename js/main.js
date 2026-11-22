@@ -513,7 +513,15 @@ if (qaLocal) {
         const backs=boat.children.filter(m=>m.userData.scurrySwanSeatBack);
         const hulls=boat.children.filter(m=>m.userData.scurrySwanHull);
         const bounds=new THREE.Box3().setFromObject(boat);
+        const passengers=boat.children.find(m=>m.userData.scurrySwanPassengerTorso);
+        const heads=boat.children.find(m=>m.userData.scurrySwanPassengerHead);
+        const feet=boat.userData.operator?.userData.pedalFeet||[];
+        const delta=feet.length===2?Math.hypot(
+          feet[0].position.y-feet[1].position.y,
+          feet[0].position.z-feet[1].position.z):0;
         return {seats:seats.length,backs:backs.length,hulls:hulls.length,
+          passengers:passengers?.count??0,passengerHeads:heads?.count??0,
+          pedalFeet:feet.length,pedalSeparation:delta,
           seatColor:seats[0]?.material.color.getHex(),
           hullColor:hulls[0]?.material.color.getHex(),
           height:bounds.max.y-bounds.min.y,

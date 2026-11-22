@@ -927,9 +927,9 @@ function buildSwanBoats(scene) {
       for(const pz of [-2.7,-1.6,-.5,.6,1.7,2.6])
         box(.07,.6,.07,darkWood,sx,1.13,pz,g,false);
     }
-    // Real boats carry people. Ten lightweight human silhouettes on the
-    // five existing bench rows; two instanced draws per hull instead of
-    // 20 separate model loads or hundreds of meshes.
+    // Actual operator literature: five rows hold ~20 guests. Four
+    // distinct people per bench remain TWO shared instanced draw calls,
+    // not 120 independent meshes across this three-boat game fleet.
     const shape=new THREE.SphereGeometry(1,8,6);
     const torsos=new THREE.InstancedMesh(shape,new THREE.MeshStandardMaterial({
       color:0xffffff,roughness:1}),SWAN_SEATS.length);
@@ -948,6 +948,8 @@ function buildSwanBoats(scene) {
       const skinIndex=(((i+Math.floor(drift.ph*10))%skins.length)+skins.length)%skins.length;
       heads.setColorAt(i,new THREE.Color(skins[skinIndex]));
     });
+    torsos.userData.scurrySwanPassengerTorso=true;
+    heads.userData.scurrySwanPassengerHead=true;
     torsos.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
     if(torsos.instanceColor)torsos.instanceColor.needsUpdate=true;
     if(heads.instanceColor)heads.instanceColor.needsUpdate=true;
@@ -963,6 +965,20 @@ function buildSwanBoats(scene) {
       new THREE.MeshStandardMaterial({color:0xb88b69,roughness:1}));
     crewFace.position.set(0,1.84,-.08);operator.add(crewFace);
     box(.34,.08,.28,darkWood,0,2.0,-.07,operator,false);
+    // A tiny real pedalling rig in front of the operator's shoes. The
+    // historic pedal wheel is hidden under the swan; do not fabricate an
+    // external wheel. Two shoes cycle opposite one another, anchored
+    // to actual visible geometries via daycycle's shared pure crank rule.
+    const axle=cyl(.045,.045,.45,cableMat,0,.87,-.22,operator,8);
+    axle.rotation.z=Math.PI/2;
+    const pedalFeet=[];
+    for(const side of [0,1]){
+      const foot=box(.20,.13,.36,darkWood,side?+.18:-.18,
+        side?.74:.98,-.22,operator);
+      foot.userData.scurrySwanPedalFoot=true;
+      pedalFeet.push(foot);
+    }
+    operator.userData.pedalFeet=pedalFeet;
     g.add(operator);g.userData.operator=operator;
     // stern deck the swan rides on
     box(3.3, 0.14, 1.7, deckMat, 0, 0.8, 3.85, g);
