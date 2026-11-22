@@ -4,7 +4,7 @@ import { test } from 'node:test';
 const src=readFileSync(new URL('../js/systems/swan-ride-rules.js',import.meta.url),'utf8');
 const layoutSrc=readFileSync(new URL('../js/world/garden-lagoon-layout.js',import.meta.url),'utf8');
 const {lagoonWaterClearance}=await import('data:text/javascript;base64,'+Buffer.from(layoutSrc).toString('base64'));
-const {swanRidePose,SWAN_RIDE_SECONDS,SWAN_DOCK}=await import(
+const {swanRidePose,SWAN_RIDE_SECONDS,SWAN_DOCK,SWAN_ROUTE_LENGTH}=await import(
   'data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 test('swan boat tour is finite and returns exactly to its real dock',()=>{
   const a=swanRidePose(0),b=swanRidePose(1);
@@ -76,4 +76,21 @@ test('14 real swan dock solid obstacles protect the visible fixtures',()=>{
  assert.match(harness,/solids:14,posts:8,bollards:2,crate:1,signposts:2/);
  assert.match(main,/pose\(-143\.3,46\.8,-140,44/);
  assert.match(main,/pose\(-118,-7,-132,1/);
+});
+
+test('pedal boat advances with near-constant arc length, not per-control-point speed',()=>{
+ assert.ok(SWAN_ROUTE_LENGTH>180&&SWAN_ROUTE_LENGTH<230);
+ assert.equal(SWAN_RIDE_SECONDS,56);
+ const deltas=[];
+ for(let i=0;i<1000;i++){
+  const a=swanRidePose(i/1000),b=swanRidePose((i+1)/1000);
+  deltas.push(Math.hypot(a.x-b.x,a.z-b.z));
+ }
+ const ideal=SWAN_ROUTE_LENGTH/1000;
+ assert.ok(deltas.every(d=>Math.abs(d-ideal)<ideal*.035),
+  'boat accelerated at a control-point boundary');
+ const a=swanRidePose(0),b=swanRidePose(1);
+ assert.ok(Math.hypot(a.x-b.x,a.z-b.z)<.000001,'tour must close at exact dock');
+ const yawDelta=Math.atan2(Math.sin(a.yaw-b.yaw),Math.cos(a.yaw-b.yaw));
+ assert.ok(Math.abs(yawDelta)<.02,'avoid yaw snap at end of tour');
 });

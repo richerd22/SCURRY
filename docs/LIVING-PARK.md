@@ -363,3 +363,18 @@ Each shares the corresponding physical artwork X/Z/Y extents; the old
 real standable dock deck remains at Y0.45m and is unchanged. A runtime
 QA survey independently checks all 14 live colliders and deck height,
 with the original full 56-second ride/boarding/exit suite still required.
+
+### Swan Boat pacing — continuous arc-length traversal
+
+The original CatmullRom route parameter divided 56 seconds evenly among
+22 unevenly spaced control points; that inadvertently accelerated the
+pedal boat through long stretches and decelerated it around the island.
+The redesigned pure swan-ride-rules.js calculates a 1,409-entry
+cumulative arc-length lookup once at module initialization, binary
+searches target travelled distance per update, and interpolates the
+original spline parameter. This changes neither the water route geometry
+nor the timing, dock, physical hull corridor or camera action. It
+keeps world-space speed approximately 3.68m/s (intentionally
+game-compressed versus the real 15-minute public ride), and a pure
+Node regression enforces under 3.5% step-to-step chord speed variance
+across 1,000 time samples, with a closed positional/heading seam.
