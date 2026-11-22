@@ -511,3 +511,13 @@ no game build step, and physical iOS Safari testing is still required.
   greenMetal (same scene color language), and a new cross-scope
   source regression locks the fix. No merge while the latest real
   browser scene boot/interaction suite is unverified.
+
+- A **production v0.7.5 main** Chromium visual rerun reported
+  two PLAYWRIGHT screenshot timeouts at the default 30s, while the
+  other seven visuals, the full live gameplay suite, Pages deploy
+  and source/physics gates passed. It reported NO JS or WebGL errors.
+  The exact failed visual job was retried independently; this PR's
+  visual harness keeps every screenshot mandatory but grants 60s
+  for the first SwiftShader software-rendering capture per scene.
+  This is a CI capture deadline adjustment, not physics tolerance,
+  screenshot omission, or game frame-rate reduction.

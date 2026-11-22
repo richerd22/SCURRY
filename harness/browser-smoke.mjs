@@ -63,7 +63,11 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     assert.ok(info.width > 0 && info.height > 0, title + ': invalid drawing buffer');
     assert.ok(info.hud && info.map && info.version, title + ': HUD/map or version missing');
     assert.equal(info.touch, mobile, title + ': touch controls do not match device');
-    await page.screenshot({ path: out + '/' + title + '.png', animations: 'disabled' });
+    // SwiftShader screenshots occasionally need >30s when other WebGL
+    // CI workers share a saturated runner. Keep the actual screenshot
+    // mandatory; only extend the I/O deadline, never skip visual proof.
+    await page.screenshot({ path: out + '/' + title + '.png',
+      animations: 'disabled', timeout: 60000 });
     if (mobile) {
       await page.locator('#map-toggle').tap();
       assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'), 'true');
