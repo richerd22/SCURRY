@@ -39,13 +39,13 @@ async function harness() {
   globalThis.__foodTest = { THREE, S, audio, toast(){}, setGossip(){},
     setCarriedVisual(){}, groundHeight(){ return 0; },
     isGrass(x,z){ return x>=0 && z>=0; },
-    GARDEN_BRIDGE:lagoon.GARDEN_BRIDGE,gardenBridgeDeck:lagoon.gardenBridgeDeck };
+    gardenBridgeDeck:lagoon.gardenBridgeDeck,gardenBridgeHeight:lagoon.gardenBridgeHeight };
   const body = source.replace("import * as THREE from 'three';", 'const THREE = globalThis.__foodTest.THREE;')
     .replace("import { S } from '../state.js';", 'const S = globalThis.__foodTest.S;')
     .replace("import { groundHeight, isGrass } from '../world/world.js';",
       'const {groundHeight,isGrass} = globalThis.__foodTest;')
-    .replace("import { GARDEN_BRIDGE, gardenBridgeDeck } from '../world/garden-lagoon-layout.js';",
-      'const {GARDEN_BRIDGE,gardenBridgeDeck} = globalThis.__foodTest;')
+    .replace("import { gardenBridgeDeck,gardenBridgeHeight } from '../world/garden-lagoon-layout.js';",
+      'const {gardenBridgeDeck,gardenBridgeHeight} = globalThis.__foodTest;')
     .replace("import { sfx } from './audio.js';", 'const sfx = globalThis.__foodTest.audio;')
     .replace("import { toast, setGossip } from '../ui/hud.js';",
       'const {toast,setGossip} = globalThis.__foodTest;')
@@ -167,18 +167,19 @@ test('nearest food reports actual distance for prompt priority', async () => {
 test('actual bridge plank drops stay raised but food over a rail lands below',async()=>{
  const h=await harness();
  const b=h.S.player.pos;
- b.set(-132,1.15,0);h.S.carried='acorn';
+ const crest=4.55;
+ b.set(-132,crest,0);h.S.carried='acorn';
  const deck=h.dropCarried();
- assert.equal(deck.floorY,1.15,'food released on bridge stays on planks');
- assert.ok(Math.abs(deck.mesh.position.y-1.2)<.001);
+ assert.equal(deck.floorY,crest,'food released on actual arched planks');
+ assert.ok(Math.abs(deck.mesh.position.y-crest-.05)<.001);
  h.updateFood(.016);
  // updateFood intentionally applies a ±8mm pickup-glint bob to ALL
  // non-stolen food. Preserve that visible motion while never losing
  // the real raised support sampled at spawn.
- assert.ok(Math.abs(deck.mesh.position.y-1.2)<=.008001,
+ assert.ok(Math.abs(deck.mesh.position.y-(crest+.05))<=.008001,
    'raised bridge food must only move within intentional 8mm visual glint');
- assert.equal(deck.floorY,1.15,'food physics floor never changes with bob');
- b.set(-132,1.15,2.9);h.S.carried='peanut';
+ assert.equal(deck.floorY,crest,'food physics floor never changes with bob');
+ b.set(-132,crest,2.9);h.S.carried='peanut';
  const outside=h.dropCarried();
  assert.equal(outside.floorY,0,'over-rail food falls to ground, never floats');
  b.set(-132,0,0);h.S.carried='peanut';

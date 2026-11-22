@@ -42,9 +42,9 @@ test('actual source explicitly rotates visible deck, rail solids and goose actio
  const landmarks=readFileSync(new URL('../js/world/landmarks.js',import.meta.url),'utf8');
  const geese=readFileSync(new URL('../js/systems/geese.js',import.meta.url),'utf8');
  const state=readFileSync(new URL('../js/state.js',import.meta.url),'utf8');
- assert.match(landmarks,/g\.rotation\.y=Math\.PI\/2/);
- assert.match(landmarks,/GARDEN_BRIDGE\.scaleLength/);
- assert.match(landmarks,/minX:x-h,maxX:x\+h,minZ:-B\.halfWidth/);
+ assert.match(landmarks,/sheet\(0,deckMat,'scurryGardenBridgeSurface'\)/);
+ assert.match(landmarks,/sheet\(-b\.deckThickness,deckMat,'scurryGardenBridgeUnderside'\)/);
+ assert.match(landmarks,/S\.platformBoxes\.push\(\{minX:x0,maxX:x1,minZ:-w,maxZ:w/);
  assert.match(geese,/gardenBridgeDeck\(P\.pos\.x,P\.pos\.z,P\.pos\.y\)/);
  assert.match(geese,/gardenBridgeLanding/);
  assert.match(state,/lagoon:\s*\{\s*x:\s*-132,\s*z:\s*0,\s*rx:\s*26,\s*rz:\s*54\s*\}/);

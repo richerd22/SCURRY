@@ -39,7 +39,7 @@ import { createMobileQualityState, advanceMobileQuality } from './systems/mobile
 import { whenModelsSettled } from './systems/models.js';
 import { groundHeight, visibleGroundHeight } from './world/world.js';
 import { BREWER_FOUNTAIN, PARK_ST_HEADHOUSE, PARK_ST_ENTRY } from './world/boston-landmark-layout.js';
-import { GARDEN_BRIDGE,lagoonContains,isGardenIsland } from './world/garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,gardenBridgeHeight,lagoonContains,isGardenIsland } from './world/garden-lagoon-layout.js';
 
 // ---------- device class ----------
 // Touch = coarse pointer, a touch screen, or ?touch=1 (verification hook).
@@ -346,7 +346,7 @@ if (Q.has('shot')) {
     case 'gardenisland':
       pose(-166,-33,-134,-31,0.18);break; // dry west bank toward island
     case 'geese': // real east-west deck, with all three geese in view
-      pose(-114,0,-132,0);P.pos.y=GARDEN_BRIDGE.deckY;P.grounded=true;
+      pose(-114,0,-132,0);P.pos.y=gardenBridgeHeight(-114);P.grounded=true;
       break;
     case 'crow': // by the pretzel cart; crows.js freezes crow #0 mid-swoop in front
       pose(124.5, 52.5, 128, 56);
@@ -539,7 +539,7 @@ if (qaLocal) {
         if(o.isMesh&&o.userData.scurryGardenBridgeSurface)meshes.push(o);
       });
       const supports=S.platformBoxes.filter(b=>b.isGardenBridgeSurface);
-      if(meshes.length!==3||supports.length!==3)
+      if(meshes.length!==3||supports.length!==50)
         throw Error('Garden bridge meshes/supports not registered: '+meshes.length+'/'+supports.length);
       const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
       const origin=new THREE.Vector3();
@@ -553,7 +553,7 @@ if (qaLocal) {
             z>=s.minZ&&z<=s.maxZ);
           if(!eligible.length)throw Error('missing bridge collider at '+x+','+z);
           const declared=Math.max(...eligible.map(s=>boxSurfaceHeight(s,x)));
-          const solver=walkSurface(x,z,b.deckY,1.5,
+          const solver=walkSurface(x,z,declared,1.5,
             visibleGroundHeight(x,z),S.platforms,S.platformBoxes,S.platformSegments);
           origin.set(x,25,z);ray.set(origin,down);
           const hit=ray.intersectObjects(meshes,false)[0];

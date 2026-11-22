@@ -171,8 +171,9 @@ async function checkGameplay() {
       assert.ok(crossing.nonGround<80,
         'approach ramp launches squirrel into air: '+JSON.stringify(crossing));
       const onDeck=crossing.samples.filter(s=>s.x>-147&&s.x<-117);
-      assert.ok(onDeck.length>8&&onDeck.every(s=>s.feet>1.07),
-        'squirrel did not really stand on bridge deck: '+JSON.stringify(onDeck));
+      assert.ok(onDeck.length>8&&onDeck.every(s=>s.feet>1.07)&&
+        onDeck.some(s=>s.feet>4.4),
+        'squirrel did not walk to real 4.55m bridge crest: '+JSON.stringify(onDeck));
     }
     await page.evaluate(()=>window.__scurryQA.placeOnTerrain(24,30,-2.2));
     await page.keyboard.down('w');

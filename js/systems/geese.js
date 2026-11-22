@@ -26,7 +26,7 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { GARDEN_BRIDGE, gardenBridgeDeck, gardenBridgeLanding } from '../world/garden-lagoon-layout.js';
+import { GARDEN_BRIDGE,gardenBridgeDeck,gardenBridgeLanding,gardenBridgeHeight } from '../world/garden-lagoon-layout.js';
 import { groundHeight } from '../world/world.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
@@ -80,7 +80,6 @@ const POSTS = [
 ];
 
 let geese = [];
-let deckY = 0.55;
 
 // flock-shared state: one alert level for the whole flock, individual
 // states per goose (in each goose record below)
@@ -197,26 +196,20 @@ function railZ(g) {
 // ------------------------------------------------------------------ build
 export function buildGeese(scene) {
   geese = [];
-  // the deck height comes from the bridge's own walkable box (landmarks.js
-  // registers it); fall back to a plausible deck if it is somehow missing
-  deckY = 0.55;
-  for (const b of S.platformBoxes || []) {
-    if (BRIDGE_X >= b.minX && BRIDGE_X <= b.maxX && 0 >= b.minZ && 0 <= b.maxZ) {
-      deckY = b.y;
-      break;
-    }
-  }
+  // Exact same continuous arch height as every visible triangle and
+  // walkable platform strip. The old one-size deckY made geese float
+  // or clip through the newly arched bridge.
   if (typeof S.gooseWarn !== 'number') S.gooseWarn = 0;
 
   for (let i = 0; i < POSTS.length; i++) {
     const [x, z, yaw] = POSTS[i];
     const mesh = makeGooseMesh();
-    mesh.position.set(x, deckY, z);
+    mesh.position.set(x,gardenBridgeHeight(x),z);
     mesh.rotation.y = yaw;
     scene.add(mesh);
     geese.push({
       mesh,
-      pos: new THREE.Vector3(x, deckY, z), // feet on the deck, always deckY
+      pos: new THREE.Vector3(x,gardenBridgeHeight(x),z), // real arched planks
       home: { x, z },
       yaw,
       phase: Math.random() * 9,            // idle animation offset
@@ -263,7 +256,7 @@ function faceYaw(g, targetYaw, dt, rate) {
 
 // steer toward (tx, tz) on the deck plane; returns distance remaining.
 // Geese never leave the deck: the target and the result are both clamped
-// to it, and pos.y is pinned to deckY no matter what.
+// to it, and pos.y follows physical arch as the bird waddles.
 function moveToward(g, tx, tz, speed, dt) {
   const cx=Math.max(BRIDGE_X-DECK_HALF_L+.3,
     Math.min(BRIDGE_X+DECK_HALF_L-.3,tx));
@@ -276,7 +269,7 @@ function moveToward(g, tx, tz, speed, dt) {
     g.pos.z += dz / d * step;
     faceYaw(g, Math.atan2(dx, dz), dt, 8);
   }
-  g.pos.y = deckY;
+  g.pos.y = gardenBridgeHeight(g.pos.x);
   return d;
 }
 
