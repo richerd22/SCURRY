@@ -22,7 +22,7 @@ const browser = await chromium.launch({
     '--disable-gpu-sandbox',
   ],
 });
-async function checkScene(pose, mobile = false, eye = 0.25) {
+async function checkScene(pose, mobile = false, eye = 0.25, offlineArena = false) {
   const context = await browser.newContext({
     viewport: mobile ? { width: 390, height: 844 } : { width: 1024, height: 720 },
     deviceScaleFactor: 1,
@@ -30,6 +30,7 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     hasTouch: mobile,
   });
   const page = await context.newPage();
+  if(offlineArena)await page.route('**/assets/models/garden.glb',route=>route.abort('failed'));
   const largeHoodRequests=[],arenaRequests=[];
   page.on('request',request=>{
     if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
@@ -38,7 +39,7 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
       arenaRequests.push(request.url());
   });
   const title = (mobile ? 'mobile-' : 'desktop-') + pose +
-    (eye!==0.25 ? '-human-eye' : '');
+    (eye!==0.25 ? '-human-eye' : '')+(offlineArena?'-offline':'');
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
   page.on('console', m => {
     if (m.type() === 'error') faults.push(title + ': console ' + m.text());
@@ -46,7 +47,7 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
   try {
     const url = base + '/?shot=' + encodeURIComponent(pose) + '&lowq=1&t=17.6' +
       '&eye=' + eye +
-      (mobile ? '&touch=1' : '');
+      (mobile ? '&touch=1' : '')+(offlineArena?'&qa=1':'');
     const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     assert.equal(response?.status(), 200, title + ': static page must load');
     await page.waitForFunction(() => window.__scurryReady === true, null,
@@ -64,6 +65,8 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
         version,
         map: !!document.getElementById('map-panel'),
         touch: getComputedStyle(document.getElementById('touchui')).display !== 'none',
+        arenaAsset:window.__scurryQA?.state()?.gardenAssetStatus??null,
+        arenaFloor:window.__scurryQA?.state()?.floor??null,
       };
     });
     assert.ok(info.canvas && info.webgl, title + ': missing WebGL canvas');
@@ -78,6 +81,12 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     }
     if(pose.startsWith('tdgarden'))assert.equal(arenaRequests.length,1,
       'explicit Garden screenshot must load real arena exactly once');
+    if(offlineArena){
+      assert.equal(info.arenaAsset,'fallback',
+        'blocked TD Garden network must leave a usable procedural arena');
+      assert.ok(Math.abs(info.arenaFloor??Infinity)<.001,
+        'offline court fallback must be real y=0 player floor');
+    }
     if(pose==='fenwayhood')assert.equal(largeHoodRequests.length,1,
       'Fenway hood screenshot failed to demand-load its real building model');
     // SwiftShader screenshots occasionally need >30s when other WebGL
@@ -789,6 +798,7 @@ try {
     await checkScene('spawn');
     await checkScene('garden');
     await checkScene('tdgarden');
+    await checkScene('tdgarden',false,.25,true);
     await checkScene('fenwayhood');
     await checkScene('gardenisland');
     await checkScene('swanunderpass');
