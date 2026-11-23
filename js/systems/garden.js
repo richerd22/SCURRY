@@ -184,53 +184,12 @@ export function buildGarden(scene) {
     scene.add(L);
   }
 
-  // the building itself: async, best-effort, exactly like every other
-  // sourced model in this game. Through v0.6.25 this load was GATED
-  // (RELEASED=false) while the model was license-held: an un-gated
-  // request would have 404'd on every boot of the live site and
-  // logged a console resource error for every player, and this
-  // game's bar is a clean console. RELEASED Nov 17 2026 on the
-  // project owner's explicit decision, with the GLB dropped at
-  // assets/models/garden.glb. (The harness window flag remains as a
-  // local-proof path; it is no longer needed.)
-  const RELEASED = true;
-  if (RELEASED || (typeof window !== 'undefined' && window.__scurryGardenAsset)) {
-    loadModel('assets/models/garden.glb').then((tpl) => {
-    if (!tpl) return;
-    const park = tpl.scene;
-    park.scale.setScalar(SCALE);
-    park.position.set(GDN.x + T.x, -0.02 * SCALE, GDN.z + T.z);
-    park.traverse((o) => {
-      if (o.isMesh) {
-        // interior: receive the arena light, don't cast - the roof
-        // would eat the shadow budget and the sun has no business
-        // in here anyway
-        o.castShadow = false;
-        o.receiveShadow = true;
-        // the screens glow like screens, day or night
-        const mn = (o.material && o.material.name) || '';
-        if (mn === 'Celtics_Jumbotron' || mn === 'celticslogo' || mn === 'celtics') {
-          o.material.emissive = new THREE.Color(0xffffff);
-          if (o.material.map) o.material.emissiveMap = o.material.map;
-          o.material.emissiveIntensity = mn === 'Celtics_Jumbotron' ? 0.55 : 0.3;
-        }
-      }
-    });
-    scene.add(park);
-    sampleHeights(park);
-    // a little life: the crowd that isn't here drops things anyway.
-    // Caps ride the burrows machinery, food rides food.js - the
-    // trophy cap sits on the centre-court logo, because of course.
-    spawnCapAt(GDN.x + 0, GDN.z + 0.85, gridGround(0, 0.85) + 0.04, 30);
-    spawnCapAt(GDN.x + 13.5, GDN.z + 0, gridGround(13.5, 0) + 0.04, 31);
-    spawnCapAt(GDN.x - 13.5, GDN.z + 0, gridGround(-13.5, 0) + 0.04, 32);
-    spawnCapAt(GDN.x - 30, GDN.z - 24, gridGround(-30, -24) + 0.04, 33);
-    spawnCapAt(GDN.x + 24, GDN.z + 30, gridGround(24, 30) + 0.04, 34);
-    spawnFood('popcorn', GDN.x + 6.5, GDN.z + 3.4, { y: gridGround(6.5, 3.4) + 0.05 });
-    spawnFood('popcorn', GDN.x - 2.5, GDN.z - 5.5, { y: gridGround(-2.5, -5.5) + 0.05 });
-    spawnFood('peanut', GDN.x + 11, GDN.z - 6.2, { y: gridGround(11, -6.2) + 0.05 });
-    });
-  }
+  // Garden model is 6.66 MiB / ~159k source triangles. Construct the
+  // procedural arena immediately, but defer the GLB until a real portal
+  // visit or an explicitly requested TD Garden screenshot.
+  gardenScene=scene;
+  S.ensureGardenModel=ensureGardenModel;
+  S.gardenAssetStatus='idle';
 
   // the burrow-side door: a dark mouth on the market's WEST wall
   // (the stall owns the north wall, Fenway owns the east). TUN coords,
@@ -252,6 +211,67 @@ export function buildGarden(scene) {
   scene.add(door);
 }
 
+
+// The model's height grid is inseparable from its visual parquet/tiers.
+// Never enable loaded triangles while the player's feet are grounded on
+// fallback y=0: doing so could snap or bury them on a delayed network.
+// Hold the completed model until exit, then activate for the NEXT E entry.
+// Screenshot-only camera routes deliberately opt into immediate activation.
+let gardenScene=null,gardenLoad=null,gardenWaiting=null,gardenInstalled=false;
+export function ensureGardenModel({screenshot=false}={}){
+ if(!gardenScene)return Promise.resolve(null);
+ if(gardenLoad)return gardenLoad;
+ S.gardenAssetStatus='loading';
+ gardenLoad=loadModel('assets/models/garden.glb').then(tpl=>{
+  if(!tpl){S.gardenAssetStatus='fallback';return null;}
+  gardenWaiting=tpl;
+  if(screenshot||!S.player.inGarden)commitGardenModel();
+  else S.gardenAssetStatus='deferred-floor';
+  return tpl;
+ });
+ return gardenLoad;
+}
+function commitGardenModel(){
+ if(gardenInstalled||!gardenWaiting)return;
+ const tpl=gardenWaiting;
+ gardenWaiting=null;gardenInstalled=true;
+ // Sample the physical arena BEFORE exposing its corresponding model.
+ // A single fixed fallback plane remains in use during any live visit.
+ const park = tpl.scene;
+ park.scale.setScalar(SCALE);
+ park.position.set(GDN.x + T.x, -0.02 * SCALE, GDN.z + T.z);
+ park.traverse((o) => {
+   if (o.isMesh) {
+     // interior: receive the arena light, don't cast - the roof
+     // would eat the shadow budget and the sun has no business
+     // in here anyway
+     o.castShadow = false;
+     o.receiveShadow = true;
+     // the screens glow like screens, day or night
+     const mn = (o.material && o.material.name) || '';
+     if (mn === 'Celtics_Jumbotron' || mn === 'celticslogo' || mn === 'celtics') {
+       o.material.emissive = new THREE.Color(0xffffff);
+       if (o.material.map) o.material.emissiveMap = o.material.map;
+       o.material.emissiveIntensity = mn === 'Celtics_Jumbotron' ? 0.55 : 0.3;
+     }
+   }
+ });
+ scene.add(park);
+ sampleHeights(park);
+ // a little life: the crowd that isn't here drops things anyway.
+ // Caps ride the burrows machinery, food rides food.js - the
+ // trophy cap sits on the centre-court logo, because of course.
+ spawnCapAt(GDN.x + 0, GDN.z + 0.85, gridGround(0, 0.85) + 0.04, 30);
+ spawnCapAt(GDN.x + 13.5, GDN.z + 0, gridGround(13.5, 0) + 0.04, 31);
+ spawnCapAt(GDN.x - 13.5, GDN.z + 0, gridGround(-13.5, 0) + 0.04, 32);
+ spawnCapAt(GDN.x - 30, GDN.z - 24, gridGround(-30, -24) + 0.04, 33);
+ spawnCapAt(GDN.x + 24, GDN.z + 30, gridGround(24, 30) + 0.04, 34);
+ spawnFood('popcorn', GDN.x + 6.5, GDN.z + 3.4, { y: gridGround(6.5, 3.4) + 0.05 });
+ spawnFood('popcorn', GDN.x - 2.5, GDN.z - 5.5, { y: gridGround(-2.5, -5.5) + 0.05 });
+ spawnFood('peanut', GDN.x + 11, GDN.z - 6.2, { y: gridGround(11, -6.2) + 0.05 });
+
+ S.gardenAssetStatus='ready';
+}
 // Sample a height grid over the bowl off the loaded arena: gives the
 // player a ground to stand on, from the parquet up the seating tiers.
 // Fenway raycasts its grid with three.js - fine at 4.7k tris, hopeless
@@ -332,6 +352,11 @@ function sampleHeights(park) {
 
 // ------------------------------------------------------------------ init
 function enterGarden() {
+  ensureGardenModel();
+  // When an earlier visit completed the download, activate the model
+  // before calculating entrance foot elevation. An initial cold visit
+  // remains on the stable flat procedural fallback floor.
+  if(gardenWaiting)commitGardenModel();
   const P = S.player;
   P.pos.set(GDN.x + HOLE_L.x + 2.2,
     gridGround(HOLE_L.x + 2.2, HOLE_L.z - 1.0), GDN.z + HOLE_L.z - 1.0);
@@ -357,6 +382,7 @@ function exitGarden() {
   P.yaw = -Math.PI / 2; P.pitch = 0; // facing into the market
   P.climbing = null; P.grounded = true;
   P.inGarden = false; P.inBurrow = true;
+  if(gardenWaiting)commitGardenModel();
   if (sfx.dig) sfx.dig();
   toast('back underground. the cheap seats were free after all.', 2.4);
 }
@@ -410,6 +436,7 @@ export function updateGarden(dt) {
 // ------------------------------------------------------------ debug poses
 // which: 'court' | 'bowl' | 'jumbo'
 export function debugEnterGarden(which) {
+  ensureGardenModel({screenshot:true});
   const P = S.player;
   P.inHollow = false; P.inBurrow = false; P.inFenway = false; P.inGarden = true;
   P.climbing = null; P.vel.set(0, 0, 0); P.grounded = true;
