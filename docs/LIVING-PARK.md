@@ -555,3 +555,28 @@ enters Fenway via E or asks for a ?shot=fenwayhood screenshot.
 - The larger TD Garden 6.66 MiB GLB remains eagerly loaded, and
   need separate safe portal/ground support handling (#8). No new
   licensing rights are created by deferring the Fenway asset.
+
+
+## v0.7.9 — demand-load 6.66 MiB TD Garden without moving player feet
+
+- Existing v0.7.8 Fenway demand-load behavior and 0.7.7 Garden lagoon/bridge gameplay retained.
+- Ordinary Boston Common boot no longer requests assets/models/garden.glb. The arena GLB (~159,329 source triangles, 6.66 MiB) requests only when the player explicitly presses E on the market NORTHBOUND portal or selects a TD Garden QA photo.
+- A procedural 28.7m × 15.2m court and centre ring supply a y=0 visible floor and existing return door during slow/offline loads. No model content, save-file or licensing changes.
+- The loaded arena's triangle-derived height grid is **committed together with its visible mesh** when the player is outside the Garden; if the network resolves during a live visit, installation is deferred until the player exits. The next E calculates spawn feet against the now-active model grid. This avoids asynchronous floor-height jump/clipping. An explicit screenshot mode can install immediately, before its frame-settled barrier.
+- One memoized request; explicit idle/loading/deferred-floor/ready/fallback state; browser counts requests at cold boot and actual portal and screenshot entry; regression protects model ownership and absence of surprise realm movement.
+- Follow-up: real iPhone Safari waterfalls, blocked-asset simulation, actual mobile FPS/thermal measurements; do NOT claim performance beyond skipped network/decode at cold boot.
+
+- When the arena GLB never arrives, a dark procedural 116 × 100m
+  interior surrounds the basketball court at y=-.012. This is
+  aligned beneath the fallback terrain's y=0 support, not an
+  invisible collision platform under a black void. The entire
+  fallback group is hidden atomically when the source model and
+  sampled real seating terrain are safely installed.
+
+- A live Playwright E test now holds the actual Garden GLB HTTP request
+  until the squirrel has entered the procedural court. After releasing
+  the download, verifies zero change in floor or foot position when the
+  model finishes loading; a **real E return** activates the full
+  model+sampler, and a second **real E visit** begins at the sampled
+  height with no duplicate HTTP request. Separate blocked GLB screenshot
+  proves the fallback's y=0 physical floor and an actual WebGL frame.

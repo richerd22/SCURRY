@@ -22,7 +22,7 @@ const browser = await chromium.launch({
     '--disable-gpu-sandbox',
   ],
 });
-async function checkScene(pose, mobile = false, eye = 0.25) {
+async function checkScene(pose, mobile = false, eye = 0.25, offlineArena = false) {
   const context = await browser.newContext({
     viewport: mobile ? { width: 390, height: 844 } : { width: 1024, height: 720 },
     deviceScaleFactor: 1,
@@ -30,21 +30,36 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     hasTouch: mobile,
   });
   const page = await context.newPage();
-  const largeHoodRequests=[];
+  const expectedOfflineFailures=[];
+  if(offlineArena){
+    await page.route('**/assets/models/garden.glb',route=>route.abort('failed'));
+    page.on('requestfailed',req=>{
+      if(req.url().includes('/assets/models/garden.glb'))
+        expectedOfflineFailures.push(req.url());
+    });
+  }
+  const largeHoodRequests=[],arenaRequests=[];
   page.on('request',request=>{
     if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
       largeHoodRequests.push(request.url());
+    if(request.url().includes('/assets/models/garden.glb'))
+      arenaRequests.push(request.url());
   });
   const title = (mobile ? 'mobile-' : 'desktop-') + pose +
-    (eye!==0.25 ? '-human-eye' : '');
+    (eye!==0.25 ? '-human-eye' : '')+(offlineArena?'-offline':'');
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
   page.on('console', m => {
-    if (m.type() === 'error') faults.push(title + ': console ' + m.text());
+    if(m.type()!=='error')return;
+    // A deliberate offline GLB request abort can create the Chrome
+    // network diagnostic; every other error still fails the suite.
+    if(offlineArena&&/Failed to load resource.*net::ERR_FAILED/.test(m.text()))return;
+    faults.push(title + ': console ' + m.text());
   });
   try {
     const url = base + '/?shot=' + encodeURIComponent(pose) + '&lowq=1&t=17.6' +
       '&eye=' + eye +
-      (mobile ? '&touch=1' : '');
+      (mobile ? '&touch=1' : '')+
+      (offlineArena||pose.startsWith('tdgarden')?'&qa=1':'');
     const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     assert.equal(response?.status(), 200, title + ': static page must load');
     await page.waitForFunction(() => window.__scurryReady === true, null,
@@ -62,14 +77,35 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
         version,
         map: !!document.getElementById('map-panel'),
         touch: getComputedStyle(document.getElementById('touchui')).display !== 'none',
+        arenaAsset:window.__scurryQA?.state()?.gardenAssetStatus??null,
+        arenaFloor:window.__scurryQA?.state()?.floor??null,
       };
     });
     assert.ok(info.canvas && info.webgl, title + ': missing WebGL canvas');
     assert.ok(info.width > 0 && info.height > 0, title + ': invalid drawing buffer');
     assert.ok(info.hud && info.map && info.version, title + ': HUD/map or version missing');
     assert.equal(info.touch, mobile, title + ': touch controls do not match device');
-    if(pose==='spawn')assert.equal(largeHoodRequests.length,0,
-      'cold Common boot downloaded the 2.60 MiB unreachable Fenway backdrop');
+    if(pose==='spawn'){
+      assert.equal(largeHoodRequests.length,0,
+        'cold Common boot downloaded the 2.60 MiB unreachable Fenway backdrop');
+      assert.equal(arenaRequests.length,0,
+        'cold Common boot downloaded the 6.66 MiB unreachable TD Garden arena');
+    }
+    if(pose.startsWith('tdgarden'))assert.equal(arenaRequests.length,1,
+      'explicit Garden screenshot must load real arena exactly once');
+    if(pose.startsWith('tdgarden')&&!offlineArena){
+      await page.waitForFunction(()=>
+        window.__scurryQA?.state()?.gardenAssetStatus==='ready',
+        null,{timeout:90000,polling:250});
+    }
+    if(offlineArena){
+      assert.equal(expectedOfflineFailures.length,1,
+        'exactly one deliberately aborted arena request must be observed');
+      assert.equal(info.arenaAsset,'fallback',
+        'blocked TD Garden network must leave a usable procedural arena');
+      assert.ok(Math.abs(info.arenaFloor??Infinity)<.001,
+        'offline court fallback must be real y=0 player floor');
+    }
     if(pose==='fenwayhood')assert.equal(largeHoodRequests.length,1,
       'Fenway hood screenshot failed to demand-load its real building model');
     // SwiftShader screenshots occasionally need >30s when other WebGL
@@ -126,10 +162,19 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
 async function checkGameplay() {
   const context = await browser.newContext({viewport:{width:800,height:560}});
   const page = await context.newPage();
-  const largeHoodRequests=[];
+  // Freeze ONLY the Garden GLB while the real squirrel enters. The
+  // GET will resume after asserting floor consistency on fallback.
+  let releaseArenaRequest;
+  const arenaGate=new Promise(resolve=>{releaseArenaRequest=resolve;});
+  await page.route('**/assets/models/garden.glb',async route=>{
+    await arenaGate;await route.continue();
+  });
+  const largeHoodRequests=[],arenaRequests=[];
   page.on('request',request=>{
     if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
       largeHoodRequests.push(request.url());
+    if(request.url().includes('/assets/models/garden.glb'))
+      arenaRequests.push(request.url());
   });
   const title = 'desktop-live-play';
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
@@ -143,6 +188,8 @@ async function checkGameplay() {
     assert.equal((await get()).started,false,'title should not auto-play');
     assert.equal(largeHoodRequests.length,0,
       'Common-only entry eagerly downloaded Fenway neighborhood before portal');
+    assert.equal(arenaRequests.length,0,
+      'Common-only entry eagerly downloaded 6.66 MiB TD Garden arena');
     await page.locator('#title').click({timeout:30000});
     await page.waitForFunction(() => window.__scurryQA.state().started, null, {timeout:15000});
     const start = await get();
@@ -356,6 +403,40 @@ async function checkGameplay() {
       if(flag==='inFenway'){
         assert.equal(largeHoodRequests.length,1,
           'real Fenway visit must request backdrop once (not at cold boot)');
+        assert.equal(arenaRequests.length,0,'Fenway visit must not load Garden arena');
+      }
+      if(flag==='inGarden'){
+        assert.equal(arenaRequests.length,1,
+          'real TD Garden visit must request its 6.66 MiB model exactly once');
+        const first=await get();
+        assert.equal(first.gardenAssetStatus,'loading',
+          'stalled real network must retain stable loading fallback');
+        assert.ok(Math.abs(first.floor)<.001&&Math.abs(first.pos.y)<.1,
+          'new arena must begin on the visible flat y=0 fallback');
+        releaseArenaRequest();
+        await page.waitForFunction(()=>
+          window.__scurryQA.state().gardenAssetStatus==='deferred-floor',
+          null,{timeout:60000,polling:200});
+        const delayed=await get();
+        assert.ok(Math.abs(delayed.floor)<.001&&Math.abs(delayed.pos.y-first.pos.y)<.08,
+          'network completion must not snap a live squirrel through parquet');
+        // E exit commits the waiting model and its height grid together.
+        assert.match(await choose('dive back to the burrows'),/burrow/i);
+        await page.keyboard.press('e');
+        await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
+          null,{timeout:10000});
+        assert.equal((await get()).gardenAssetStatus,'ready');
+        // Second deliberate E must use real sampled parquet and never
+        // re-download its 6.66 MiB GLB.
+        assert.match(await choose('north run'),/north run/i);
+        await page.keyboard.press('e');
+        await page.waitForFunction(()=>window.__scurryQA.state().inGarden,
+          null,{timeout:10000});
+        const revisit=await get();
+        assert.equal(revisit.gardenAssetStatus,'ready');
+        assert.ok(Math.abs(revisit.pos.y-revisit.floor)<.08,
+          'real arena entered with feet already on its sampled floor');
+        assert.equal(arenaRequests.length,1,'return visit requested duplicate GLB');
       }
       const destination=await get();
       assert.ok(destination.grounded,'arrival at '+flag+' must be grounded');
@@ -769,6 +850,8 @@ try {
   if (suite==='all'||suite==='visuals') {
     await checkScene('spawn');
     await checkScene('garden');
+    await checkScene('tdgarden');
+    await checkScene('tdgarden',false,.25,true);
     await checkScene('fenwayhood');
     await checkScene('gardenisland');
     await checkScene('swanunderpass');
