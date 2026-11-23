@@ -493,6 +493,9 @@ function buildOverlay(scene, park) {
 
 // ------------------------------------------------------------------ init
 function enterFenway() {
+  // Demand-load backdrop only after an actual Fenway burrow visit.
+  // The field and player floor are complete and independent.
+  S.ensureFenwayHoodModel?.();
   const P = S.player;
   P.pos.set(FEN.x + HOLE_L.x + 2.6,
     fenGround(HOLE_L.x + 2.6, HOLE_L.z - 1.2), FEN.z + HOLE_L.z - 1.2);
@@ -579,6 +582,9 @@ export function updateFenway(dt) {
 // ------------------------------------------------------------ debug poses
 // which: 'plate' | 'monster' | 'wall' | 'top' | 'citgo' | 'hood'
 export function debugEnterFenway(which) {
+  // Run before main.js ?shot=... whenModelsSettled() barrier, including
+  // the hood aerial pose. No Common-only requests.
+  S.ensureFenwayHoodModel?.();
   const P = S.player;
   P.inHollow = false; P.inBurrow = false; P.inFenway = true;
   P.climbing = null; P.vel.set(0, 0, 0); P.grounded = true;

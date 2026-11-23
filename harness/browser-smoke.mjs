@@ -30,6 +30,11 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     hasTouch: mobile,
   });
   const page = await context.newPage();
+  const largeHoodRequests=[];
+  page.on('request',request=>{
+    if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
+      largeHoodRequests.push(request.url());
+  });
   const title = (mobile ? 'mobile-' : 'desktop-') + pose +
     (eye!==0.25 ? '-human-eye' : '');
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
@@ -63,6 +68,10 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     assert.ok(info.width > 0 && info.height > 0, title + ': invalid drawing buffer');
     assert.ok(info.hud && info.map && info.version, title + ': HUD/map or version missing');
     assert.equal(info.touch, mobile, title + ': touch controls do not match device');
+    if(pose==='spawn')assert.equal(largeHoodRequests.length,0,
+      'cold Common boot downloaded the 2.60 MiB unreachable Fenway backdrop');
+    if(pose==='fenwayhood')assert.equal(largeHoodRequests.length,1,
+      'Fenway hood screenshot failed to demand-load its real building model');
     // SwiftShader screenshots occasionally need >30s when other WebGL
     // CI workers share a saturated runner. Keep the actual screenshot
     // mandatory; only extend the I/O deadline, never skip visual proof.
@@ -117,6 +126,11 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
 async function checkGameplay() {
   const context = await browser.newContext({viewport:{width:800,height:560}});
   const page = await context.newPage();
+  const largeHoodRequests=[];
+  page.on('request',request=>{
+    if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
+      largeHoodRequests.push(request.url());
+  });
   const title = 'desktop-live-play';
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
   page.on('console', m => { if (m.type() === 'error') faults.push(title + ': console ' + m.text()); });
@@ -127,6 +141,8 @@ async function checkGameplay() {
     await page.waitForFunction(() => !!window.__scurryQA && !!window.__scurryQA.state().pos,
       null,{timeout:120000});
     assert.equal((await get()).started,false,'title should not auto-play');
+    assert.equal(largeHoodRequests.length,0,
+      'Common-only entry eagerly downloaded Fenway neighborhood before portal');
     await page.locator('#title').click({timeout:30000});
     await page.waitForFunction(() => window.__scurryQA.state().started, null, {timeout:15000});
     const start = await get();
@@ -337,6 +353,10 @@ async function checkGameplay() {
       assert.match(await choose(entry), /run/i);
       await page.keyboard.press('e');
       await page.waitForFunction(flag => window.__scurryQA.state()[flag],flag,{timeout:10000});
+      if(flag==='inFenway'){
+        assert.equal(largeHoodRequests.length,1,
+          'real Fenway visit must request backdrop once (not at cold boot)');
+      }
       const destination=await get();
       assert.ok(destination.grounded,'arrival at '+flag+' must be grounded');
       assert.ok(Math.abs(destination.pos.y-destination.floor)<.1,
@@ -749,6 +769,7 @@ try {
   if (suite==='all'||suite==='visuals') {
     await checkScene('spawn');
     await checkScene('garden');
+    await checkScene('fenwayhood');
     await checkScene('gardenisland');
     await checkScene('swanunderpass');
     // These are separate from the physics raycast: preserve visual
