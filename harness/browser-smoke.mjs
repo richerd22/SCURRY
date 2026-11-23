@@ -30,7 +30,14 @@ async function checkScene(pose, mobile = false, eye = 0.25, offlineArena = false
     hasTouch: mobile,
   });
   const page = await context.newPage();
-  if(offlineArena)await page.route('**/assets/models/garden.glb',route=>route.abort('failed'));
+  const expectedOfflineFailures=[];
+  if(offlineArena){
+    await page.route('**/assets/models/garden.glb',route=>route.abort('failed'));
+    page.on('requestfailed',req=>{
+      if(req.url().includes('/assets/models/garden.glb'))
+        expectedOfflineFailures.push(req.url());
+    });
+  }
   const largeHoodRequests=[],arenaRequests=[];
   page.on('request',request=>{
     if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
@@ -42,12 +49,17 @@ async function checkScene(pose, mobile = false, eye = 0.25, offlineArena = false
     (eye!==0.25 ? '-human-eye' : '')+(offlineArena?'-offline':'');
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
   page.on('console', m => {
-    if (m.type() === 'error') faults.push(title + ': console ' + m.text());
+    if(m.type()!=='error')return;
+    // A deliberate offline GLB request abort can create the Chrome
+    // network diagnostic; every other error still fails the suite.
+    if(offlineArena&&/Failed to load resource.*net::ERR_FAILED/.test(m.text()))return;
+    faults.push(title + ': console ' + m.text());
   });
   try {
     const url = base + '/?shot=' + encodeURIComponent(pose) + '&lowq=1&t=17.6' +
       '&eye=' + eye +
-      (mobile ? '&touch=1' : '')+(offlineArena?'&qa=1':'');
+      (mobile ? '&touch=1' : '')+
+      (offlineArena||pose.startsWith('tdgarden')?'&qa=1':'');
     const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     assert.equal(response?.status(), 200, title + ': static page must load');
     await page.waitForFunction(() => window.__scurryReady === true, null,
@@ -81,7 +93,14 @@ async function checkScene(pose, mobile = false, eye = 0.25, offlineArena = false
     }
     if(pose.startsWith('tdgarden'))assert.equal(arenaRequests.length,1,
       'explicit Garden screenshot must load real arena exactly once');
+    if(pose.startsWith('tdgarden')&&!offlineArena){
+      await page.waitForFunction(()=>
+        window.__scurryQA?.state()?.gardenAssetStatus==='ready',
+        null,{timeout:90000,polling:250});
+    }
     if(offlineArena){
+      assert.equal(expectedOfflineFailures.length,1,
+        'exactly one deliberately aborted arena request must be observed');
       assert.equal(info.arenaAsset,'fallback',
         'blocked TD Garden network must leave a usable procedural arena');
       assert.ok(Math.abs(info.arenaFloor??Infinity)<.001,
