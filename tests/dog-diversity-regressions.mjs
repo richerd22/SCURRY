@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {test} from 'node:test';
 const src=readFileSync(new URL('../js/systems/dog-rules.js',import.meta.url),'utf8');
+const dogSystem=readFileSync(new URL('../js/systems/dogs.js',import.meta.url),'utf8');
 const {DOG_PROFILES,DOG_PATROLS,dogMayChase}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
+const stepSrc=readFileSync(new URL('../js/systems/wildlife-step-rules.js',import.meta.url),'utf8');
+const {wildlifeStep}=await import('data:text/javascript;base64,'+Buffer.from(stepSrc).toString('base64'));
 test('dog pack has distinct sizes, safe leashed walkers and a non-chasing curious dog',()=>{
   assert.equal(DOG_PROFILES.length,5);
   assert.equal(new Set(DOG_PROFILES.map(x=>x.name)).size,5);
@@ -44,4 +47,18 @@ test('every patrol leg remains dry and does not enter Charles Street',()=>{
       }
     }
   }
+});
+
+test('dog-sized NPC steers around a solid rather than entering it',()=>{
+  // Runtime dogs use this same deterministic step: reject the blocked
+  // forward point, choose a legal shoulder, or wait if both are closed.
+  const blocked=(x,z)=>!(x>.7&&x<1.3&&Math.abs(z)<.45);
+  const next=wildlifeStep(0,0,2,0,.8,blocked,1);
+  assert.ok(Math.abs(next.x)<.001,'dog should not pass through the box');
+  assert.ok(next.z>.7,'dog should take the preferred clear shoulder');
+  const held=wildlifeStep(0,0,2,0,.8,()=>false,1);
+  assert.deepEqual(held,{x:0,z:0},'no legal shoulder means wait, never clip');
+  assert.match(dogSystem,/createObstacleIndex\(S\.solids, S\.solidBoxes, S\.walls/);
+  assert.match(dogSystem,/resolveHorizontal\(dogProbe, S\.solids, S\.solidBoxes, S\.walls/);
+  assert.match(dogSystem,/wildlifeStep\(d\.pos\.x, d\.pos\.z/);
 });

@@ -580,3 +580,20 @@ enters Fenway via E or asks for a ?shot=fenwayhood screenshot.
   model+sampler, and a second **real E visit** begins at the sampled
   height with no duplicate HTTP request. Separate blocked GLB screenshot
   proves the fallback's y=0 physical floor and an actual WebGL frame.
+
+
+## v0.7.10 — dogs respect the actual park collision world
+
+All five scheduled dogs now evaluate each patrol, chase and flee step against
+the same indexed circles, boxes and graded rail segments that stop the player.
+The old water and Charles Street guard remains in force. A blocked forward
+step tries one deterministic shoulder and then the other; if neither is clear,
+the dog waits rather than clipping through a tree trunk, bench, fence or other
+registered park solid.
+
+Dogs deliberately stay non-solid to the squirrel and other gameplay actors:
+this avoids a pack pinning the player in a corner or creating a second
+dynamic-collision feedback system. The existing breed behaviours, leashed
+walkers, day/night visibility, food-loss boop and nose-bite escape all remain
+unchanged. Pure regression coverage proves both shoulder selection and
+no-legal-step waiting, and locks the runtime to the live obstacle registry.
