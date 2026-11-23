@@ -565,3 +565,10 @@ enters Fenway via E or asks for a ?shot=fenwayhood screenshot.
 - The loaded arena's triangle-derived height grid is **committed together with its visible mesh** when the player is outside the Garden; if the network resolves during a live visit, installation is deferred until the player exits. The next E calculates spawn feet against the now-active model grid. This avoids asynchronous floor-height jump/clipping. An explicit screenshot mode can install immediately, before its frame-settled barrier.
 - One memoized request; explicit idle/loading/deferred-floor/ready/fallback state; browser counts requests at cold boot and actual portal and screenshot entry; regression protects model ownership and absence of surprise realm movement.
 - Follow-up: real iPhone Safari waterfalls, blocked-asset simulation, actual mobile FPS/thermal measurements; do NOT claim performance beyond skipped network/decode at cold boot.
+
+- When the arena GLB never arrives, a dark procedural 116 × 100m
+  interior surrounds the basketball court at y=-.012. This is
+  aligned beneath the fallback terrain's y=0 support, not an
+  invisible collision platform under a black void. The entire
+  fallback group is hidden atomically when the source model and
+  sampled real seating terrain are safely installed.

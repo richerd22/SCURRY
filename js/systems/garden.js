@@ -177,6 +177,12 @@ export function buildGarden(scene) {
   // during a slow first visit the player has a real floor, not a void.
   // Model's calibrated parquet replaces this, never overlaps it.
   fallbackCourt=new THREE.Group();
+  // Entire reachable bowl is visibly grounded even when the GLB is
+  // blocked. y=-.012 avoids floating above the analytic y=0 floor.
+  const surround=new THREE.Mesh(new THREE.PlaneGeometry(116,100),
+    new THREE.MeshStandardMaterial({color:0x2b3136,roughness:1}));
+  surround.rotation.x=-Math.PI/2;surround.position.y=-.012;
+  surround.receiveShadow=true;fallbackCourt.add(surround);
   const floor=new THREE.Mesh(new THREE.BoxGeometry(28.7,.03,15.2),
     new THREE.MeshStandardMaterial({color:0xb7905f,roughness:.92}));
   floor.position.set(0,-.015,.85);floor.receiveShadow=true;

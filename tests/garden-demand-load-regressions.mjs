@@ -7,6 +7,8 @@ test('Garden procedural fallback loads before GLB but never downloads during Com
  const build=garden.split('export function buildGarden(scene) {')[1]
   .split('// Sample a height grid over the bowl')[0];
  assert.match(build,/floor\.position\.set\(0,-\.015,\.85\)/);
+ assert.match(build,/new THREE\.PlaneGeometry\(116,100\)/);
+ assert.match(build,/surround\.position\.y=-\.012/);
  assert.match(build,/gardenScene=scene/);
  assert.match(build,/S\.ensureGardenModel=ensureGardenModel/);
  const startup=build.split('let gardenScene=null')[0];
