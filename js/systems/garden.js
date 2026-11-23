@@ -173,6 +173,19 @@ export function buildGarden(scene) {
   g.add(holeSign);
 
   scene.add(g);
+  // Visible, physically flush y=0 parquet fallback: when offline or
+  // during a slow first visit the player has a real floor, not a void.
+  // Model's calibrated parquet replaces this, never overlaps it.
+  fallbackCourt=new THREE.Group();
+  const floor=new THREE.Mesh(new THREE.BoxGeometry(28.7,.03,15.2),
+    new THREE.MeshStandardMaterial({color:0xb7905f,roughness:.92}));
+  floor.position.set(0,-.015,.85);floor.receiveShadow=true;
+  fallbackCourt.add(floor);
+  const circle=new THREE.Mesh(new THREE.TorusGeometry(2.1,.035,4,48),
+    new THREE.MeshBasicMaterial({color:0xf1ded0}));
+  circle.rotation.x=Math.PI/2;circle.position.set(0,.015,.85);
+  fallbackCourt.add(circle);
+  g.add(fallbackCourt);
 
   // arena lighting: constant, day-cycle-independent, distance-capped.
   // Four banks over the court corners + one high centre light. These
@@ -218,6 +231,7 @@ export function buildGarden(scene) {
 // Hold the completed model until exit, then activate for the NEXT E entry.
 // Screenshot-only camera routes deliberately opt into immediate activation.
 let gardenScene=null,gardenLoad=null,gardenWaiting=null,gardenInstalled=false;
+let fallbackCourt=null;
 export function ensureGardenModel({screenshot=false}={}){
  if(!gardenScene)return Promise.resolve(null);
  if(gardenLoad)return gardenLoad;
@@ -256,8 +270,9 @@ function commitGardenModel(){
      }
    }
  });
- scene.add(park);
+ gardenScene.add(park);
  sampleHeights(park);
+ if(fallbackCourt)fallbackCourt.visible=false;
  // a little life: the crowd that isn't here drops things anyway.
  // Caps ride the burrows machinery, food rides food.js - the
  // trophy cap sits on the centre-court logo, because of course.

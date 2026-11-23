@@ -403,6 +403,7 @@ if (qaLocal) {
       const p = S.player;
       return {
         started: S.started, paused: S.paused,
+        gardenAssetStatus:S.gardenAssetStatus??'idle',
         relocating: S.relocating, catchGrace: S.catchGrace,
         pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
         floor: p.inFenway ? S.realmGround.fenway?.(p.pos.x,p.pos.z) :

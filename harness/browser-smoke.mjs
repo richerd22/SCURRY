@@ -30,10 +30,12 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     hasTouch: mobile,
   });
   const page = await context.newPage();
-  const largeHoodRequests=[];
+  const largeHoodRequests=[],arenaRequests=[];
   page.on('request',request=>{
     if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
       largeHoodRequests.push(request.url());
+    if(request.url().includes('/assets/models/garden.glb'))
+      arenaRequests.push(request.url());
   });
   const title = (mobile ? 'mobile-' : 'desktop-') + pose +
     (eye!==0.25 ? '-human-eye' : '');
@@ -68,8 +70,14 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
     assert.ok(info.width > 0 && info.height > 0, title + ': invalid drawing buffer');
     assert.ok(info.hud && info.map && info.version, title + ': HUD/map or version missing');
     assert.equal(info.touch, mobile, title + ': touch controls do not match device');
-    if(pose==='spawn')assert.equal(largeHoodRequests.length,0,
-      'cold Common boot downloaded the 2.60 MiB unreachable Fenway backdrop');
+    if(pose==='spawn'){
+      assert.equal(largeHoodRequests.length,0,
+        'cold Common boot downloaded the 2.60 MiB unreachable Fenway backdrop');
+      assert.equal(arenaRequests.length,0,
+        'cold Common boot downloaded the 6.66 MiB unreachable TD Garden arena');
+    }
+    if(pose.startsWith('tdgarden'))assert.equal(arenaRequests.length,1,
+      'explicit Garden screenshot must load real arena exactly once');
     if(pose==='fenwayhood')assert.equal(largeHoodRequests.length,1,
       'Fenway hood screenshot failed to demand-load its real building model');
     // SwiftShader screenshots occasionally need >30s when other WebGL
@@ -126,10 +134,12 @@ async function checkScene(pose, mobile = false, eye = 0.25) {
 async function checkGameplay() {
   const context = await browser.newContext({viewport:{width:800,height:560}});
   const page = await context.newPage();
-  const largeHoodRequests=[];
+  const largeHoodRequests=[],arenaRequests=[];
   page.on('request',request=>{
     if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
       largeHoodRequests.push(request.url());
+    if(request.url().includes('/assets/models/garden.glb'))
+      arenaRequests.push(request.url());
   });
   const title = 'desktop-live-play';
   page.on('pageerror', e => faults.push(title + ': JS ' + (e.stack || e.message)));
@@ -143,6 +153,8 @@ async function checkGameplay() {
     assert.equal((await get()).started,false,'title should not auto-play');
     assert.equal(largeHoodRequests.length,0,
       'Common-only entry eagerly downloaded Fenway neighborhood before portal');
+    assert.equal(arenaRequests.length,0,
+      'Common-only entry eagerly downloaded 6.66 MiB TD Garden arena');
     await page.locator('#title').click({timeout:30000});
     await page.waitForFunction(() => window.__scurryQA.state().started, null, {timeout:15000});
     const start = await get();
@@ -356,6 +368,13 @@ async function checkGameplay() {
       if(flag==='inFenway'){
         assert.equal(largeHoodRequests.length,1,
           'real Fenway visit must request backdrop once (not at cold boot)');
+        assert.equal(arenaRequests.length,0,'Fenway visit must not load Garden arena');
+      }
+      if(flag==='inGarden'){
+        assert.equal(arenaRequests.length,1,
+          'real TD Garden visit must request its 6.66 MiB model exactly once');
+        assert.ok(['loading','deferred-floor','ready','fallback'].includes(
+          (await get()).gardenAssetStatus),'invalid Garden load state');
       }
       const destination=await get();
       assert.ok(destination.grounded,'arrival at '+flag+' must be grounded');
@@ -769,6 +788,7 @@ try {
   if (suite==='all'||suite==='visuals') {
     await checkScene('spawn');
     await checkScene('garden');
+    await checkScene('tdgarden');
     await checkScene('fenwayhood');
     await checkScene('gardenisland');
     await checkScene('swanunderpass');
