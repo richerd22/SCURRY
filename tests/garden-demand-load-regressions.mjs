@@ -30,3 +30,12 @@ test('CI checks zero 6.66 MiB requests at home, one on E and one on snapshot',()
  assert.match(browser,/arenaRequests\.length,1/);
  assert.match(browser,/checkScene\('tdgarden'\)/);
 });
+
+test('live browser exercise stalls model GET, preserves feet and re-enters real parquet',()=>{
+ assert.match(browser,/const arenaGate=new Promise/);
+ assert.match(browser,/releaseArenaRequest\(\)/);
+ assert.match(browser,/gardenAssetStatus==='deferred-floor'/);
+ assert.match(browser,/window\.__scurryQA\.state\(\)\.inGarden/);
+ assert.match(browser,/return visit requested duplicate GLB/);
+ assert.match(browser,/offlineArena/);
+});

@@ -143,6 +143,13 @@ async function checkScene(pose, mobile = false, eye = 0.25, offlineArena = false
 async function checkGameplay() {
   const context = await browser.newContext({viewport:{width:800,height:560}});
   const page = await context.newPage();
+  // Freeze ONLY the Garden GLB while the real squirrel enters. The
+  // GET will resume after asserting floor consistency on fallback.
+  let releaseArenaRequest;
+  const arenaGate=new Promise(resolve=>{releaseArenaRequest=resolve;});
+  await page.route('**/assets/models/garden.glb',async route=>{
+    await arenaGate;await route.continue();
+  });
   const largeHoodRequests=[],arenaRequests=[];
   page.on('request',request=>{
     if(request.url().includes('/assets/models/fenway-neighborhood.glb'))
@@ -382,8 +389,35 @@ async function checkGameplay() {
       if(flag==='inGarden'){
         assert.equal(arenaRequests.length,1,
           'real TD Garden visit must request its 6.66 MiB model exactly once');
-        assert.ok(['loading','deferred-floor','ready','fallback'].includes(
-          (await get()).gardenAssetStatus),'invalid Garden load state');
+        const first=await get();
+        assert.equal(first.gardenAssetStatus,'loading',
+          'stalled real network must retain stable loading fallback');
+        assert.ok(Math.abs(first.floor)<.001&&Math.abs(first.pos.y)<.1,
+          'new arena must begin on the visible flat y=0 fallback');
+        releaseArenaRequest();
+        await page.waitForFunction(()=>
+          window.__scurryQA.state().gardenAssetStatus==='deferred-floor',
+          null,{timeout:60000,polling:200});
+        const delayed=await get();
+        assert.ok(Math.abs(delayed.floor)<.001&&Math.abs(delayed.pos.y-first.pos.y)<.08,
+          'network completion must not snap a live squirrel through parquet');
+        // E exit commits the waiting model and its height grid together.
+        assert.match(await choose('dive back to the burrows'),/burrow/i);
+        await page.keyboard.press('e');
+        await page.waitForFunction(()=>window.__scurryQA.state().inBurrow,
+          null,{timeout:10000});
+        assert.equal((await get()).gardenAssetStatus,'ready');
+        // Second deliberate E must use real sampled parquet and never
+        // re-download its 6.66 MiB GLB.
+        assert.match(await choose('north run'),/north run/i);
+        await page.keyboard.press('e');
+        await page.waitForFunction(()=>window.__scurryQA.state().inGarden,
+          null,{timeout:10000});
+        const revisit=await get();
+        assert.equal(revisit.gardenAssetStatus,'ready');
+        assert.ok(Math.abs(revisit.pos.y-revisit.floor)<.08,
+          'real arena entered with feet already on its sampled floor');
+        assert.equal(arenaRequests.length,1,'return visit requested duplicate GLB');
       }
       const destination=await get();
       assert.ok(destination.grounded,'arrival at '+flag+' must be grounded');

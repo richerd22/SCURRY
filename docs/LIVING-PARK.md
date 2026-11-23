@@ -572,3 +572,11 @@ enters Fenway via E or asks for a ?shot=fenwayhood screenshot.
   invisible collision platform under a black void. The entire
   fallback group is hidden atomically when the source model and
   sampled real seating terrain are safely installed.
+
+- A live Playwright E test now holds the actual Garden GLB HTTP request
+  until the squirrel has entered the procedural court. After releasing
+  the download, verifies zero change in floor or foot position when the
+  model finishes loading; a **real E return** activates the full
+  model+sampler, and a second **real E visit** begins at the sampled
+  height with no duplicate HTTP request. Separate blocked GLB screenshot
+  proves the fallback's y=0 physical floor and an actual WebGL frame.

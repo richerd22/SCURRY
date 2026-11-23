@@ -189,7 +189,7 @@ export function buildGarden(scene) {
   fallbackCourt.add(floor);
   const circle=new THREE.Mesh(new THREE.TorusGeometry(2.1,.035,4,48),
     new THREE.MeshBasicMaterial({color:0xf1ded0}));
-  circle.rotation.x=Math.PI/2;circle.position.set(0,.015,.85);
+  circle.rotation.x=-Math.PI/2;circle.position.set(0,.015,.85);
   fallbackCourt.add(circle);
   g.add(fallbackCourt);
 
