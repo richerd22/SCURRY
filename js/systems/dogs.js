@@ -15,8 +15,15 @@ import { loadModel, cloneModel, findClip, fitHeight, shadowify } from './models.
 import { makeHuman, setActorRole } from './humans.js';
 import { DOG_PROFILES, DOG_PATROLS, dogMayChase } from './dog-rules.js';
 import { parkShift, actorVisible } from './park-shifts.js';
+import { createObstacleIndex, resolveHorizontal } from './collision.js';
+import { wildlifeStep } from './wildlife-step-rules.js';
 
 const dogs = [];
+// Dogs remain non-solids to the player, but their visible paws need the
+// same trees, benches and rails as the player. The index uses the largest
+// dog radius; the narrow phase below still applies each dog's true radius.
+let dogObstacleIndex = null;
+const dogProbe = { x: 0, y: 0, z: 0 };
 
 function makeDog(coat, profile) {
   const g = new THREE.Group();
@@ -132,6 +139,9 @@ export function updateDogs(dt) {
   const P = S.player;
   const now = performance.now() / 1000;
   const shift=parkShift(S.timeHours);
+  if (!dogObstacleIndex) {
+    dogObstacleIndex = createObstacleIndex(S.solids, S.solidBoxes, S.walls, .42, 8);
+  }
   for (let i=0;i<dogs.length;i++) {
     const d=dogs[i];
     const active=actorVisible(i,dogs.length,shift.dogs);
@@ -216,28 +226,25 @@ function moveToward(d, target, dirSign, speed, dt) {
   const dx = (target.x - d.pos.x) * dirSign, dz = (target.z - d.pos.z) * dirSign;
   const l = Math.hypot(dx, dz);
   if (l < 0.05) return;
-  const step=speed*dt,ux=dx/l,uz=dz/l;
-  let sx=ux,sz=uz,nx=d.pos.x+ux*step,nz=d.pos.z+uz*step;
-  if(inWater(nx,nz)||onRoad(nx,nz)){
-    // A non-player creature should not walk straight through the lagoon
-    // or across the busy Charles Street simply because it sees a squirrel.
-    // Follow either shoreline tangent instead; if neither is safe, stay.
-    let found=false;
-    for(const side of [1,-1]){
-      const vx=-uz*side,vz=ux*side;
-      const x=d.pos.x+vx*step,z=d.pos.z+vz*step;
-      if(!inWater(x,z)&&!onRoad(x,z)){
-        nx=x;nz=z;sx=vx;sz=vz;found=true;break;
-      }
-    }
-    if(!found)return;
-  }
-  d.pos.x=nx;d.pos.z=nz;
+  const radius = .22 * d.profile.scale;
+  const next = wildlifeStep(d.pos.x, d.pos.z, d.pos.x + dx, d.pos.z + dz,
+    speed * dt, (x, z) => dogFreeStep(radius, x, z), d.profile.leashed ? -1 : 1);
+  const sx = next.x - d.pos.x, sz = next.z - d.pos.z;
+  if (Math.hypot(sx, sz) < .0001) return;
+  d.pos.x=next.x;d.pos.z=next.z;
   const targetYaw = Math.atan2(sx, sz);
   let dy = targetYaw - d.mesh.rotation.y;
   while (dy > Math.PI) dy -= Math.PI * 2;
   while (dy < -Math.PI) dy += Math.PI * 2;
   d.mesh.rotation.y += dy * Math.min(1, dt * 8);
+}
+
+function dogFreeStep(radius, x, z) {
+  if (inWater(x, z) || onRoad(x, z)) return false;
+  dogProbe.x = x; dogProbe.z = z; dogProbe.y = groundHeight(x, z);
+  resolveHorizontal(dogProbe, S.solids, S.solidBoxes, S.walls, radius, null, dogObstacleIndex);
+  // A resolver displacement means this candidate overlaps a registered solid.
+  return Math.hypot(dogProbe.x - x, dogProbe.z - z) < .003;
 }
 
 // bite resolution: called by player via S.onBite chaining in main
