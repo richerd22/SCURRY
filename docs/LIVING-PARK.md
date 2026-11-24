@@ -613,3 +613,17 @@ existing park tree/bench/rail collision, road/water exclusion, patrol paths
 and chase policy continue to decide where a dog may go. Tests lock both the
 registered static geometry and the two live resident registries into every
 candidate dog step.
+
+
+## v0.7.12 — truthful dog threat language
+
+The nearby-dog HUD warning now shares the exact chase predicate used by the
+dog simulation. It appears only for a visible off-leash dog that can chase the
+current squirrel state. Leashed dogs, remote destinations, Swan Boat riders,
+airborne squirrels and the golden dog's non-sprinting curiosity no longer
+produce a false threat warning.
+
+This changes only player-facing language and query selection: dog movement,
+chase distance, bite escape, scheduling and the new resident courtesy remain
+unchanged. The warning is deliberately more specific—“an off-leash dog”—so
+players can understand which nearby interaction is risky.

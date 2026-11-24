@@ -25,7 +25,8 @@ test('leashed dogs and Swan Boat riders cannot enter an off-leash chase',()=>{
   assert.equal(dogMayChase(DOG_PROFILES[1],{...player,onSwanBoat:true}),false);
   assert.equal(dogMayChase(DOG_PROFILES[1],{...player,remote:true}),false);
   assert.equal(dogMayChase(DOG_PROFILES[1],{...player,grounded:false}),false);
-  assert.equal(dogMayChase(DOG_PROFILES[0],{...player,sprinting:false}),false);
+  assert.equal(dogMayChase(DOG_PROFILES[0],{...player,sprinting:false}),false,
+    'the curious golden must not cause a threat warning while walking');
 });
 
 
@@ -63,4 +64,6 @@ test('dog-sized NPC steers around a solid rather than entering it',()=>{
   assert.match(dogSystem,/wildlifeStep\(d\.pos\.x, d\.pos\.z/);
   assert.match(dogSystem,/for \(const h of S\.humanActors \|\| \[\]\)/);
   assert.match(dogSystem,/for \(const a of S\.wildlifeActors \|\| \[\]\)/);
+  assert.match(dogSystem,/export function nearestDogThreatDist\(\)/);
+  assert.match(dogSystem,/dogMayChase\(d\.profile,chaseState\)/);
 });

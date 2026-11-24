@@ -11,7 +11,7 @@ import { initDaycycle, updateDaycycle, setSunShadows, setShadowSize } from './sy
 import { initPlayer, updatePlayer, syncPlayerCamera, clearPlayerInput } from './systems/player.js';
 import { buildHumans, updateHumans } from './systems/humans.js';
 import { initFood, updateFood, nearestFoodAction, buryAction } from './systems/food.js';
-import { buildDogs, updateDogs, biteDogs, nearestDogDist } from './systems/dogs.js';
+import { buildDogs, updateDogs, biteDogs, nearestDogThreatDist } from './systems/dogs.js';
 import { buildRanger, updateRanger, biteRanger } from './systems/ranger.js';
 import { buildHawk, updateHawk, biteHawk } from './systems/hawk.js';
 import { buildHollow, initHollowInteractables, updateHollow } from './systems/hollow.js';
@@ -1104,7 +1104,7 @@ function warnings() {
   if (S.gooseWarn > 0) return '! THE GEESE ARE OBJECTING - WAIT, BRIBE THEM, OR GO AROUND !';
   if (S.hawkFlash > 0) return '! HAWK DUA HAS YOU MARKED - GET UNDER COVER !';
   if (S.spottedFlash > 0) return '! A DOG HAS YOUR SCENT !';
-  if (nearestDogDist() < 7 && S.player.grounded && !S.player.climbing) return 'a dog is eyeing you...';
+  if (nearestDogThreatDist() < 7) return 'an off-leash dog is eyeing you...';
   return '';
 }
 

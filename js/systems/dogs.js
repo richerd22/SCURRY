@@ -135,6 +135,22 @@ export function nearestDogDist() {
   return bd;
 }
 
+// HUD language must match actual risk. A leashed terrier or the curious
+// golden while the squirrel walks is scenery, not an incoming chase.
+export function nearestDogThreatDist() {
+  const P = S.player;
+  const chaseState={
+    grounded:isOnGroundLow(), onSwanBoat:!!P.onSwanBoat,
+    remote:P.inHollow||P.inBurrow||P.inFenway||P.inGarden||P.inCityHall||P.inEsplanade||P.inMBTA,
+    sprinting:P.sprinting,
+  };
+  let bd=1e9;
+  for(const d of dogs){
+    if(d.mesh.visible&&dogMayChase(d.profile,chaseState))bd=Math.min(bd,d.pos.distanceTo(P.pos));
+  }
+  return bd;
+}
+
 export function updateDogs(dt) {
   const P = S.player;
   const now = performance.now() / 1000;
