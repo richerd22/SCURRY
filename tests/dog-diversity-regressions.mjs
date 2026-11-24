@@ -61,4 +61,6 @@ test('dog-sized NPC steers around a solid rather than entering it',()=>{
   assert.match(dogSystem,/createObstacleIndex\(S\.solids, S\.solidBoxes, S\.walls/);
   assert.match(dogSystem,/resolveHorizontal\(dogProbe, S\.solids, S\.solidBoxes, S\.walls/);
   assert.match(dogSystem,/wildlifeStep\(d\.pos\.x, d\.pos\.z/);
+  assert.match(dogSystem,/for \(const h of S\.humanActors \|\| \[\]\)/);
+  assert.match(dogSystem,/for \(const a of S\.wildlifeActors \|\| \[\]\)/);
 });

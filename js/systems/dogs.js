@@ -228,7 +228,7 @@ function moveToward(d, target, dirSign, speed, dt) {
   if (l < 0.05) return;
   const radius = .22 * d.profile.scale;
   const next = wildlifeStep(d.pos.x, d.pos.z, d.pos.x + dx, d.pos.z + dz,
-    speed * dt, (x, z) => dogFreeStep(radius, x, z), d.profile.leashed ? -1 : 1);
+    speed * dt, (x, z) => dogFreeStep(d, radius, x, z), d.profile.leashed ? -1 : 1);
   const sx = next.x - d.pos.x, sz = next.z - d.pos.z;
   if (Math.hypot(sx, sz) < .0001) return;
   d.pos.x=next.x;d.pos.z=next.z;
@@ -239,12 +239,27 @@ function moveToward(d, target, dirSign, speed, dt) {
   d.mesh.rotation.y += dy * Math.min(1, dt * 8);
 }
 
-function dogFreeStep(radius, x, z) {
+function dogFreeStep(d, radius, x, z) {
   if (inWater(x, z) || onRoad(x, z)) return false;
   dogProbe.x = x; dogProbe.z = z; dogProbe.y = groundHeight(x, z);
   resolveHorizontal(dogProbe, S.solids, S.solidBoxes, S.walls, radius, null, dogObstacleIndex);
   // A resolver displacement means this candidate overlaps a registered solid.
-  return Math.hypot(dogProbe.x - x, dogProbe.z - z) < .003;
+  if (Math.hypot(dogProbe.x - x, dogProbe.z - z) >= .003) return false;
+  // Dynamic residents stay visual-only to the player, but a dog should not
+  // stride through a passerby, sitter, or an active surface critter. Keep
+  // this bounded small-list check separate from the static obstacle index.
+  for (const h of S.humanActors || []) {
+    if (!h.mesh?.visible || h.mesh === d.walker) continue;
+    const gap=radius+(h.r||.34)+.08;
+    if ((h.x-x)**2+(h.z-z)**2<gap*gap) return false;
+  }
+  for (const a of S.wildlifeActors || []) {
+    if (a.underground || !a.mesh?.visible) continue;
+    const other=a.kind==='rabbit'?.19:a.kind==='squirrel'?.15:.12;
+    const gap=radius+other+.08;
+    if ((a.x-x)**2+(a.z-z)**2<gap*gap) return false;
+  }
+  return true;
 }
 
 // bite resolution: called by player via S.onBite chaining in main
