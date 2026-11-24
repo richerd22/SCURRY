@@ -123,8 +123,16 @@ function seatOnBench(h, spot) {
 const wanderers = [];
 const pendingTosses = [];
 let nightWorker=null;
+const humanActors=[];
+
+function registerHumanActor(mesh, x, z, r=.34) {
+  const actor={mesh,x,z,r};
+  humanActors.push(actor);
+  return actor;
+}
 
 export function buildHumans(scene) {
+  S.humanActors=humanActors;
   // bench sitters - the beg targets
   const sitterBenches = [0, 2, 4, 6, 9, 12, 15, 17, 19, 21];
   for (const bi of sitterBenches) {
@@ -136,6 +144,7 @@ export function buildHumans(scene) {
     scene.add(h);
     const sitter = { mesh: h, x: spot.x, z: spot.z, cooldown: 0, phase: Math.random() * 9 };
     S.benchSitters.push(sitter);
+    sitter.presence=registerHumanActor(h,spot.x,spot.z,.31);
     S.interactables.push({
       x: spot.x, z: spot.z, y: spot.gy, r: 2.4,
       label: () => !sitter.mesh.visible || sitter.cooldown > 0 ? null : 'E - beg',
@@ -155,6 +164,7 @@ export function buildHumans(scene) {
       pauseCooldown:0,x:path[0][0],z:path[0][1],interactable:null,
     };
     wanderers.push(w);
+    w.presence=registerHumanActor(h,w.x,w.z,.34);
     const it={
       x:w.x,z:w.z,y:groundHeight(w.x,w.z),r:1.9,
       label:()=>!w.mesh.visible||w.cooldown>0||S.player.onSwanBoat||S.player.inBurrow||
@@ -182,6 +192,7 @@ export function buildHumans(scene) {
       p.legL.rotation.x = -1.4; p.legR.rotation.x = -1.4;
       p.legL.position.set(-0.11, 0.45, 0.25); p.legR.position.set(0.11, 0.45, 0.25);
       scene.add(h);
+      registerHumanActor(h,ox,oz,.34);
       b['owner' + k] = h;
     }
   }
@@ -200,10 +211,12 @@ export function buildHumans(scene) {
       action: () => startBeg(vendor),
     });
     S.benchSitters.push(vendor);
+    vendor.presence=registerHumanActor(v,vendor.x,vendor.z,.34);
   }
   // One late-shift park worker, not nine tourists picnicking at 3 AM.
   const nw=makeHuman(1.02);setActorRole(nw,'walk');scene.add(nw);
   nightWorker={mesh:nw,baseX:-27,baseZ:-88};
+  nightWorker.presence=registerHumanActor(nw,-27,-88,.34);
   S.nightWorker=nw;
   S.interactables.push({
     x:-27,z:-88,y:groundHeight(-27,-88),r:1.8,
@@ -232,6 +245,7 @@ export function updateHumans(dt) {
       const z=nightWorker.baseZ+Math.cos(now*.35)*.4;
       nightWorker.mesh.position.set(x,groundHeight(x,z),z);
       nightWorker.mesh.rotation.y=Math.sin(now*.2)*.9;
+      nightWorker.presence.x=x;nightWorker.presence.z=z;
     }
   }
   // sourced-model actors: advance mixers, keep the ranger's clip honest
@@ -270,6 +284,7 @@ export function updateHumans(dt) {
     const x = a[0] + (b[0] - a[0]) * w.t, z = a[1] + (b[1] - a[1]) * w.t;
     const gy = groundHeight(x, z);
     w.x=x;w.z=z;
+    w.presence.x=x;w.presence.z=z;
     w.interactable.x=x;w.interactable.z=z;w.interactable.y=gy;
     w.mesh.position.set(x, gy + Math.abs(Math.sin(now * 7 + w.phase)) * 0.04, z);
     w.mesh.rotation.y = Math.atan2((b[0] - a[0]) * w.dir, (b[1] - a[1]) * w.dir);

@@ -597,3 +597,19 @@ dynamic-collision feedback system. The existing breed behaviours, leashed
 walkers, day/night visibility, food-loss boop and nose-bite escape all remain
 unchanged. Pure regression coverage proves both shoulder selection and
 no-legal-step waiting, and locks the runtime to the live obstacle registry.
+
+
+## v0.7.11 — dogs give park residents space
+
+The lightweight dog movement query now also tests the live pedestrian and
+surface-wildlife registries. A dog avoids visible walkers, bench sitters,
+picnic owners, vendors, night staff, rabbits, squirrels and surface rats;
+underground residents are intentionally excluded. Its own leashed walker is
+excluded so the attached pair can keep their authored leash arrangement.
+
+This is deliberately courtesy movement rather than a new dynamic physics
+layer: humans, wildlife and dogs still do not become player solids, and the
+existing park tree/bench/rail collision, road/water exclusion, patrol paths
+and chase policy continue to decide where a dog may go. Tests lock both the
+registered static geometry and the two live resident registries into every
+candidate dog step.

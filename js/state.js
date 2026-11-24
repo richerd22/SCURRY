@@ -20,6 +20,7 @@ export const S = {
   interactables: [], // {x, y, z, r, label: fn()->string|null, action: fn()}
   blankets: [],      // picnic blankets (props.js fills, food.js reads)
   benchSitters: [],  // humans who can be begged (humans.js fills)
+  humanActors: [],   // visible human positions for lightweight NPC courtesy
 
   // player state (systems/player.js owns the body, everyone reads)
   player: {
