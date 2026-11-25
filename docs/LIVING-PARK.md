@@ -627,3 +627,17 @@ This changes only player-facing language and query selection: dog movement,
 chase distance, bite escape, scheduling and the new resident courtesy remain
 unchanged. The warning is deliberately more specific—“an off-leash dog”—so
 players can understand which nearby interaction is risky.
+
+
+## v0.7.13 — nocturnal rat scavenging
+
+The single authored surface rat now investigates loose food within five metres
+while its nighttime schedule is active. On reaching it, the rat visibly removes
+the item and waits eighteen seconds before looking again. Carried food is never
+eligible, and blanket food remains reserved for its picnic-owner interaction;
+burrow residents never enter this surface-only loop.
+
+This gives the nighttime rat a bounded ecological behavior without adding new
+assets, actor collisions, spawn churn, or a hidden economy penalty. A nearby
+squirrel receives a short toast when the theft is visible, and pure rules tests
+cover visibility, distance, picnic exclusion and invalid coordinates.
