@@ -8,7 +8,8 @@ import { insideParkLawn } from '../world/ground-rules.js';
 import { TUN } from './burrows.js';
 import { setCarriedVisual } from './player.js';
 import { toast } from '../ui/hud.js';
-import { WILDLIFE_SPAWNS, wildlifeResponse, nearestThreatDistance } from './wildlife-rules.js';
+import { WILDLIFE_SPAWNS, wildlifeResponse, nearestThreatDistance, nearestRatSnack } from './wildlife-rules.js';
+import { removeFoodItem } from './food.js';
 import { parkShift } from './park-shifts.js';
 import { createObstacleIndex, resolveHorizontal } from './collision.js';
 import { wildlifeStep } from './wildlife-step-rules.js';
@@ -144,7 +145,7 @@ export function buildWildlife(scene) {
     scene.add(g);
     const a={kind:role,underground,mesh:g,x,z,y,homeX:x,homeZ:z,
       index,phase:index*2.399,clock:0,heading:index*1.79,roam:1+index%4,
-      cooldown:0,flee:0,calm:0,friendly:0,exposed:false,
+      cooldown:0,flee:0,calm:0,friendly:0,snackCooldown:0,exposed:false,
       patrol,routeStep:patrol?1:0};
     actors.push(a);
     S.interactables.push({
@@ -183,6 +184,7 @@ export function updateWildlife(dt) {
     a.calm=Math.max(0,a.calm-dt);
     a.friendly=Math.max(0,a.friendly-dt);
     a.flee=Math.max(0,a.flee-dt);
+    a.snackCooldown=Math.max(0,a.snackCooldown-dt);
     const pace=P.sprinting?6.6:P.moving?3.3:0;
     const response=wildlifeResponse(a.underground?'burrow-rat':a.kind,
       dist,pace,a.underground?100:nearestThreatDistance(a.x,a.z,S.dogPositions),!!S.carried);
@@ -211,6 +213,9 @@ export function updateWildlife(dt) {
     let tx=a.homeX+Math.cos(a.clock*.31+a.phase)*a.roam,
       tz=a.homeZ+Math.sin(a.clock*.29+a.phase)*a.roam;
     let speed=a.kind==='rabbit'?.72:.55;
+    const snack=a.kind==='rat'&&!a.underground&&a.flee<=0&&a.snackCooldown<=0?
+      nearestRatSnack(a.x,a.z,S.foods):null;
+    if(snack){tx=snack.x;tz=snack.z;speed=.9;}
     if(a.friendly>0&&dist>2.1&&dist<16&&a.kind==='squirrel'){
       tx=P.pos.x;tz=P.pos.z;speed=1.85;
     }else if(a.flee>0&&!a.underground){
@@ -234,6 +239,10 @@ export function updateWildlife(dt) {
     if(a.mesh.userData.tail)
       a.mesh.userData.tail.rotation.z=Math.sin(a.clock*5+a.phase)*.1;
     a.interactable.x=a.x;a.interactable.z=a.z;a.interactable.y=a.y;
+    if(snack&&Math.hypot(a.x-snack.x,a.z-snack.z)<.22&&S.foods.includes(snack)){
+      removeFoodItem(snack);a.snackCooldown=18;
+      if(dist<7)toast('the night rat makes off with a loose '+snack.type+'.',2.2);
+    }
   }
 }
 export function biteWildlife() {

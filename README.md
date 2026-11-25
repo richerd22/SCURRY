@@ -22,7 +22,7 @@ from CDN via the import map in `index.html` (pinned: three@0.160.0).
 - [CI](.github/workflows/ci.yml): syntax checks, pure Node physics/input regressions, and static no-build/mobile invariants on every push/PR.
 - [Headless WebGL smoke](.github/workflows/browser-smoke.yml): Chromium/SwiftShader runtime boot, still screenshots, real desktop PLAY/WALK/JUMP/PORTAL round trips, simulated mobile dual-touch controls, optional map/notes checks, and screenshots/console artifacts on pushes to main.
 
-**Current version: v0.7.12.** The dog HUD now tells the truth: only a visible off-leash dog that can actually chase the squirrel triggers the nearby threat warning. Leashed dogs, remote realms, Swan Boat riders, airborne squirrels, and the curious golden while you are walking stay peaceful—so the park can feel inhabited without constantly crying wolf. v0.7.11’s resident-aware dog courtesy, v0.7.10 obstacle safety, v0.7.9 mobile cold boot, real Garden geography, living schedules, rats, MBTA, humans, wildlife and Swan Boats remain intact. Physical iPhone Safari FPS/thermals remain unverified.
+**Current version: v0.7.13.** The nocturnal surface rat now has a real scavenging loop: it investigates only nearby, visible loose food at night, visibly takes it, and then pauses before hunting again. It never consumes carried food, hidden picnic food, or anything in the burrows. Existing dog UX, resident courtesy, mobile cold boot, real Garden geography, living schedules, MBTA, humans, wildlife and Swan Boats remain intact. Physical iPhone Safari FPS/thermals remain unverified.
 
 ## Controls
 

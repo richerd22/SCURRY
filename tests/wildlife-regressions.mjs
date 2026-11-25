@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 const src=readFileSync(new URL('../js/systems/wildlife-rules.js',import.meta.url),'utf8');
-const {WILDLIFE_SPAWNS,wildlifeResponse,nearestThreatDistance}=await import(
+const {WILDLIFE_SPAWNS,wildlifeResponse,nearestThreatDistance,nearestRatSnack}=await import(
   'data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 test('authored urban wildlife is bounded, diverse, and includes the burrow network',()=>{
   assert.equal(WILDLIFE_SPAWNS.length,21);
@@ -38,4 +38,10 @@ test('hidden off-duty dogs do not frighten late-night rats',()=>{
  const sleeping=[{pos:{x:0,z:0},mesh:{visible:false}}];
  assert.equal(nearestThreatDistance(0,1,sleeping),Infinity);
  assert.equal(wildlifeResponse('rat',7,0,Infinity,false),'idle');
+});
+test('surface rat chooses only nearby visible loose food',()=>{
+ const near={x:2,z:0,mesh:{visible:true},type:'pretzel'},hidden={x:1,z:0,mesh:{visible:false}},picnic={x:1,z:0,mesh:{visible:true},steal:true};
+ assert.equal(nearestRatSnack(0,0,[hidden,picnic,near]),near);
+ assert.equal(nearestRatSnack(0,0,[{x:7,z:0,mesh:{visible:true}}]),null);
+ assert.equal(nearestRatSnack(NaN,0,[near]),null);
 });

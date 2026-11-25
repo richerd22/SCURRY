@@ -22,6 +22,18 @@ export function nearestThreatDistance(x,z,dogs=[]) {
   }
   return best;
 }
+// One nocturnal surface rat may investigate loose food, never food being
+// carried, hidden picnic food, or anything outside a short local radius.
+export function nearestRatSnack(x,z,foods=[],range=5) {
+  if(!Number.isFinite(x)||!Number.isFinite(z)||!(range>0))return null;
+  let best=null,bd=range;
+  for(const f of foods){
+    if(!f||f.mesh?.visible===false||f.steal||!Number.isFinite(f.x)||!Number.isFinite(f.z))continue;
+    const d=Math.hypot(f.x-x,f.z-z);
+    if(d<bd){best=f;bd=d;}
+  }
+  return best;
+}
 export function wildlifeResponse(kind, distance, pace, dogDistance, carryingFood) {
   if(![distance,pace].every(Number.isFinite)||distance<0||
     !(Number.isFinite(dogDistance)||dogDistance===Infinity))return 'idle';
