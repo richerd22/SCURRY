@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { groundHeight } from '../world/world.js';
+import { groundHeight, visibleGroundHeight } from '../world/world.js';
 import { makeHuman, setActorRole } from './humans.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
@@ -89,7 +89,7 @@ export function updateRanger(dt) {
     moveToward({ x: wp[0], z: wp[1] }, 1.7, dt);
   }
 
-  ranger.pos.y = groundHeight(ranger.pos.x, ranger.pos.z);
+  ranger.pos.y = visibleGroundHeight(ranger.pos.x, ranger.pos.z); // rendered surface, v0.7.14
   if (ranger.stumble <= 0) ranger.mesh.position.copy(ranger.pos);
   else ranger.mesh.position.set(ranger.pos.x, ranger.mesh.position.y, ranger.pos.z);
   const speedF = ranger.state === 'chase' ? 10 : 5.5;

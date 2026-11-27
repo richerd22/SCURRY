@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { groundHeight, PATHS } from '../world/world.js';
+import { groundHeight, visibleGroundHeight, PATHS } from '../world/world.js';
 import { BENCH_SPOTS } from '../world/props.js';
 import { spawnFood, tossFood } from './food.js';
 import { sfx } from './audio.js';
@@ -243,7 +243,7 @@ export function updateHumans(dt) {
     if(shift.nightWorker){
       const x=nightWorker.baseX+Math.sin(now*.35)*1.05;
       const z=nightWorker.baseZ+Math.cos(now*.35)*.4;
-      nightWorker.mesh.position.set(x,groundHeight(x,z),z);
+      nightWorker.mesh.position.set(x,visibleGroundHeight(x,z),z);
       nightWorker.mesh.rotation.y=Math.sin(now*.2)*.9;
       nightWorker.presence.x=x;nightWorker.presence.z=z;
     }
@@ -282,7 +282,7 @@ export function updateHumans(dt) {
     // before painting the actor, otherwise a one-frame path discontinuity.
     a=line[w.seg];b=line[(w.seg+1)%line.length];
     const x = a[0] + (b[0] - a[0]) * w.t, z = a[1] + (b[1] - a[1]) * w.t;
-    const gy = groundHeight(x, z);
+    const gy = visibleGroundHeight(x, z); // walkers tread the rendered path/lawn, v0.7.14
     w.x=x;w.z=z;
     w.presence.x=x;w.presence.z=z;
     w.interactable.x=x;w.interactable.z=z;w.interactable.y=gy;

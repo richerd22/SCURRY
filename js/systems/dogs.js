@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { S } from '../state.js';
-import { groundHeight, inWater, onRoad } from '../world/world.js';
+import { groundHeight, visibleGroundHeight, inWater, onRoad } from '../world/world.js';
 import { sfx } from './audio.js';
 import { toast } from '../ui/hud.js';
 import { dropCarried } from './food.js';
@@ -204,7 +204,7 @@ export function updateDogs(dt) {
       moveToward(d, { x: wp[0], z: wp[1] }, 1, d.profile.cruise, dt);
     }
 
-    d.pos.y = groundHeight(d.pos.x, d.pos.z);
+    d.pos.y = visibleGroundHeight(d.pos.x, d.pos.z); // feet on the rendered surface, not the analytic hill (v0.7.14)
     d.mesh.position.copy(d.pos);
     if(d.petInteractable){
       d.petInteractable.x=d.pos.x;d.petInteractable.z=d.pos.z;d.petInteractable.y=d.pos.y;
@@ -212,7 +212,7 @@ export function updateDogs(dt) {
     if(d.walker){
       const angle=d.mesh.rotation.y;
       const wx=d.pos.x-Math.sin(angle)*1.6,wz=d.pos.z-Math.cos(angle)*1.6;
-      const wy=groundHeight(wx,wz);
+      const wy=visibleGroundHeight(wx,wz);
       d.walker.position.set(wx,wy,wz);d.walker.rotation.y=angle;
       const attr=d.leash.geometry.getAttribute('position');
       attr.setXYZ(0,d.pos.x,d.pos.y+.35*d.profile.scale,d.pos.z);
@@ -257,7 +257,7 @@ function moveToward(d, target, dirSign, speed, dt) {
 
 function dogFreeStep(d, radius, x, z) {
   if (inWater(x, z) || onRoad(x, z)) return false;
-  dogProbe.x = x; dogProbe.z = z; dogProbe.y = groundHeight(x, z);
+  dogProbe.x = x; dogProbe.z = z; dogProbe.y = visibleGroundHeight(x, z);
   resolveHorizontal(dogProbe, S.solids, S.solidBoxes, S.walls, radius, null, dogObstacleIndex);
   // A resolver displacement means this candidate overlaps a registered solid.
   if (Math.hypot(dogProbe.x - x, dogProbe.z - z) >= .003) return false;
