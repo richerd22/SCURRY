@@ -4,6 +4,7 @@ import { S } from '../state.js';
 import { visibleGroundHeight } from '../world/world.js';
 import { isGardenIsland } from '../world/garden-lagoon-layout.js';
 import { discoverAt, FIELD_NOTES, FIELD_NOTE_KEYS } from './discovery-rules.js';
+import { toast } from '../ui/hud.js';
 
 export const NOTES_KEY='scurry-field-notes-v1';
 const unlocked=new Set();
@@ -26,11 +27,17 @@ export function updateDiscoveries(dt) {
   const p=S.player;
   const remote=p.inHollow||p.inBurrow||p.inFenway||p.inGarden||p.inCityHall||p.inEsplanade;
   const floor=remote?null:visibleGroundHeight(p.pos.x,p.pos.z);
-  let changed=false;
+  let changed=false; const fresh=[];
   for(const id of discoverAt(p,floor,S.hollowTreePos,isGardenIsland)) {
     if(unlocked.has(id))continue;
     unlocked.add(id);
-    changed=true;
+    changed=true; fresh.push(id);
+  }
+  if(fresh.length){
+    const label=(FIELD_NOTES.find(n=>n.id===fresh[0])||{}).label||fresh[0];
+    // Discovering a place should feel discovered (v0.7.15): name it, count it.
+    if(unlocked.size>=FIELD_NOTES.length) toast('FIELD NOTES complete - every corner of the park, known. '+unlocked.size+'/'+FIELD_NOTES.length, 4.5);
+    else toast('field note: '+label+' - '+unlocked.size+'/'+FIELD_NOTES.length+' (map > field notes)', 3.4);
   }
   if(changed){
     try{localStorage.setItem(NOTES_KEY,JSON.stringify({v:1,ids:[...unlocked]}));}

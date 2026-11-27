@@ -7,6 +7,7 @@ import { S } from '../state.js';
 import { visibleGroundHeight, inWater } from '../world/world.js';
 import { walkSurface, resolveHorizontal, createSurfaceIndex, createObstacleIndex } from './collision.js';
 import { advanceJumpIntent, resetJumpIntent } from './jump.js';
+import { targetFov, stepFov } from './camera-feel.js';
 import { mayAttachToTrunk, mayTransferToCanopy } from './climb-gate.js';
 import { sfx } from './audio.js';
 
@@ -402,8 +403,18 @@ export function updatePlayer(dt, camera) {
 }
 
 // Re-sync after destination clamps/portals: these run after player physics.
+let lastCamT = null;
 export function syncPlayerCamera(camera) {
   const P = S.player;
+  // Sprint FOV kick (v0.7.15): ease the lens open while sprinting on the
+  // ground. Skipped in debug-shot mode so QA screenshots stay deterministic.
+  if (!S.debugShot && camera && Number.isFinite(camera.fov)) {
+    const now = performance.now() / 1000;
+    const dt = lastCamT === null ? 0 : Math.min(0.1, Math.max(0, now - lastCamT));
+    lastCamT = now;
+    const next = stepFov(camera.fov, targetFov(P), dt);
+    if (Math.abs(next - camera.fov) > 0.001) { camera.fov = next; camera.updateProjectionMatrix(); }
+  }
   const bob = P.grounded && P.moving ? Math.sin(runPhase * 2) * 0.02 : 0;
   const eye = S.debugShot && Number.isFinite(S.debugEye) ? S.debugEye : EYE;
   camera.position.set(P.pos.x, P.pos.y + eye + bob, P.pos.z);
