@@ -129,7 +129,57 @@ export const sfx = {
   caw() { tone(1150, 700, 0.13, 'sawtooth', 0.13); noiseBurst(0.1, 1800, 0.08); tone(1050, 650, 0.11, 'sawtooth', 0.1, 0.16); },
 };
 
-// --- ambience: sparse synthesized birdsong by day, crickets by night ---
+// --- ambience: sparse synthesized soundscape, keyed to the park clock ---
+// This deliberately stays a small, infrequent foreground detail rather than
+// a looping bed. It keeps the Common quiet enough for footsteps, dogs, geese
+// and people to read, while dawn and night feel meaningfully different.
+export function ambienceProfile(hour) {
+  const h = ((Number.isFinite(hour) ? hour : 17.6) % 24 + 24) % 24;
+  if (h >= 5.25 && h < 7.25) return 'dawn';
+  if (h >= 7.25 && h < 16.5) return 'day';
+  if (h >= 16.5 && h < 19.5) return 'golden';
+  if (h >= 19.5 && h < 22.5) return 'evening';
+  return 'night';
+}
+
+export function ambienceDelay(profile, random = Math.random) {
+  const draw = random();
+  const r = Math.max(0, Math.min(1, Number.isFinite(draw) ? draw : 0.5));
+  // In milliseconds. Dawn gets a little more activity; deep night breathes.
+  const range = profile === 'dawn' ? [2300, 3300] :
+    profile === 'day' ? [3800, 5200] :
+      profile === 'golden' ? [4800, 6200] :
+        profile === 'evening' ? [3900, 5300] : [5200, 7000];
+  return range[0] + (range[1] - range[0]) * r;
+}
+
+function playAmbience(profile) {
+  if (profile === 'dawn') {
+    // A few high, tentative calls before the busy park wakes up.
+    const base = 2500 + Math.random() * 850;
+    for (let i = 0; i < 2; i++) tone(base * (1 + i * 0.07), base * (0.92 + i * 0.08), 0.09, 'sine', 0.028, i * 0.18);
+  } else if (profile === 'day') {
+    // Daytime song is present but deliberately not constant.
+    const base = 2200 + Math.random() * 1400;
+    const n = 2 + (Math.random() * 3 | 0);
+    for (let i = 0; i < n; i++) tone(base, base * (0.8 + Math.random() * 0.5), 0.07, 'sine', 0.035, i * 0.11);
+  } else if (profile === 'golden') {
+    // Fewer, lower calls as the daytime flock settles down.
+    const base = 1700 + Math.random() * 900;
+    for (let i = 0; i < 2; i++) tone(base * (1 + i * 0.1), base * (0.76 + i * 0.05), 0.11, 'triangle', 0.024, i * 0.2);
+  } else if (profile === 'evening') {
+    // The first crickets arrive under the last small bird calls.
+    tone(3550, 3550, 0.035, 'sine', 0.012);
+    tone(3720, 3720, 0.035, 'sine', 0.012, 0.09);
+    if (Math.random() < 0.45) tone(1850, 1510, 0.1, 'triangle', 0.018, 0.22);
+  } else {
+    // Night is intentionally the quietest profile: a sparse insect trio,
+    // not an exhausting wall of crickets.
+    const base = 3950 + Math.random() * 500;
+    for (let i = 0; i < 3; i++) tone(base * (1 + i * 0.025), base, 0.03, 'sine', 0.014, i * 0.075);
+  }
+}
+
 let ambienceTimer = null;
 function stopAmbience() {
   if (ambienceTimer !== null) {
@@ -141,23 +191,19 @@ function startAmbience() {
   if (ambienceTimer !== null || !ctx || muted || gameAudioPaused) return;
   const tick = () => {
     ambienceTimer = null;
+    let profile = 'golden';
     if (ctx && !muted && !gameAudioPaused) {
       try {
         const hour = window.__scurryHour ? window.__scurryHour() : 17.6;
-        if (hour > 5.5 && hour < 19.5) {
-          // bird chirp cluster
-          const base = 2200 + Math.random() * 1400;
-          const n = 2 + (Math.random() * 3 | 0);
-          for (let i = 0; i < n; i++) tone(base, base * (0.8 + Math.random() * 0.5), 0.07, 'sine', 0.035, i * 0.11);
-        } else {
-          // crickets
-          for (let i = 0; i < 3; i++) tone(4200, 4200, 0.03, 'sine', 0.015, i * 0.06);
-        }
+        profile = ambienceProfile(hour);
+        playAmbience(profile);
       } catch (e) {}
     }
-    // Never leave a recurring timer armed behind a pause/mute.
+    // Never leave a recurring timer armed behind a pause/mute. Scheduling is
+    // intentionally outside the synthesis try block: one failed oscillator
+    // must not silence the rest of the session.
     if (ctx && !muted && !gameAudioPaused)
-      ambienceTimer = setTimeout(tick, 2500 + Math.random() * 5000);
+      ambienceTimer = setTimeout(tick, ambienceDelay(profile));
   };
   ambienceTimer = setTimeout(tick, 1500);
 }
