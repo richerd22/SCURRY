@@ -2,6 +2,19 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 const src=readFileSync(new URL('../js/systems/audio.js',import.meta.url),'utf8');
+test('park ambience has distinct, clock-wrapping quiet profiles',async()=>{
+  const m=await import('data:text/javascript;base64,'+Buffer.from(src+'\n// ambience rules instance').toString('base64'));
+  assert.equal(m.ambienceProfile(6),'dawn');
+  assert.equal(m.ambienceProfile(12),'day');
+  assert.equal(m.ambienceProfile(17.6),'golden');
+  assert.equal(m.ambienceProfile(20),'evening');
+  assert.equal(m.ambienceProfile(2),'night');
+  assert.equal(m.ambienceProfile(26),m.ambienceProfile(2),'clock wraps');
+  for(const profile of ['dawn','day','golden','evening','night']){
+    const delay=m.ambienceDelay(profile,()=>.5);
+    assert.ok(delay>=2300&&delay<=7000,profile+' remains sparse');
+  }
+});
 test('mute before first gesture sets master gain to zero and starts no timer',async()=>{
   const priorW=globalThis.window,priorSet=globalThis.setTimeout,priorClear=globalThis.clearTimeout;
   let created=0,timers=0,cancelled=0,ctx;
